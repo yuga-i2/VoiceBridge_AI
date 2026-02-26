@@ -2,31 +2,30 @@
 VoiceBridge AI — SMS Service
 Sends document checklist SMS after scheme recommendation.
 Supports multi-provider: Twilio, SNS (AWS), or Mock
+Provider is read FRESH from .env on every call — zero caching.
 """
 
 import os
 import logging
+from pathlib import Path
+from dotenv import load_dotenv
 from config.settings import USE_MOCK, AWS_REGION, SNS_SENDER_ID
 from services.scheme_service import format_scheme_for_sms
 
 logger = logging.getLogger(__name__)
 
-SMS_PROVIDER = os.getenv('SMS_PROVIDER', 'mock')
+# Reload .env on every call to ensure fresh values
+_BASE_DIR = Path(__file__).resolve().parent.parent
+_DOTENV_PATH = _BASE_DIR / '.env'
 
 if not USE_MOCK:
     import boto3
 
-# Twilio imports (only if provider is twilio)
-if SMS_PROVIDER == 'twilio':
-    try:
-        from twilio.rest import Client
-        TWILIO_ACCOUNT_SID = os.getenv('TWILIO_ACCOUNT_SID')
-        TWILIO_AUTH_TOKEN = os.getenv('TWILIO_AUTH_TOKEN')
-        TWILIO_PHONE_NUMBER = os.getenv('TWILIO_PHONE_NUMBER')
-        TWILIO_CLIENT = Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
-    except Exception as e:
-        logger.warning(f"Twilio not configured: {e}")
-        TWILIO_CLIENT = None
+
+def _get_sms_provider():
+    """Read SMS_PROVIDER fresh from .env every time. Never cached."""
+    load_dotenv(dotenv_path=_DOTENV_PATH, override=True)
+    return os.getenv('SMS_PROVIDER', 'mock').strip().lower()
 
 
 def send_checklist(phone_number: str, scheme_ids: list[str]) -> dict:
@@ -36,13 +35,19 @@ def send_checklist(phone_number: str, scheme_ids: list[str]) -> dict:
     - 'twilio': Use Twilio
     - 'sns': Use AWS SNS
     - 'mock': Print to console
+    
+    Provider is read FRESH from .env on every call — zero caching.
     """
+    # Reload .env and get provider fresh
+    load_dotenv(dotenv_path=_DOTENV_PATH, override=True)
+    sms_provider = os.getenv('SMS_PROVIDER', 'mock').strip().lower()
+    
     # Get formatted SMS text
     message_text = format_scheme_for_sms(scheme_ids)
     
-    if SMS_PROVIDER == 'twilio':
+    if sms_provider == 'twilio':
         return _send_via_twilio(phone_number, message_text)
-    elif SMS_PROVIDER == 'sns':
+    elif sms_provider == 'sns':
         return _send_via_sns(phone_number, message_text)
     else:
         return _send_via_mock(phone_number, message_text)
@@ -105,7 +110,13 @@ def _send_via_sns(phone_number: str, message_text: str) -> dict:
 def _send_via_twilio(phone_number: str, message_text: str) -> dict:
     """Twilio SMS provider"""
     try:
-        if not TWILIO_CLIENT:
+        # Read credentials fresh from .env
+        load_dotenv(dotenv_path=_DOTENV_PATH, override=True)
+        twilio_account_sid = os.getenv('TWILIO_ACCOUNT_SID')
+        twilio_auth_token = os.getenv('TWILIO_AUTH_TOKEN')
+        twilio_phone_number = os.getenv('TWILIO_PHONE_NUMBER')
+        
+        if not twilio_account_sid or not twilio_auth_token:
             return {
                 "success": False,
                 "error": "Twilio not configured",
@@ -113,9 +124,12 @@ def _send_via_twilio(phone_number: str, message_text: str) -> dict:
                 "provider": "twilio"
             }
         
-        message = TWILIO_CLIENT.messages.create(
+        from twilio.rest import Client
+        twilio_client = Client(twilio_account_sid, twilio_auth_token)
+        
+        message = twilio_client.messages.create(
             body=message_text,
-            from_=os.getenv('TWILIO_PHONE_NUMBER'),
+            from_=twilio_phone_number,
             to=phone_number
         )
         

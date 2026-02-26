@@ -19,12 +19,15 @@ def initiate_outbound_call(farmer_phone, farmer_name, scheme_ids):
             'message': 'Set CONNECT_INSTANCE_ID in .env when AWS activates'
         }
     try:
+        # Extract Queue ID from ARN (last part after /queue/)
+        queue_id = CONNECT_QUEUE_ARN.split('/queue/')[-1] if CONNECT_QUEUE_ARN else None
+        
         connect_client = boto3.client('connect', region_name=AWS_REGION)
         response = connect_client.start_outbound_voice_contact(
             DestinationPhoneNumber=farmer_phone,
             ContactFlowId=CONNECT_CONTACT_FLOW_ID,
             InstanceId=CONNECT_INSTANCE_ID,
-            QueueId=CONNECT_QUEUE_ARN,
+            QueueId=queue_id,
             Attributes={
                 'farmerName': farmer_name,
                 'schemeIds': ','.join(scheme_ids[:3]),
