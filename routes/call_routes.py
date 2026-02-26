@@ -36,43 +36,18 @@ call_bp = Blueprint('call', __name__)
 @call_bp.route('/api/call/twiml', methods=['GET', 'POST'])
 def twiml_stage1_intro():
     """
-    Stage 1: Trust building.
-    Sahaya introduces herself, states she never asks for OTP,
-    then plays Voice Memory clip from S3 (peer success story).
-    Then asks first eligibility question.
+    CRITICAL FIX: Twilio returns "Press any key" when endpoint returns ERROR.
+    This version has ZERO function calls - just hardcoded strings.
+    No exceptions possible = Twilio always gets valid XML.
     """
     try:
-        farmer_name = request.args.get('farmer_name', 'Kisan bhai')
-        
-        # Default to PM_KISAN voice memory for first contact
-        try:
-            from services.call_conversation import get_voice_memory_url
-            voice_memory_url = get_voice_memory_url('PM_KISAN')
-        except Exception as e:
-            logger.error(f"get_voice_memory_url failed: {e}")
-            voice_memory_url = 'https://voicebridge-audio-yuga.s3.ap-southeast-1.amazonaws.com/voice_memory_PM_KISAN.mp3'
-        
-        try:
-            base_url = _get_base_url()
-        except Exception as e:
-            logger.error(f"_get_base_url failed: {e}")
-            base_url = 'https://164a-43-229-91-78.ngrok-free.app'
-
-        twiml = f'''<?xml version="1.0" encoding="UTF-8"?><Response><Say voice="Polly.Kajal" language="hi-IN">Namaste {farmer_name} ji! Main Sahaya hoon — ek sarkaari kalyan sahayak. Main aapko sarkaari yojanaon ke baare mein jaankari dene ke liye call kar rahi hoon.</Say><Pause length="1"/><Say voice="Polly.Kajal" language="hi-IN">Ek zaroori baat — main kabhi bhi aapka Aadhaar number, OTP, ya bank password nahi maangti. Agar koi aisa maange, woh Sahaya nahi hai.</Say><Pause length="1"/><Say voice="Polly.Kajal" language="hi-IN">Pehle aapko Tumkur ke ek kisan, Suresh Kumar ji ka sandesh sunwaati hoon.</Say><Play>{voice_memory_url}</Play><Pause length="1"/><Say voice="Polly.Kajal" language="hi-IN">Ab main aapki thodi jaankari lena chahti hoon taaki sahi yojana bataa sakoon.</Say><Gather numDigits="1" action="{base_url}/api/call/stage2-land?farmer_name={farmer_name}" method="POST" timeout="10"><Say voice="Polly.Kajal" language="hi-IN">Aapke paas kitni zameen hai? 2 acre se kam ke liye 1 dabaayein. 2 se 5 acre ke liye 2 dabaayein. 5 acre se zyada ke liye 3 dabaayein.</Say></Gather><Say voice="Polly.Kajal" language="hi-IN">Koi jawab nahi mila. Sahaya dobara call karegi. Dhanyavaad.</Say></Response>'''
-
-        logger.info(f"Stage 1 TwiML returned for {farmer_name}")
-        return Response(twiml, mimetype='text/xml')
-        
+        farmer_name = request.args.get('farmer_name', 'Farmer')
+        # HARDCODED - NO FUNCTION CALLS ALLOWED
+        twiml = f'<?xml version="1.0" encoding="UTF-8"?><Response><Say voice="Polly.Kajal" language="hi-IN">Namaste {farmer_name} ji. Main Sahaya hoon. Ek sarkaari kalyan sahayak. Main aapko sarkaari yojanaon ke baare mein jaankari dene ke liye call kar rahi hoon.</Say><Pause length="1"/><Say voice="Polly.Kajal" language="hi-IN">Ek important baat. Main kabhi aapka Aadhaar number, OTP, ya bank password nahi maangti.</Say><Pause length="1"/><Say voice="Polly.Kajal" language="hi-IN">Ab main aapki thodi jaankari lena chahti hoon taaki sahi yojana bataa sakoon.</Say><Gather numDigits="1" action="https://164a-43-229-91-78.ngrok-free.app/api/call/stage2-land?farmer_name={farmer_name}" method="POST" timeout="10"><Say voice="Polly.Kajal" language="hi-IN">Aapke paas kitni zameen hai? 1 dabayen. 2 dabayen. 3 dabayen.</Say></Gather></Response>'
+        return Response(twiml, mimetype='text/xml; charset=utf-8')
     except Exception as e:
-        logger.error(f"ERROR in twiml_stage1_intro: {e}", exc_info=True)
-        # Return a minimal valid TwiML that won't crash
-        error_twiml = '''<?xml version="1.0" encoding="UTF-8"?>
-<Response>
-    <Say voice="Polly.Kajal" language="hi-IN">
-        Namaste! Main Sahaya hoon. Ek moment...
-    </Say>
-</Response>'''
-        return Response(error_twiml, mimetype='text/xml')
+        logger.error(f"CRITICAL: twiml_stage1_intro crashed: {e}")
+        return Response('<?xml version="1.0" encoding="UTF-8"?><Response><Say voice="Polly.Kajal" language="hi-IN">Error occurred.</Say></Response>', mimetype='text/xml')
 
 
 # ─────────────────────────────────────────────
