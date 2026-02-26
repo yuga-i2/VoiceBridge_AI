@@ -5,14 +5,18 @@ Single source of truth for all app configuration.
 """
 
 import os
+from pathlib import Path
 from dotenv import load_dotenv
 
-# Load .env file at import time
-load_dotenv()
+# Load .env file at import time - use absolute path relative to this file
+# override=True forces re-read even if vars already in environment
+BASE_DIR = Path(__file__).resolve().parent.parent
+dotenv_path = BASE_DIR / ".env"
+load_dotenv(dotenv_path=dotenv_path, override=True)
 
 # Configuration constants
 FLASK_ENV = os.getenv("FLASK_ENV", "development")
-USE_MOCK = os.getenv("USE_MOCK", "True").lower() == "true"
+USE_MOCK = os.getenv("USE_MOCK", "True").strip().lower() == "true"
 AWS_REGION = os.getenv("AWS_REGION", "ap-southeast-1")
 BEDROCK_MODEL_ID = os.getenv("BEDROCK_MODEL_ID", "anthropic.claude-3-haiku-20240307-v1:0")
 DYNAMODB_TABLE_NAME = os.getenv("DYNAMODB_TABLE_NAME", "welfare_schemes")

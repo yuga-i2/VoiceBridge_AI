@@ -5,12 +5,21 @@ Generates Sahaya's Hindi responses using Bedrock (AWS) or mock data (development
 
 import json
 import re
+from decimal import Decimal
 from config.settings import USE_MOCK, AWS_REGION, BEDROCK_MODEL_ID
 from services.scheme_service import get_scheme_by_id
 from models.farmer import FarmerProfile
 
 if not USE_MOCK:
     import boto3
+
+
+class DecimalEncoder(json.JSONEncoder):
+    """Custom JSON encoder to handle Decimal objects from DynamoDB."""
+    def default(self, obj):
+        if isinstance(obj, Decimal):
+            return float(obj) if '.' in str(obj) else int(obj)
+        return super().default(obj)
 
 
 SAHAYA_SYSTEM_PROMPT = """You are Sahaya, a compassionate AI assistant helping rural Indian farmers access government welfare schemes.
@@ -131,8 +140,8 @@ def _build_bedrock_messages(
     Builds messages array for Bedrock Claude API.
     Injects scheme data and farmer profile into system prompt.
     """
-    # Inject data into system prompt
-    scheme_data_str = json.dumps(scheme_data, ensure_ascii=False, indent=2)
+    # Inject data into system prompt - use custom encoder for Decimal objects
+    scheme_data_str = json.dumps(scheme_data, ensure_ascii=False, indent=2, cls=DecimalEncoder)
     farmer_profile_str = json.dumps(farmer.to_dict(), ensure_ascii=False, indent=2)
     
     system_with_data = SAHAYA_SYSTEM_PROMPT.replace("{scheme_data}", scheme_data_str)
@@ -201,21 +210,24 @@ def generate_response(
                 farmer
             )
             
-            # Call Bedrock
-            body = json.dumps({
-                "messages": messages,
-                "system": system_final,
+            # Call Bedrock with correct Claude Messages API format
+            request_body = {
+                "anthropic_version": "bedrock-2023-05-31",
                 "max_tokens": 512,
-                "temperature": 0.7
-            })
+                "temperature": 0.7,
+                "system": system_final,
+                "messages": messages
+            }
             
             response = client.invoke_model(
                 modelId=BEDROCK_MODEL_ID,
-                body=body
+                body=json.dumps(request_body, cls=DecimalEncoder),
+                contentType="application/json",
+                accept="application/json"
             )
             
             # Parse response
-            response_body = json.loads(response["body"].read().decode("utf-8"))
+            response_body = json.loads(response["body"].read())
             raw_response = response_body["content"][0]["text"]
             
             # Extract voice memory tag
