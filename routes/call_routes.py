@@ -58,62 +58,7 @@ def twiml_stage1_intro():
             logger.error(f"_get_base_url failed: {e}")
             base_url = 'https://164a-43-229-91-78.ngrok-free.app'
 
-        twiml = f'''<?xml version="1.0" encoding="UTF-8"?>
-<Response>
-
-    <!-- Sahaya introduction — warm, trustworthy -->
-    <Say voice="Polly.Kajal" language="hi-IN">
-        Namaste {farmer_name} ji!
-        Main Sahaya hoon — ek sarkaari kalyan sahayak.
-        Main aapko sarkaari yojanaon ke baare mein 
-        jaankari dene ke liye call kar rahi hoon.
-    </Say>
-
-    <Pause length="1"/>
-
-    <!-- Anti-scam trust statement — always first -->
-    <Say voice="Polly.Kajal" language="hi-IN">
-        Ek zaroori baat — main kabhi bhi aapka Aadhaar 
-        number, OTP, ya bank password nahi maangti.
-        Agar koi aisa maange, woh Sahaya nahi hai.
-    </Say>
-
-    <Pause length="1"/>
-
-    <!-- Voice Memory Network — peer success story from S3 -->
-    <Say voice="Polly.Kajal" language="hi-IN">
-        Pehle aapko Tumkur ke ek kisan, Suresh Kumar ji 
-        ka sandesh sunwaati hoon.
-    </Say>
-
-    <Play>{voice_memory_url}</Play>
-
-    <Pause length="1"/>
-
-    <!-- Move to eligibility questions -->
-    <Say voice="Polly.Kajal" language="hi-IN">
-        Ab main aapki thodi jaankari lena chahti hoon
-        taaki sahi yojana bataa sakoon.
-    </Say>
-
-    <Gather numDigits="1" 
-            action="{base_url}/api/call/stage2-land?farmer_name={farmer_name}"
-            method="POST" timeout="10" finishOnKey="">
-        <Say voice="Polly.Kajal" language="hi-IN">
-            Aapke paas kitni zameen hai?
-            2 acre se kam ke liye 1 dabaayein.
-            2 se 5 acre ke liye 2 dabaayein.
-            5 acre se zyada ke liye 3 dabaayein.
-        </Say>
-    </Gather>
-
-    <!-- Timeout fallback -->
-    <Say voice="Polly.Kajal" language="hi-IN">
-        Koi jawab nahi mila. Sahaya dobara call karegi.
-        Dhanyavaad.
-    </Say>
-
-</Response>'''
+        twiml = f'''<?xml version="1.0" encoding="UTF-8"?><Response><Say voice="Polly.Kajal" language="hi-IN">Namaste {farmer_name} ji! Main Sahaya hoon — ek sarkaari kalyan sahayak. Main aapko sarkaari yojanaon ke baare mein jaankari dene ke liye call kar rahi hoon.</Say><Pause length="1"/><Say voice="Polly.Kajal" language="hi-IN">Ek zaroori baat — main kabhi bhi aapka Aadhaar number, OTP, ya bank password nahi maangti. Agar koi aisa maange, woh Sahaya nahi hai.</Say><Pause length="1"/><Say voice="Polly.Kajal" language="hi-IN">Pehle aapko Tumkur ke ek kisan, Suresh Kumar ji ka sandesh sunwaati hoon.</Say><Play>{voice_memory_url}</Play><Pause length="1"/><Say voice="Polly.Kajal" language="hi-IN">Ab main aapki thodi jaankari lena chahti hoon taaki sahi yojana bataa sakoon.</Say><Gather numDigits="1" action="{base_url}/api/call/stage2-land?farmer_name={farmer_name}" method="POST" timeout="10"><Say voice="Polly.Kajal" language="hi-IN">Aapke paas kitni zameen hai? 2 acre se kam ke liye 1 dabaayein. 2 se 5 acre ke liye 2 dabaayein. 5 acre se zyada ke liye 3 dabaayein.</Say></Gather><Say voice="Polly.Kajal" language="hi-IN">Koi jawab nahi mila. Sahaya dobara call karegi. Dhanyavaad.</Say></Response>'''
 
         logger.info(f"Stage 1 TwiML returned for {farmer_name}")
         return Response(twiml, mimetype='text/xml')
