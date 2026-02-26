@@ -19,6 +19,8 @@ from services.stt_service import transcribe_audio
 from services.tts_service import synthesize_speech
 from services.sms_service import send_checklist
 from services.voice_memory_service import get_clip
+from services.call_service import initiate_sahaya_call, get_active_provider
+import os
 
 # Create Flask app
 app = Flask(__name__)
@@ -33,7 +35,18 @@ def health():
     return jsonify({
         "status": "ok",
         "mock_mode": USE_MOCK,
-        "version": "1.0.0"
+        "version": "1.0.0",
+        "call_provider": get_active_provider(),
+        "sms_provider": os.getenv('SMS_PROVIDER', 'mock'),
+        "services": {
+            "bedrock": "live" if not USE_MOCK else "mock",
+            "dynamodb": "live" if not USE_MOCK else "mock",
+            "polly": "live" if not USE_MOCK else "mock",
+            "s3": "live" if not USE_MOCK else "mock",
+            "transcribe": "live" if not USE_MOCK else "mock",
+            "call": get_active_provider(),
+            "sms": os.getenv('SMS_PROVIDER', 'mock')
+        }
     }), 200
 
 
@@ -337,6 +350,41 @@ def send_sms():
         }), 500
 
 
+# ==================== CALL INITIATION ====================
+
+@app.route("/api/initiate-call", methods=["POST"])
+def initiate_call():
+    """
+    Initiate outbound call to farmer.
+    Body: { farmer_phone, farmer_name, scheme_ids[] }
+    Provider switches via CALL_PROVIDER env var.
+    """
+    try:
+        data = request.get_json()
+        farmer_phone = data.get('farmer_phone', '').strip()
+        farmer_name = data.get('farmer_name', 'Kisan bhai')
+        scheme_ids = data.get('scheme_ids', ['PM_KISAN'])
+        
+        if not farmer_phone:
+            return jsonify({
+                'success': False,
+                'error': 'farmer_phone required',
+                'code': 'INVALID_INPUT'
+            }), 400
+        
+        result = initiate_sahaya_call(farmer_phone, farmer_name, scheme_ids)
+        result['active_provider'] = get_active_provider()
+        
+        return jsonify(result), 200 if result['success'] else 400
+    
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'code': 'SERVICE_ERROR'
+        }), 500
+
+
 # ==================== ERROR HANDLERS ====================
 
 @app.errorhandler(404)
@@ -355,6 +403,12 @@ def server_error(e):
         "error": "Internal server error",
         "code": "SERVER_ERROR"
     }), 500
+
+
+# ==================== REGISTER BLUEPRINTS ====================
+
+from routes.call_routes import call_bp
+app.register_blueprint(call_bp)
 
 
 # ==================== RUN ====================
