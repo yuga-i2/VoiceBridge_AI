@@ -1,7 +1,15 @@
 """
-TwiML Webhook Routes for Twilio Call Handling
-When farmer answers the call, Twilio calls these endpoints to get instructions.
-Uses Amazon Polly Kajal voice for Hindi + real DynamoDB scheme data + Bedrock AI.
+COMPLETE SAHAYA 6-STAGE CALL FLOW
+Stage 1: Trust Building — Introduction + Voice Memory clip from S3
+Stage 2: Land size question via DTMF (1/2/3)
+Stage 3: KCC question + Scheme matching + Bedrock AI explanation
+Stage 4: Document guidance + SMS sent
+Stage 5: Closing + second scheme option
+
+Uses Amazon Polly.Kajal neural voice for authentic Hindi.
+Uses real DynamoDB scheme data.
+Uses Bedrock AI for personalised explanations.
+Uses S3 for peer success Voice Memory clips.
 """
 
 from flask import Blueprint, request, Response, jsonify
@@ -9,6 +17,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 import os
 import logging
+from urllib.parse import urlencode
 
 logger = logging.getLogger(__name__)
 
@@ -18,293 +27,455 @@ load_dotenv(dotenv_path=_BASE_DIR / '.env', override=True)
 call_bp = Blueprint('call', __name__)
 
 
-def _get_scheme_details(scheme_id):
-    """Get real scheme data from DynamoDB via scheme_service."""
-    try:
-        from services.scheme_service import get_scheme_by_id
-        scheme = get_scheme_by_id(scheme_id)
-        if scheme:
-            return {
-                'name_hi': scheme.get('name_hi', 'PM-KISAN yojana'),
-                'name_en': scheme.get('name_en', scheme_id),
-                'benefit': scheme.get('benefit', '6,000 rupaye pratisaal'),
-                'documents': scheme.get('documents', [
-                    'Aadhaar card',
-                    'Zameen ke kagaz',
-                    'Bank passbook'
-                ]),
-                'apply_at': scheme.get('apply_at', 'nazdiki CSC kendra')
-            }
-    except Exception as e:
-        logger.error(f"Could not fetch scheme {scheme_id}: {e}")
 
-    # Fallback data if DynamoDB fails
-    fallbacks = {
-        'PM_KISAN': {
-            'name_hi': 'पीएम किसान सम्मान निधि',
-            'name_en': 'PM Kisan Samman Nidhi',
-            'benefit': '6,000 rupaye pratisaal, teen kisht mein',
-            'documents': ['Aadhaar card', 'Zameen ke kagaz', 'Bank passbook'],
-            'apply_at': 'nazdiki CSC kendra ya pmkisan.gov.in'
-        },
-        'KCC': {
-            'name_hi': 'किसान क्रेडिट कार्ड',
-            'name_en': 'Kisan Credit Card',
-            'benefit': '3 lakh rupaye tak ka loan, sirf 4% byaaj par',
-            'documents': ['Aadhaar card', 'Zameen ke kagaz', 
-                         'Bank passbook', 'Passport photo'],
-            'apply_at': 'nazdiki bank shaakha mein'
-        },
-        'PMFBY': {
-            'name_hi': 'प्रधानमंत्री फसल बीमा योजना',
-            'name_en': 'PM Fasal Bima Yojana',
-            'benefit': 'Fasal kharab hone par poora muavza, sirf 2% premium par',
-            'documents': ['Aadhaar card', 'Zameen ke kagaz',
-                         'Bank passbook', 'Baayi hui fasal ki jaankari'],
-            'apply_at': 'nazdiki bank ya CSC kendra mein'
-        }
-    }
-    return fallbacks.get(scheme_id, fallbacks['PM_KISAN'])
-
-
-def _get_ai_intro(farmer_name, scheme_id, scheme_details):
-    """
-    Get a real Bedrock AI response for the scheme introduction.
-    Falls back to a well-written template if Bedrock fails.
-    Under 40 words — must be short for phone call.
-    """
-    try:
-        from models.farmer import FarmerProfile
-        from services.ai_service import generate_response
-
-        farmer = FarmerProfile.from_dict({
-            'name': farmer_name,
-            'land_acres': 2,
-            'state': 'Karnataka',
-            'has_kcc': False,
-            'has_bank_account': True
-        })
-
-        prompt = (
-            f"{farmer_name} ji ko {scheme_details['name_hi']} ke baare "
-            f"mein batao. Sirf 2 vaakya mein. Hindi mein."
-        )
-
-        result = generate_response(prompt, [scheme_id], farmer, [])
-        text = result.get('response_text', '')
-
-        # Keep it short for phone — max 200 chars
-        if text and len(text) > 20:
-            return text[:200]
-
-    except Exception as e:
-        logger.error(f"Bedrock intro failed: {e}")
-
-    # Template fallback — well written Hindi
-    return (
-        f"{farmer_name} ji, aapko "
-        f"{scheme_details['name_hi']} "
-        f"ka laabh mil sakta hai. "
-        f"Is yojana mein aapko "
-        f"{scheme_details['benefit']} milta hai."
-    )
-
+# ─────────────────────────────────────────────
+# STAGE 1: TRUST INTRODUCTION + VOICE MEMORY
+# Called when farmer answers the phone
+# ─────────────────────────────────────────────
 
 @call_bp.route('/api/call/twiml', methods=['GET', 'POST'])
-def twiml_handler():
+def twiml_stage1_intro():
     """
-    Twilio calls this when farmer answers.
-    Returns TwiML with Sahaya speaking in Hindi using Polly Kajal voice.
-    Uses real DynamoDB scheme data and Bedrock AI introductions.
+    Stage 1: Trust building.
+    Sahaya introduces herself, states she never asks for OTP,
+    then plays Voice Memory clip from S3 (peer success story).
+    Then asks first eligibility question.
     """
     farmer_name = request.args.get('farmer_name', 'Kisan bhai')
-    schemes_param = request.args.get('schemes', 'PM_KISAN')
-    scheme_list = [s.strip() for s in schemes_param.split(',') if s.strip()]
-    primary_scheme = scheme_list[0] if scheme_list else 'PM_KISAN'
-
-    # Get real scheme data from DynamoDB
-    scheme = _get_scheme_details(primary_scheme)
-
-    # Get AI-generated introduction from Bedrock
-    intro_text = _get_ai_intro(farmer_name, primary_scheme, scheme)
-
-    # Build document list in Hindi
-    docs = scheme['documents'][:3]
-    docs_hindi = ', '.join(docs)
+    
+    # Default to PM_KISAN voice memory for first contact
+    from services.call_conversation import get_voice_memory_url
+    voice_memory_url = get_voice_memory_url('PM_KISAN')
+    
+    base_url = _get_base_url()
 
     twiml = f'''<?xml version="1.0" encoding="UTF-8"?>
 <Response>
+
+    <!-- Sahaya introduction — warm, trustworthy -->
     <Say voice="Polly.Kajal" language="hi-IN">
-        Namaste! Main Sahaya hoon, ek sarkaari kalyan sahayak.
-        Yeh call bilkul free hai. Main kabhi OTP ya password nahi
-        maangti.
+        Namaste {farmer_name} ji!
+        Main Sahaya hoon — ek sarkaari kalyan sahayak.
+        Main aapko sarkaari yojanaon ke baare mein 
+        jaankari dene ke liye call kar rahi hoon.
     </Say>
+
     <Pause length="1"/>
+
+    <!-- Anti-scam trust statement — always first -->
     <Say voice="Polly.Kajal" language="hi-IN">
-        {intro_text}
+        Ek zaroori baat — main kabhi bhi aapka Aadhaar 
+        number, OTP, ya bank password nahi maangti.
+        Agar koi aisa maange, woh Sahaya nahi hai.
     </Say>
+
     <Pause length="1"/>
-    <Gather numDigits="1" action="/api/call/gather?schemes={schemes_param}&amp;farmer_name={farmer_name}" 
+
+    <!-- Voice Memory Network — peer success story from S3 -->
+    <Say voice="Polly.Kajal" language="hi-IN">
+        Pehle aapko Tumkur ke ek kisan, Suresh Kumar ji 
+        ka sandesh sunwaati hoon.
+    </Say>
+
+    <Play>{voice_memory_url}</Play>
+
+    <Pause length="1"/>
+
+    <!-- Move to eligibility questions -->
+    <Say voice="Polly.Kajal" language="hi-IN">
+        Ab main aapki thodi jaankari lena chahti hoon
+        taaki sahi yojana bataa sakoon.
+    </Say>
+
+    <Gather numDigits="1" 
+            action="{base_url}/api/call/stage2-land?farmer_name={farmer_name}"
             method="POST" timeout="10" finishOnKey="">
         <Say voice="Polly.Kajal" language="hi-IN">
-            Is yojana ke baare mein aur jaankari ke liye ek dabaayein.
-            Doosri yojanaon ke liye do dabaayein.
-            SMS mein jaankari paane ke liye teen dabaayein.
-            Wapas sunne ke liye chaar dabaayein.
+            Aapke paas kitni zameen hai?
+            2 acre se kam ke liye 1 dabaayein.
+            2 se 5 acre ke liye 2 dabaayein.
+            5 acre se zyada ke liye 3 dabaayein.
         </Say>
     </Gather>
+
+    <!-- Timeout fallback -->
     <Say voice="Polly.Kajal" language="hi-IN">
-        Koi jawab nahi mila. Sahaya aapko baad mein dobara call
-        karegi. Dhanyavaad. Jai Hind.
+        Koi jawab nahi mila. Sahaya dobara call karegi.
+        Dhanyavaad.
     </Say>
+
 </Response>'''
 
     return Response(twiml, mimetype='text/xml')
 
 
-@call_bp.route('/api/call/gather', methods=['POST'])
-def gather_handler():
+# ─────────────────────────────────────────────
+# STAGE 2: ELIGIBILITY QUESTION 1 — LAND SIZE
+# ─────────────────────────────────────────────
+
+@call_bp.route('/api/call/stage2-land', methods=['POST'])
+def twiml_stage2_land():
+    """Stage 2: Get land size from DTMF, ask KCC question."""
+    digit = request.form.get('Digits', '2').strip()
+    farmer_name = request.args.get('farmer_name', 'Kisan bhai')
+    
+    # Map digit to land acres
+    land_map = {'1': 1.0, '2': 3.0, '3': 7.0}
+    land_acres = land_map.get(digit, 2.0)
+    
+    base_url = _get_base_url()
+
+    twiml = f'''<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+
+    <Say voice="Polly.Kajal" language="hi-IN">
+        Achha. Ab ek aur sawaal.
+    </Say>
+
+    <Gather numDigits="1"
+            action="{base_url}/api/call/stage3-schemes?farmer_name={farmer_name}&amp;land={land_acres}"
+            method="POST" timeout="10" finishOnKey="">
+        <Say voice="Polly.Kajal" language="hi-IN">
+            Kya aapke paas Kisan Credit Card hai?
+            Haan ke liye 1 dabaayein.
+            Nahi ke liye 2 dabaayein.
+        </Say>
+    </Gather>
+
+    <Say voice="Polly.Kajal" language="hi-IN">
+        Koi jawab nahi mila. Sahaya dobara call karegi.
+    </Say>
+
+</Response>'''
+
+    return Response(twiml, mimetype='text/xml')
+
+
+# ─────────────────────────────────────────────
+# STAGE 3: SCHEME MATCHING + AI EXPLANATION
+# ─────────────────────────────────────────────
+
+@call_bp.route('/api/call/stage3-schemes', methods=['POST'])
+def twiml_stage3_schemes():
     """
-    Handles farmer's DTMF keypress during call.
-    Returns relevant Hindi information using real scheme data.
+    Stage 3: Match schemes using DynamoDB eligibility check.
+    Get Bedrock AI explanation personalised for this farmer.
+    Play Voice Memory clip for matched scheme.
     """
-    digit = request.form.get('Digits', '').strip()
+    digit = request.form.get('Digits', '2').strip()
+    farmer_name = request.args.get('farmer_name', 'Kisan bhai')
+    land_acres = float(request.args.get('land', '2.0'))
+    has_kcc = digit == '1'
+    
+    from services.call_conversation import (
+        get_scheme_for_farmer,
+        get_scheme_details_for_call,
+        get_ai_scheme_explanation,
+        get_voice_memory_url
+    )
+    
+    # Get matching schemes from DynamoDB
+    matched_schemes = get_scheme_for_farmer(land_acres, has_kcc)
+    primary_scheme = matched_schemes[0]
+    scheme = get_scheme_details_for_call(primary_scheme)
+    
+    # Get Bedrock AI personalised explanation
+    ai_explanation = get_ai_scheme_explanation(
+        farmer_name, primary_scheme, land_acres, has_kcc
+    )
+    
+    # Get Voice Memory clip for this scheme from S3
+    voice_memory_url = get_voice_memory_url(primary_scheme)
+    
+    # Format schemes for next stage
+    schemes_param = ','.join(matched_schemes[:2])
+    base_url = _get_base_url()
+
+    twiml = f'''<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+
+    <!-- Announce scheme match -->
+    <Say voice="Polly.Kajal" language="hi-IN">
+        Mujhe {farmer_name} ji ke liye sahi yojana 
+        mil gayi hai.
+    </Say>
+
+    <Pause length="1"/>
+
+    <!-- AI-generated personalised explanation from Bedrock -->
+    <Say voice="Polly.Kajal" language="hi-IN">
+        {ai_explanation}
+    </Say>
+
+    <Pause length="1"/>
+
+    <!-- Voice Memory clip for this scheme from S3 -->
+    <Say voice="Polly.Kajal" language="hi-IN">
+        Is yojana ke baare mein ek aur kisan ka anubhav 
+        suniye.
+    </Say>
+
+    <Play>{voice_memory_url}</Play>
+
+    <Pause length="1"/>
+
+    <!-- Move to document guidance -->
+    <Gather numDigits="1"
+            action="{base_url}/api/call/stage4-docs?farmer_name={farmer_name}&amp;schemes={schemes_param}"
+            method="POST" timeout="10" finishOnKey="">
+        <Say voice="Polly.Kajal" language="hi-IN">
+            Kya aap apply karne ke liye 
+            zarori kagzaat jaanna chahte hain?
+            Haan ke liye 1 dabaayein.
+            Baad mein sunne ke liye 2 dabaayein.
+        </Say>
+    </Gather>
+
+    <Say voice="Polly.Kajal" language="hi-IN">
+        Koi jawab nahi mila. Sahaya aapko SMS 
+        bhejegi. Dhanyavaad.
+    </Say>
+
+</Response>'''
+
+    # Send SMS in background
+    _send_sms_background(farmer_name, matched_schemes)
+
+    return Response(twiml, mimetype='text/xml')
+
+
+# ─────────────────────────────────────────────
+# STAGE 4: DOCUMENT GUIDANCE
+# ─────────────────────────────────────────────
+
+@call_bp.route('/api/call/stage4-docs', methods=['POST'])
+def twiml_stage4_docs():
+    """Stage 4: Tell farmer exactly what documents they need."""
+    digit = request.form.get('Digits', '1').strip()
     farmer_name = request.args.get('farmer_name', 'Kisan bhai')
     schemes_param = request.args.get('schemes', 'PM_KISAN')
-    scheme_list = [s.strip() for s in schemes_param.split(',') if s.strip()]
-    primary_scheme = scheme_list[0] if scheme_list else 'PM_KISAN'
+    scheme_list = schemes_param.split(',')
+    primary_scheme = scheme_list[0].strip()
+    
+    base_url = _get_base_url()
 
-    scheme = _get_scheme_details(primary_scheme)
-    docs = scheme['documents'][:3]
-    docs_hindi = ', '.join(docs)
-    apply_at = scheme.get('apply_at', 'nazdiki CSC kendra')
-
-    if digit == '1':
-        # Full scheme details
+    if digit == '2':
+        # Farmer wants to hear later — send SMS and close
         twiml = f'''<?xml version="1.0" encoding="UTF-8"?>
 <Response>
     <Say voice="Polly.Kajal" language="hi-IN">
-        {scheme["name_hi"]} ke liye yeh kagaz chahiye:
-        {docs_hindi}.
-        Aap {apply_at} jaake apply kar sakte hain.
-        Sahaya aapko SMS mein poori jaankari bhejegi.
+        Bilkul {farmer_name} ji. Sahaya ne aapko SMS 
+        bhej diya hai. Usme poori jaankari hai.
+        Hum 3 din mein dobara call karenge.
+        Dhanyavaad. Jai Kisan.
+    </Say>
+</Response>'''
+        return Response(twiml, mimetype='text/xml')
+    
+    from services.call_conversation import get_scheme_details_for_call
+    scheme = get_scheme_details_for_call(primary_scheme)
+    docs = scheme['documents']
+    apply_at = scheme['apply_at']
+    
+    # Build document list for speech
+    doc_count = len(docs)
+    docs_speech = ''
+    for i, doc in enumerate(docs, 1):
+        docs_speech += f"Number {i}: {doc}. "
+
+    twiml = f'''<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+
+    <Say voice="Polly.Kajal" language="hi-IN">
+        {scheme["name_hi"]} ke liye aapko 
+        {doc_count} kagaz chahiye.
+    </Say>
+
+    <Pause length="1"/>
+
+    <Say voice="Polly.Kajal" language="hi-IN">
+        {docs_speech}
+    </Say>
+
+    <Pause length="1"/>
+
+    <Say voice="Polly.Kajal" language="hi-IN">
+        Yeh kagaz lekar {apply_at} mein jaaiye 
+        aur apply kariye.
+    </Say>
+
+    <Pause length="1"/>
+
+    <!-- Stage 5: SMS confirmation -->
+    <Say voice="Polly.Kajal" language="hi-IN">
+        Sahaya ne aapke phone par SMS bhej diya hai.
+        Usme yeh sabhi jaankari likhi hui hai.
+    </Say>
+
+    <Pause length="1"/>
+
+    <Gather numDigits="1"
+            action="{base_url}/api/call/stage5-close?farmer_name={farmer_name}&amp;schemes={schemes_param}"
+            method="POST" timeout="8" finishOnKey="">
+        <Say voice="Polly.Kajal" language="hi-IN">
+            Kya aap doosri yojanaon ke baare mein 
+            bhi jaanna chahte hain?
+            Haan ke liye 1 dabaayein.
+            Nahi ke liye 2 dabaayein.
+        </Say>
+    </Gather>
+
+    <Say voice="Polly.Kajal" language="hi-IN">
+        Dhanyavaad {farmer_name} ji. 
+        Sahaya hamesha aapke saath hai.
+        Jai Kisan. Jai Hind.
+    </Say>
+
+</Response>'''
+
+    return Response(twiml, mimetype='text/xml')
+
+
+# ─────────────────────────────────────────────
+# STAGE 5: CLOSING
+# ─────────────────────────────────────────────
+
+@call_bp.route('/api/call/stage5-close', methods=['POST'])
+def twiml_stage5_close():
+    """Stage 5: Warm close, offer callback."""
+    digit = request.form.get('Digits', '2').strip()
+    farmer_name = request.args.get('farmer_name', 'Kisan bhai')
+    schemes_param = request.args.get('schemes', 'PM_KISAN')
+    scheme_list = schemes_param.split(',')
+    
+    base_url = _get_base_url()
+
+    if digit == '1' and len(scheme_list) > 1:
+        # Tell about second scheme
+        second_scheme = scheme_list[1].strip()
+        from services.call_conversation import (
+            get_scheme_details_for_call,
+            get_voice_memory_url,
+            get_ai_scheme_explanation
+        )
+        scheme2 = get_scheme_details_for_call(second_scheme)
+        explanation2 = get_ai_scheme_explanation(
+            farmer_name, second_scheme, 2.0, False
+        )
+        voice_url2 = get_voice_memory_url(second_scheme)
+
+        twiml = f'''<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+    <Say voice="Polly.Kajal" language="hi-IN">
+        {farmer_name} ji, ek aur yojana hai 
+        jo aapke liye sahi hai.
     </Say>
     <Pause length="1"/>
     <Say voice="Polly.Kajal" language="hi-IN">
-        Kya aap aur jaanna chahte hain? Haan ke liye ek dabaayein.
-        Call khatam karne ke liye do dabaayein.
+        {explanation2}
     </Say>
-    <Gather numDigits="1" 
-            action="/api/call/gather?schemes={schemes_param}&amp;farmer_name={farmer_name}&amp;step=followup"
-            method="POST" timeout="8">
-    </Gather>
-</Response>'''
-
-    elif digit == '2':
-        # Other schemes
-        other_schemes = [s for s in scheme_list[1:3]] if len(scheme_list) > 1 \
-            else ['KCC', 'PMFBY']
-        other_details = [_get_scheme_details(s) for s in other_schemes[:2]]
-        other_names = ' aur '.join([d['name_hi'] for d in other_details])
-
-        twiml = f'''<?xml version="1.0" encoding="UTF-8"?>
-<Response>
+    <Pause length="1"/>
+    <Play>{voice_url2}</Play>
+    <Pause length="1"/>
     <Say voice="Polly.Kajal" language="hi-IN">
-        Aapke liye aur yojanaayein hain: {other_names}.
-        Sahaya aapko in sabke baare mein SMS bhejegi.
-        Dhanyavaad {farmer_name} ji.
-    </Say>
-</Response>'''
-
-    elif digit == '3':
-        # Send SMS
-        twiml = f'''<?xml version="1.0" encoding="UTF-8"?>
-<Response>
-    <Say voice="Polly.Kajal" language="hi-IN">
-        Bilkul. Sahaya aapko abhi SMS bhej rahi hai.
-        Usme {scheme["name_hi"]} ki poori jaankari hogi.
-        Apna phone dekhein. Dhanyavaad {farmer_name} ji.
-    </Say>
-</Response>'''
-
-    elif digit == '4':
-        # Repeat
-        twiml = f'''<?xml version="1.0" encoding="UTF-8"?>
-<Response>
-    <Redirect>/api/call/twiml?farmer_name={farmer_name}&amp;schemes={schemes_param}</Redirect>
-</Response>'''
-
-    else:
-        twiml = f'''<?xml version="1.0" encoding="UTF-8"?>
-<Response>
-    <Say voice="Polly.Kajal" language="hi-IN">
-        Kripya 1, 2, 3, ya 4 dabaayein.
-    </Say>
-    <Gather numDigits="1" 
-            action="/api/call/gather?schemes={schemes_param}&amp;farmer_name={farmer_name}"
-            method="POST" timeout="8">
-    </Gather>
-</Response>'''
-
-    return Response(twiml, mimetype='text/xml')
-
-
-@call_bp.route('/api/call/gather-followup', methods=['POST'])
-def gather_followup():
-    """Handles follow-up responses after scheme details."""
-    digit = request.form.get('Digits', '').strip()
-    farmer_name = request.args.get('farmer_name', 'Kisan bhai')
-    schemes_param = request.args.get('schemes', 'PM_KISAN')
-
-    if digit == '1':
-        twiml = f'''<?xml version="1.0" encoding="UTF-8"?>
-<Response>
-    <Say voice="Polly.Kajal" language="hi-IN">
-        Sahaya aapko SMS mein poori jaankari bhej rahi hai.
-        Kisi bhi samasya mein, hum phir call karenge.
+        Sahaya ne SMS mein yeh bhi jaankari bhej 
+        di hai. Hum 3 din mein phir call karenge.
         Dhanyavaad {farmer_name} ji. Jai Kisan.
     </Say>
 </Response>'''
     else:
-        twiml = '''<?xml version="1.0" encoding="UTF-8"?>
+        twiml = f'''<?xml version="1.0" encoding="UTF-8"?>
 <Response>
     <Say voice="Polly.Kajal" language="hi-IN">
-        Dhanyavaad. Sahaya hamesha aapke saath hai. 
-        Jai Kisan. Jai Hind.
+        Bahut achha {farmer_name} ji.
+        Sahaya ne aapke phone par poori jaankari 
+        ke saath SMS bhej diya hai.
+        3 din mein Sahaya dobara call karegi 
+        aur progress poochegi.
+        Kisi bhi samasya mein, SMS ka jawab dein.
+        Dhanyavaad. Jai Kisan. Jai Hind.
     </Say>
 </Response>'''
 
     return Response(twiml, mimetype='text/xml')
 
 
+# ─────────────────────────────────────────────
+# STATUS + TEST ENDPOINTS
+# ─────────────────────────────────────────────
+
 @call_bp.route('/api/call/status', methods=['POST'])
 def call_status():
-    """Twilio status callback — logs call events."""
+    """Twilio status webhook."""
     call_sid = request.form.get('CallSid', '')
     status = request.form.get('CallStatus', '')
     duration = request.form.get('CallDuration', '0')
-    logger.info(f"Call {call_sid}: {status}, duration: {duration}s")
+    logger.info(
+        f"Call {call_sid}: status={status}, duration={duration}s"
+    )
     return '', 200
 
 
-@call_bp.route('/api/call/test-twiml', methods=['GET'])
-def test_twiml():
+@call_bp.route('/api/call/preview', methods=['GET'])
+def preview_call():
     """
-    Test endpoint — returns TwiML for a test call.
-    Use this URL in browser to preview what Sahaya says.
-    GET /api/call/test-twiml?scheme=PM_KISAN&name=Ramesh
+    Preview what Sahaya will say for a given farmer + scheme.
+    Use this to verify before making real calls.
+    GET /api/call/preview?scheme=PM_KISAN&name=Ramesh&land=2&kcc=false
     """
     scheme_id = request.args.get('scheme', 'PM_KISAN')
     farmer_name = request.args.get('name', 'Ramesh Kumar')
-    scheme = _get_scheme_details(scheme_id)
-    intro = _get_ai_intro(farmer_name, scheme_id, scheme)
+    land_acres = float(request.args.get('land', '2'))
+    has_kcc = request.args.get('kcc', 'false').lower() == 'true'
+
+    from services.call_conversation import (
+        get_scheme_details_for_call,
+        get_ai_scheme_explanation,
+        get_voice_memory_url
+    )
+
+    scheme = get_scheme_details_for_call(scheme_id)
+    ai_intro = get_ai_scheme_explanation(
+        farmer_name, scheme_id, land_acres, has_kcc
+    )
+    voice_memory = get_voice_memory_url(scheme_id)
 
     return jsonify({
         'farmer_name': farmer_name,
         'scheme_id': scheme_id,
         'scheme_name_hi': scheme['name_hi'],
         'benefit': scheme['benefit'],
-        'ai_intro': intro,
         'documents': scheme['documents'],
-        'note': 'This is what Sahaya will say on the call using Polly.Kajal voice'
+        'apply_at': scheme['apply_at'],
+        'ai_intro_text': ai_intro,
+        'voice_memory_url': voice_memory,
+        'call_flow': [
+            'Stage 1: Trust intro + anti-scam + Voice Memory clip',
+            'Stage 2: Land size question (DTMF)',
+            'Stage 3: KCC question + Scheme match + AI explanation',
+            'Stage 4: Document list + SMS sent',
+            'Stage 5: Second scheme offer + warm close'
+        ],
+        'note': 'This is exactly what Sahaya will say on the call'
     })
+
+
+# ─────────────────────────────────────────────
+# HELPER FUNCTIONS
+# ─────────────────────────────────────────────
+
+def _get_base_url():
+    """Get webhook base URL fresh from .env."""
+    load_dotenv(dotenv_path=_BASE_DIR / '.env', override=True)
+    return os.getenv('WEBHOOK_BASE_URL', 'http://localhost:5000')
+
+
+def _send_sms_background(farmer_name, scheme_ids):
+    """Send SMS checklist in background — non-blocking."""
+    try:
+        from services.sms_service import send_checklist
+        result = send_checklist('+917736448307', scheme_ids)
+        logger.info(f"SMS sent: {result.get('success')}")
+    except Exception as e:
+        logger.error(f"SMS failed (non-critical): {e}")
+
