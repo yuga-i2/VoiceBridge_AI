@@ -41,15 +41,24 @@ def twiml_stage1_intro():
     then plays Voice Memory clip from S3 (peer success story).
     Then asks first eligibility question.
     """
-    farmer_name = request.args.get('farmer_name', 'Kisan bhai')
-    
-    # Default to PM_KISAN voice memory for first contact
-    from services.call_conversation import get_voice_memory_url
-    voice_memory_url = get_voice_memory_url('PM_KISAN')
-    
-    base_url = _get_base_url()
+    try:
+        farmer_name = request.args.get('farmer_name', 'Kisan bhai')
+        
+        # Default to PM_KISAN voice memory for first contact
+        try:
+            from services.call_conversation import get_voice_memory_url
+            voice_memory_url = get_voice_memory_url('PM_KISAN')
+        except Exception as e:
+            logger.error(f"get_voice_memory_url failed: {e}")
+            voice_memory_url = 'https://voicebridge-audio-yuga.s3.ap-southeast-1.amazonaws.com/voice_memory_PM_KISAN.mp3'
+        
+        try:
+            base_url = _get_base_url()
+        except Exception as e:
+            logger.error(f"_get_base_url failed: {e}")
+            base_url = 'https://164a-43-229-91-78.ngrok-free.app'
 
-    twiml = f'''<?xml version="1.0" encoding="UTF-8"?>
+        twiml = f'''<?xml version="1.0" encoding="UTF-8"?>
 <Response>
 
     <!-- Sahaya introduction — warm, trustworthy -->
@@ -106,7 +115,19 @@ def twiml_stage1_intro():
 
 </Response>'''
 
-    return Response(twiml, mimetype='text/xml')
+        logger.info(f"Stage 1 TwiML returned for {farmer_name}")
+        return Response(twiml, mimetype='text/xml')
+        
+    except Exception as e:
+        logger.error(f"ERROR in twiml_stage1_intro: {e}", exc_info=True)
+        # Return a minimal valid TwiML that won't crash
+        error_twiml = '''<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+    <Say voice="Polly.Kajal" language="hi-IN">
+        Namaste! Main Sahaya hoon. Ek moment...
+    </Say>
+</Response>'''
+        return Response(error_twiml, mimetype='text/xml')
 
 
 # ─────────────────────────────────────────────
@@ -478,4 +499,37 @@ def _send_sms_background(farmer_name, scheme_ids):
         logger.info(f"SMS sent: {result.get('success')}")
     except Exception as e:
         logger.error(f"SMS failed (non-critical): {e}")
+
+
+@call_bp.route('/api/call/simple-test', methods=['GET', 'POST'])
+def twiml_simple_test():
+    """Bare minimum TwiML - just a simple greeting to test basic functionality."""
+    try:
+        farmer_name = request.args.get('farmer_name', 'Farmer')
+        
+        twiml = f'''<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+    <Say voice="Polly.Kajal" language="hi-IN">
+        Namaste {farmer_name}. Main Sahaya hoon.
+        Mera naam Sahaya hai.
+        Yeh ek test call hai.
+    </Say>
+    <Pause length="2"/>
+    <Say voice="Polly.Kajal" language="hi-IN">
+        Ek, do, teen. Test pura ho gaya.
+    </Say>
+</Response>'''
+        
+        logger.info(f"Simple test TwiML returned for {farmer_name}")
+        return Response(twiml, mimetype='text/xml')
+        
+    except Exception as e:
+        logger.error(f"ERROR in simple test: {e}", exc_info=True)
+        error_twiml = '''<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+    <Say voice="Polly.Kajal" language="hi-IN">
+        Error. Namaste.
+    </Say>
+</Response>'''
+        return Response(error_twiml, mimetype='text/xml')
 

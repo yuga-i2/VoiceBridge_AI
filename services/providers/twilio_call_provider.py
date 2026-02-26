@@ -38,12 +38,15 @@ def initiate_outbound_call(farmer_phone, farmer_name, scheme_ids):
             f"{webhook_base}/api/call/twiml"
             f"?{urlencode({'farmer_name': farmer_name, 'schemes': scheme_param})}"
         )
+        
+        # Log the exact URL being sent to Twilio
+        logger.info(f"Webhook URL: {twiml_url}")
 
         call = client.calls.create(
             to=farmer_phone,
             from_=twilio_number,
             url=twiml_url,
-            method='GET'
+            method='POST'
         )
 
         logger.info(f"Twilio call initiated: {call.sid} to {farmer_phone}")
