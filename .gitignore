@@ -7,4 +7,5 @@ venv/
 .venv/
 *.mp3
 *.wav
+upload_schemes.py
 !data/voice_memory/.gitkeep
