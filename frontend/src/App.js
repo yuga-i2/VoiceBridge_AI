@@ -421,8 +421,10 @@ function App() {
         'https://bkzd32abpg.execute-api.ap-southeast-1.amazonaws.com/dev/api/eligibility-check',
         { farmer_profile: DEMO_FARMER }
       )
-      setEligibleSchemes(res.data.eligible_schemes || [])
-      console.log('[VoiceBridge] Eligible:', res.data.eligible_schemes)
+      const schemes = res.data.eligible_schemes || []
+      const ids = schemes.map(s => typeof s === 'string' ? s : s.scheme_id)
+      setEligibleSchemes(ids)
+      console.log('[VoiceBridge] Eligible IDs:', ids)
     } catch(e) {
       console.error('Eligibility check failed:', e)
     }
