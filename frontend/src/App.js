@@ -374,6 +374,13 @@ function App() {
     loadSchemes()
   }, [])
 
+  // Set eligible schemes from all schemes when loaded
+  useEffect(() => {
+    if (allSchemes.length > 0 && farmerProfile) {
+      setEligibleSchemes(allSchemes.map(s => s.scheme_id))
+    }
+  }, [allSchemes, farmerProfile])
+
   const loadSchemes = async () => {
     try {
       const res = await axios.get(API.schemes)
@@ -399,16 +406,6 @@ function App() {
     setCallState(CALL_STATES.IDLE)
     setInputEnabled(false)
     setIsSpeaking(false)
-    
-    // Check eligibility
-    try {
-      const res = await axios.post(API.eligibilityCheck, {
-        farmer_profile: DEMO_FARMER
-      })
-      setEligibleSchemes(res.data.eligible_schemes || [])
-    } catch(e) {
-      console.error('Eligibility check failed:', e)
-    }
   }
 
   // ========== SAHAYA OPENING SPEECH ==========
@@ -633,7 +630,7 @@ function App() {
       // Fetch voice memory audio if available
       if (aiResponse.voice_memory_clip) {
         try {
-          const vmRes = await fetch(`/api/voice-memory/${aiResponse.voice_memory_clip}`)
+          const vmRes = await fetch(`${API.voiceMemory}/${aiResponse.voice_memory_clip}`)
           const vmData = await vmRes.json()
           aiResponse.voiceMemoryUrl = vmData.audio_url
           aiResponse.voiceMemoryScheme = aiResponse.voice_memory_clip
@@ -787,7 +784,7 @@ function App() {
       // Fetch voice memory audio if available
       if (aiResponse.voice_memory_clip) {
         try {
-          const vmRes = await fetch(`/api/voice-memory/${aiResponse.voice_memory_clip}`)
+          const vmRes = await fetch(`${API.voiceMemory}/${aiResponse.voice_memory_clip}`)
           const vmData = await vmRes.json()
           aiResponse.voiceMemoryUrl = vmData.audio_url
           aiResponse.voiceMemoryScheme = aiResponse.voice_memory_clip
