@@ -1,0 +1,7 @@
+flask
+flask-cors
+boto3
+python-dotenv
+pydub
+requests
+twilio
