@@ -325,6 +325,7 @@ function App() {
   const [matchedSchemes, setMatchedSchemes] = useState([]) // Schemes mentioned in conversation
   const [allSchemes, setAllSchemes] = useState([])
   const [isRecording, setIsRecording] = useState(false)
+  const [isProcessing, setIsProcessing] = useState(false)
   const [transcript, setTranscript] = useState('')
   const [response, setResponse] = useState(null)
   const [conversationHistory, setConversationHistory] = useState([])
@@ -335,8 +336,7 @@ function App() {
   const [inputEnabled, setInputEnabled] = useState(false)
   const [isConversationActive, setIsConversationActive] = useState(false)
   
-  const mediaRecorderRef = useRef(null)
-  const chunksRef = useRef([])
+  const recognitionRef = useRef(null)
   const isConversationActiveRef = useRef(false)
 
   // Load all schemes on mount
@@ -443,13 +443,13 @@ function App() {
       utterance.rate = 0.9
       utterance.onend = () => {
         if (isConversationActiveRef.current) {
-          setTimeout(() => startRecording(), 500)
+          setTimeout(() => startListening(), 500)
         }
       }
       window.speechSynthesis.speak(utterance)
     } else {
       if (isConversationActiveRef.current) {
-        setTimeout(() => startRecording(), 2000)
+        setTimeout(() => startListening(), 2000)
       }
     }
   }
@@ -481,7 +481,7 @@ function App() {
       if (ttsResult.data.audio_url) {
         playSahayaAudio(ttsResult.data.audio_url, () => {
           if (isConversationActiveRef.current) {
-            setTimeout(() => startRecording(), 500)
+            setTimeout(() => startListening(), 500)
           }
         })
       } else {
@@ -505,100 +505,78 @@ function App() {
     setInputEnabled(false)
   }
 
-  // ========== MICROPHONE RECORDING ==========
-  const startRecording = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-      const mediaRecorder = new MediaRecorder(stream)
-      mediaRecorderRef.current = mediaRecorder
-      chunksRef.current = []
-
-      mediaRecorder.ondataavailable = (e) => {
-        if (e.data.size > 0) {
-          chunksRef.current.push(e.data)
-        }
-      }
-
-      mediaRecorder.onstop = async () => {
-        if (chunksRef.current.length === 0) {
-          console.error('No audio chunks recorded')
-          setCallState(CALL_STATES.WAITING)
-          alert('No audio recorded. Please try again.')
-          return
-        }
-        
-        const audioBlob = new Blob(chunksRef.current, { type: 'audio/webm' })
-        stream.getTracks().forEach(track => track.stop())
-        processAudio(audioBlob)
-      }
-
-      mediaRecorder.start(100) // collect chunks every 100ms
+  // ========== WEB SPEECH API RECOGNITION ==========
+  const startListening = () => {
+    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+      alert('Please use Chrome, Edge, or Safari browser for voice input')
+      return
+    }
+    
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
+    const recognition = new SpeechRecognition()
+    
+    recognition.lang = 'hi-IN'  // Accepts both Hindi AND English (code-switching)
+    recognition.interimResults = false
+    recognition.maxAlternatives = 1
+    recognition.continuous = false
+    
+    recognition.onstart = () => {
       setIsRecording(true)
+      setIsProcessing(false)
       setCallState(CALL_STATES.RECORDING)
       setInputEnabled(false)
-
-      // Auto-stop after 5 seconds
-      setTimeout(() => {
-        if (mediaRecorder.state === 'recording') {
-          mediaRecorder.stop()
-          setIsRecording(false)
-          stream.getTracks().forEach(track => track.stop())
-        }
-      }, 5000)
-    } catch(e) {
-      console.error('Microphone error:', e)
-      alert('Microphone access denied. Please type your message instead.')
-      setCallState(CALL_STATES.WAITING)
-      setInputEnabled(true)
     }
-  }
-
-  const stopRecording = () => {
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
-      mediaRecorderRef.current.stop()
+    
+    recognition.onresult = (event) => {
+      const transcript = event.results[0][0].transcript
+      console.log('[VoiceBridge] Web Speech transcript:', transcript)
+      setIsRecording(false)
+      setIsProcessing(true)
+      setTranscript(transcript)
+      sendMessage(transcript)  // Send directly to /api/chat
+    }
+    
+    recognition.onerror = (event) => {
+      console.log('[VoiceBridge] Speech error:', event.error)
+      setIsRecording(false)
+      setIsProcessing(false)
+      setCallState(CALL_STATES.WAITING)
+      
+      if (event.error === 'no-speech') {
+        // Silently ignore - user just didn't speak
+        setInputEnabled(true)
+      } else if (event.error === 'not-allowed') {
+        alert('Microphone permission denied. Please allow mic access and try again.')
+        setInputEnabled(true)
+      } else if (event.error === 'network') {
+        alert('Network error. Please check your connection.')
+        setInputEnabled(true)
+      }
+    }
+    
+    recognition.onend = () => {
       setIsRecording(false)
     }
+    
+    recognitionRef.current = recognition
+    recognition.start()
   }
 
-  // ========== AUDIO PROCESSING & CHAT ==========
-  const processAudio = async (audioBlob) => {
+  const stopListening = () => {
+    recognitionRef.current?.stop()
+    setIsRecording(false)
+  }
+
+  // ========== CHAT MESSAGE HANDLING ==========
+  const sendMessage = async (userMessage) => {
+    if (!userMessage.trim()) {
+      setIsProcessing(false)
+      return
+    }
+
     try {
-      if (!audioBlob || audioBlob.size === 0) {
-        console.error('Empty audio blob')
-        setCallState(CALL_STATES.WAITING)
-        alert('No audio recorded. Please try again.')
-        return
-      }
-
-      setCallState(CALL_STATES.TRANSCRIBING)
-
-      // Send audio as FormData (required by backend)
-      const formData = new FormData()
-      formData.append('audio', audioBlob, 'recording.webm')
-
-      const sttRes = await axios.post(API.stt, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      })
-      
-      const userMessage = sttRes.data.transcription || sttRes.data.text || sttRes.data.transcript || ''
-      if (!userMessage) {
-        console.warn('[VoiceBridge] No transcription returned from STT service')
-        console.log('[VoiceBridge] STT Response:', sttRes.data)
-        // Graceful fallback: prompt user to type instead of crashing
-        const fallbackMsg = 'मैं आपकी आवाज नहीं समझ पाई। कृपया अपना संदेश टाइप करें।'
-        setCallState(CALL_STATES.WAITING)
-        setInputEnabled(true)
-        setResponse({ 
-          text: fallbackMsg,
-          error: true 
-        })
-        // SPEAK the fallback message
-        speakAndWait(fallbackMsg)
-        return
-      }
-      
-      setTranscript(userMessage)
       setCallState(CALL_STATES.THINKING)
+      setInputEnabled(false)
 
       // Build history BEFORE sending to Lambda (include current user message)
       const historyToSend = [
@@ -607,7 +585,7 @@ function App() {
       ]
       console.log('[VoiceBridge] Sending to Lambda with history length:', historyToSend.length)
 
-      // Get AI response
+      // Get AI response from /api/chat
       const chatRes = await axios.post(API.chat, {
         message: userMessage,
         farmer_profile: farmerProfile,
@@ -634,12 +612,14 @@ function App() {
         { role: 'assistant', content: aiResponse.text }
       ])
 
+      setIsProcessing(false)
+
       // Handle audio playback with auto-listen for continuous conversation
       if (aiResponse.audio_url && isConversationActiveRef.current) {
         // Continuous conversation: auto-listen after audio ends
         playSahayaAudio(aiResponse.audio_url, () => {
           if (isConversationActiveRef.current) {
-            setTimeout(() => startRecording(), 500)
+            setTimeout(() => startListening(), 500)
           } else {
             setIsSpeaking(false)
             setCallState(CALL_STATES.WAITING)
@@ -680,6 +660,7 @@ function App() {
       setResponse({ error: 'Chat processing failed: ' + e.message })
       setCallState(CALL_STATES.WAITING)
       setInputEnabled(true)
+      setIsProcessing(false)
     }
   }
 
@@ -939,10 +920,10 @@ function App() {
                 {callState !== CALL_STATES.IDLE && (
                   <>
                     {/* Microphone Button */}
-                    {!isSpeaking && callState === CALL_STATES.WAITING && (
+                    {!isSpeaking && callState === CALL_STATES.WAITING && !isProcessing && (
                       <div className="mb-3">
                         <button
-                          onClick={isRecording ? stopRecording : startRecording}
+                          onClick={isRecording ? stopListening : startListening}
                           disabled={!inputEnabled || isSpeaking || callState !== CALL_STATES.WAITING}
                           className={`w-full py-4 rounded-lg font-bold text-lg transition-all ${
                             isRecording
