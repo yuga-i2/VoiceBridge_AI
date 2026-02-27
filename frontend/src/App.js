@@ -333,9 +333,11 @@ function App() {
   const [callState, setCallState] = useState(CALL_STATES.IDLE)
   const [isSpeaking, setIsSpeaking] = useState(false)
   const [inputEnabled, setInputEnabled] = useState(false)
+  const [isConversationActive, setIsConversationActive] = useState(false)
   
   const mediaRecorderRef = useRef(null)
   const chunksRef = useRef([])
+  const isConversationActiveRef = useRef(false)
 
   // Load all schemes on mount
   useEffect(() => {
@@ -417,6 +419,90 @@ function App() {
       setCallState(CALL_STATES.IDLE)
       setInputEnabled(false)
     }
+  }
+
+  // ========== AUDIO HELPER FUNCTIONS ==========
+  const playSahayaAudio = (audioUrl, onComplete) => {
+    const audio = new Audio(audioUrl)
+    audio.onended = () => {
+      if (onComplete) onComplete()
+    }
+    audio.onerror = () => {
+      if (onComplete) onComplete()
+    }
+    audio.play().catch(() => {
+      setTimeout(() => onComplete(), 2000)
+    })
+    return audio
+  }
+
+  const speakAndListen = (text) => {
+    if ('speechSynthesis' in window) {
+      const utterance = new SpeechSynthesisUtterance(text)
+      utterance.lang = 'hi-IN'
+      utterance.rate = 0.9
+      utterance.onend = () => {
+        if (isConversationActiveRef.current) {
+          setTimeout(() => startRecording(), 500)
+        }
+      }
+      window.speechSynthesis.speak(utterance)
+    } else {
+      if (isConversationActiveRef.current) {
+        setTimeout(() => startRecording(), 2000)
+      }
+    }
+  }
+
+  // ========== CONVERSATION MANAGEMENT ==========
+  const startConversation = async () => {
+    setIsConversationActive(true)
+    isConversationActiveRef.current = true
+    setCallState(CALL_STATES.CONNECTING)
+    setConversationHistory([])
+    setTranscript('')
+    setResponse(null)
+    
+    const openingText = 'नमस्ते! मैं सहाया हूँ, एक सरकारी कल्याण सहायक। आप PM-KISAN, KCC, फसल बीमा, या किसी भी योजना के बारे में पूछ सकते हैं।'
+    
+    setConversationHistory([{
+      role: 'assistant',
+      content: openingText
+    }])
+    setResponse({ text: openingText })
+    
+    // Try to get Polly audio first
+    try {
+      const ttsResult = await axios.post(
+        `${API.tts}`,
+        { text: openingText, voice: 'Kajal' }
+      )
+      
+      if (ttsResult.data.audio_url) {
+        playSahayaAudio(ttsResult.data.audio_url, () => {
+          if (isConversationActiveRef.current) {
+            setTimeout(() => startRecording(), 500)
+          }
+        })
+      } else {
+        speakAndListen(openingText)
+      }
+    } catch(e) {
+      console.log('TTS request failed, using browser TTS:', e)
+      speakAndListen(openingText)
+    }
+  }
+
+  const endConversation = () => {
+    setIsConversationActive(false)
+    isConversationActiveRef.current = false
+    if (mediaRecorderRef.current?.state === 'recording') {
+      mediaRecorderRef.current.stop()
+    }
+    window.speechSynthesis?.cancel()
+    setIsRecording(false)
+    setCallState(CALL_STATES.IDLE)
+    setInputEnabled(false)
   }
 
   // ========== MICROPHONE RECORDING ==========
@@ -548,9 +634,22 @@ function App() {
         { role: 'assistant', content: aiResponse.text }
       ])
 
-      // Handle audio playback with fallback to TTS
-      if (aiResponse.audio_url) {
-        // Try to play Polly audio first
+      // Handle audio playback with auto-listen for continuous conversation
+      if (aiResponse.audio_url && isConversationActiveRef.current) {
+        // Continuous conversation: auto-listen after audio ends
+        playSahayaAudio(aiResponse.audio_url, () => {
+          if (isConversationActiveRef.current) {
+            setTimeout(() => startRecording(), 500)
+          } else {
+            setIsSpeaking(false)
+            setCallState(CALL_STATES.WAITING)
+            setInputEnabled(true)
+          }
+        })
+        setIsSpeaking(true)
+        setCallState(CALL_STATES.SAHAYA_SPEAKING)
+      } else if (aiResponse.audio_url) {
+        // Manual button mode: play audio without auto-listening
         const audio = new Audio(aiResponse.audio_url)
         audio.onplay = () => {
           setIsSpeaking(true)
@@ -569,8 +668,11 @@ function App() {
           console.log('Audio playback failed:', e)
           speakAndWait(aiResponse.text)
         })
+      } else if (isConversationActiveRef.current) {
+        // Fallback to browser TTS with auto-listen for continuous conversation
+        speakAndListen(aiResponse.text)
       } else {
-        // Fallback to browser TTS if no Polly audio
+        // Manual button mode: fallback to TTS without auto-listening
         speakAndWait(aiResponse.text)
       }
     } catch(e) {
@@ -802,18 +904,35 @@ function App() {
                   </div>
                 )}
 
-                {/* Microphone Button or Text Input - depends on state */}
-                {callState === CALL_STATES.IDLE && (
-                  <div className="mb-3">
+                {/* Call Controls */}
+                {callState === CALL_STATES.IDLE && !isConversationActive && (
+                  <div className="space-y-2">
                     <button
-                      onClick={startSahayaCall}
+                      onClick={startConversation}
                       className="w-full py-4 rounded-lg font-bold text-lg transition-all bg-green-600 text-white hover:bg-green-700 animate-pulse"
                     >
-                      📞 Start Call with Sahaya
+                      ☎️ सहाया से बात करें (Start Conversation)
+                    </button>
+                    <button
+                      onClick={startSahayaCall}
+                      className="w-full py-4 rounded-lg font-bold text-lg transition-all bg-blue-600 text-white hover:bg-blue-700"
+                    >
+                      📞 Start Call with Sahaya (Manual Mode)
                     </button>
                     <p className="text-xs text-gray-500 mt-2 text-center">
-                      Click to simulate receiving a call from Sahaya
+                      Choose: Continuous conversation (auto-listen) or manual feedback control
                     </p>
+                  </div>
+                )}
+
+                {isConversationActive && (
+                  <div className="mb-3">
+                    <button
+                      onClick={endConversation}
+                      className="w-full py-4 rounded-lg font-bold text-lg transition-all bg-red-600 text-white hover:bg-red-700"
+                    >
+                      📵 Call को बंद करें (End Call)
+                    </button>
                   </div>
                 )}
 
@@ -882,8 +1001,33 @@ function App() {
                       </div>
                     )}
 
+                    {/* State indicators for Continuous Conversation */}
+                    {isConversationActive && callState === CALL_STATES.RECORDING && !isSpeaking && (
+                      <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded text-center">
+                        <div className="flex justify-center gap-1 mb-2">
+                          <div className="w-2 h-2 bg-blue-600 rounded-full animate-pulse"></div>
+                          <div className="w-2 h-2 bg-blue-600 rounded-full animate-pulse"></div>
+                          <div className="w-2 h-2 bg-blue-600 rounded-full animate-pulse"></div>
+                        </div>
+                        <p className="text-sm text-blue-800">सुन रही हूँ... (Listening...)</p>
+                      </div>
+                    )}
+
+                    {isConversationActive && (callState === CALL_STATES.THINKING || callState === CALL_STATES.TRANSCRIBING) && (
+                      <div className="mb-3 p-3 bg-purple-50 border border-purple-200 rounded text-center">
+                        <div className="flex justify-center gap-1 mb-2">
+                          <div className="w-2 h-2 bg-purple-600 rounded-full animate-bounce" style={{animationDelay: '0s'}}></div>
+                          <div className="w-2 h-2 bg-purple-600 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+                          <div className="w-2 h-2 bg-purple-600 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                        </div>
+                        <p className="text-sm text-purple-800">
+                          {callState === CALL_STATES.TRANSCRIBING ? 'Converting speech to text...' : 'सोच रही हूँ... (Thinking...)'}
+                        </p>
+                      </div>
+                    )}
+
                     {/* State indicators */}
-                    {(callState === CALL_STATES.CONNECTING || 
+                    {!isConversationActive && (callState === CALL_STATES.CONNECTING || 
                       callState === CALL_STATES.TRANSCRIBING || 
                       callState === CALL_STATES.THINKING) && (
                       <div className="mb-3 p-3 bg-yellow-50 border border-yellow-200 rounded text-center">
