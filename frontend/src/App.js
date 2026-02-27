@@ -496,9 +496,7 @@ function App() {
   const endConversation = () => {
     setIsConversationActive(false)
     isConversationActiveRef.current = false
-    if (mediaRecorderRef.current?.state === 'recording') {
-      mediaRecorderRef.current.stop()
-    }
+    recognitionRef.current?.stop()
     window.speechSynthesis?.cancel()
     setIsRecording(false)
     setCallState(CALL_STATES.IDLE)
