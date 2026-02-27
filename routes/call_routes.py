@@ -42,12 +42,22 @@ def twiml_stage1_intro():
     """
     try:
         farmer_name = request.args.get('farmer_name', 'Farmer')
+        logger.info(f"[STAGE1] Received request: farmer_name={farmer_name}, method={request.method}")
+        
         # HARDCODED - NO FUNCTION CALLS ALLOWED
         twiml = f'<?xml version="1.0" encoding="UTF-8"?><Response><Say voice="Polly.Kajal" language="hi-IN">Namaste {farmer_name} ji. Main Sahaya hoon. Ek sarkaari kalyan sahayak. Main aapko sarkaari yojanaon ke baare mein jaankari dene ke liye call kar rahi hoon.</Say><Pause length="1"/><Say voice="Polly.Kajal" language="hi-IN">Ek important baat. Main kabhi aapka Aadhaar number, OTP, ya bank password nahi maangti.</Say><Pause length="1"/><Say voice="Polly.Kajal" language="hi-IN">Ab main aapki thodi jaankari lena chahti hoon taaki sahi yojana bataa sakoon.</Say><Gather numDigits="1" action="https://164a-43-229-91-78.ngrok-free.app/api/call/stage2-land?farmer_name={farmer_name}" method="POST" timeout="10"><Say voice="Polly.Kajal" language="hi-IN">Aapke paas kitni zameen hai? 1 dabayen. 2 dabayen. 3 dabayen.</Say></Gather></Response>'
-        return Response(twiml, mimetype='text/xml; charset=utf-8')
+        
+        logger.info(f"[STAGE1] Returning TwiML, length={len(twiml)}, starts with: {twiml[:100]}")
+        response = Response(twiml)
+        response.headers['Content-Type'] = 'text/xml'
+        logger.info(f"[STAGE1] Response status={response.status_code}, content-type={response.headers.get('Content-Type')}")
+        return response
     except Exception as e:
-        logger.error(f"CRITICAL: twiml_stage1_intro crashed: {e}")
-        return Response('<?xml version="1.0" encoding="UTF-8"?><Response><Say voice="Polly.Kajal" language="hi-IN">Error occurred.</Say></Response>', mimetype='text/xml')
+        logger.error(f"[STAGE1] CRASHED: {type(e).__name__}: {e}", exc_info=True)
+        error_twiml = '<?xml version="1.0" encoding="UTF-8"?><Response><Say voice="Polly.Kajal" language="hi-IN">Error occurred.</Say></Response>'
+        response = Response(error_twiml)
+        response.headers['Content-Type'] = 'text/xml'
+        return response
 
 
 # ─────────────────────────────────────────────

@@ -6,6 +6,19 @@ All endpoints defined here. No business logic - only delegation to services.
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 import uuid
+import logging
+import sys
+
+# Configure logging to see what Twilio is sending us
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s [%(levelname)s] %(name)s: %(message)s',
+    stream=sys.stdout
+)
+logger = logging.getLogger(__name__)
+logger.info("="*80)
+logger.info("FLASK STARTUP - VoiceBridge AI")
+logger.info("="*80)
 
 from config.settings import USE_MOCK, FLASK_PORT, FLASK_ENV
 from models.farmer import FarmerProfile
@@ -409,17 +422,21 @@ def server_error(e):
 
 from routes.call_routes import call_bp
 app.register_blueprint(call_bp)
+logger.info(f"Registered blueprints: call_bp")
 
 
 # ==================== RUN ====================
 
 if __name__ == "__main__":
-    print(f"\n{'='*60}")
-    print("VoiceBridge AI — Flask Server Starting")
-    print(f"{'='*60}")
-    print(f"Environment:  {FLASK_ENV}")
-    print(f"Mock Mode:    {USE_MOCK}")
-    print(f"Port:         {FLASK_PORT}")
-    print(f"{'='*60}\n")
+    logger.info(f"{'='*80}")
+    logger.info(f"VoiceBridge AI — Flask Server Starting")
+    logger.info(f"{'='*80}")
+    logger.info(f"Environment:  {FLASK_ENV}")
+    logger.info(f"Mock Mode:    {USE_MOCK}")
+    logger.info(f"Port:         {FLASK_PORT}")
+    logger.info(f"{'='*80}")
+    logger.info(f"Flask app started. Listening for Twilio webhooks...")
+    logger.info(f"Expected ngrok URL: https://164a-43-229-91-78.ngrok-free.app/api/call/twiml")
+    logger.info(f"{'='*80}\n")
     
-    app.run(host="0.0.0.0", port=FLASK_PORT, debug=(FLASK_ENV == "development"))
+    app.run(host="0.0.0.0", port=FLASK_PORT, debug=(FLASK_ENV == "development"), use_reloader=False)
