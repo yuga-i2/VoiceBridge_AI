@@ -1,17 +1,24 @@
 import os
 import boto3
 import logging
+from pathlib import Path
+from dotenv import load_dotenv
 
 logger = logging.getLogger(__name__)
+_BASE_DIR = Path(__file__).resolve().parent.parent.parent
+_ENV_PATH = _BASE_DIR / '.env'
 
-AWS_REGION = os.getenv('AWS_REGION', 'ap-southeast-1')
-CONNECT_INSTANCE_ID = os.getenv('CONNECT_INSTANCE_ID')
-CONNECT_CONTACT_FLOW_ID = os.getenv('CONNECT_CONTACT_FLOW_ID')
-CONNECT_QUEUE_ARN = os.getenv('CONNECT_QUEUE_ARN')
 
 def initiate_outbound_call(farmer_phone, farmer_name, scheme_ids):
-    """Amazon Connect provider - used when AWS account fully activates"""
-    if not CONNECT_INSTANCE_ID or CONNECT_INSTANCE_ID == 'pending':
+    """Amazon Connect provider - reads .env fresh on every call."""
+    load_dotenv(dotenv_path=_ENV_PATH, override=True)
+    
+    aws_region = os.getenv('AWS_REGION', 'ap-southeast-1')
+    connect_instance_id = os.getenv('CONNECT_INSTANCE_ID', '')
+    connect_contact_flow_id = os.getenv('CONNECT_CONTACT_FLOW_ID', '')
+    connect_queue_arn = os.getenv('CONNECT_QUEUE_ARN', '')
+    
+    if not connect_instance_id:
         return {
             'success': False,
             'provider': 'connect',
@@ -19,14 +26,13 @@ def initiate_outbound_call(farmer_phone, farmer_name, scheme_ids):
             'message': 'Set CONNECT_INSTANCE_ID in .env when AWS activates'
         }
     try:
-        # Extract Queue ID from ARN (last part after /queue/)
-        queue_id = CONNECT_QUEUE_ARN.split('/queue/')[-1] if CONNECT_QUEUE_ARN else None
+        queue_id = connect_queue_arn.split('/queue/')[-1] if connect_queue_arn else None
         
-        connect_client = boto3.client('connect', region_name=AWS_REGION)
+        connect_client = boto3.client('connect', region_name=aws_region)
         response = connect_client.start_outbound_voice_contact(
             DestinationPhoneNumber=farmer_phone,
-            ContactFlowId=CONNECT_CONTACT_FLOW_ID,
-            InstanceId=CONNECT_INSTANCE_ID,
+            ContactFlowId=connect_contact_flow_id,
+            InstanceId=connect_instance_id,
             QueueId=queue_id,
             Attributes={
                 'farmerName': farmer_name,

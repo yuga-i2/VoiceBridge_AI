@@ -1,442 +1,222 @@
 """
-VoiceBridge AI — Flask REST API
-All endpoints defined here. No business logic - only delegation to services.
+VoiceBridge AI — Flask Application Entry Point
+Registers all blueprints. No business logic here.
 """
-
-from flask import Flask, request, jsonify, send_from_directory
-from flask_cors import CORS
-import uuid
 import logging
-import sys
+from pathlib import Path
+from dotenv import load_dotenv
+from flask import Flask, jsonify, request
+from flask_cors import CORS
 
-# Configure logging to see what Twilio is sending us
+# Load .env before everything else
+_BASE_DIR = Path(__file__).resolve().parent
+load_dotenv(dotenv_path=_BASE_DIR / '.env', override=True)
+
+from config.settings import FLASK_PORT, USE_MOCK
+
+# Configure logging
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s [%(levelname)s] %(name)s: %(message)s',
-    stream=sys.stdout
+    format='%(asctime)s [%(levelname)s] %(name)s: %(message)s'
 )
 logger = logging.getLogger(__name__)
-logger.info("="*80)
-logger.info("FLASK STARTUP - VoiceBridge AI")
-logger.info("="*80)
 
-from config.settings import USE_MOCK, FLASK_PORT, FLASK_ENV
-from models.farmer import FarmerProfile
-from services.scheme_service import (
-    get_all_schemes,
-    match_schemes_to_message,
-    check_eligibility
-)
-from services.ai_service import generate_response
-from services.stt_service import transcribe_audio
-from services.tts_service import synthesize_speech
-from services.sms_service import send_checklist
-from services.voice_memory_service import get_clip
-from services.call_service import initiate_sahaya_call, get_active_provider
-import os
-
-# Create Flask app
+# ── Create Flask app ──────────────────────────────────────
 app = Flask(__name__)
-CORS(app)
+CORS(app, resources={r"/api/*": {"origins": "*"}})
 
-
-# ==================== HEALTH & UTILITIES ====================
-
-@app.route("/api/health", methods=["GET"])
-def health():
-    """Health check endpoint."""
-    return jsonify({
-        "status": "ok",
-        "mock_mode": USE_MOCK,
-        "version": "1.0.0",
-        "call_provider": get_active_provider(),
-        "sms_provider": os.getenv('SMS_PROVIDER', 'mock'),
-        "services": {
-            "bedrock": "live" if not USE_MOCK else "mock",
-            "dynamodb": "live" if not USE_MOCK else "mock",
-            "polly": "live" if not USE_MOCK else "mock",
-            "s3": "live" if not USE_MOCK else "mock",
-            "transcribe": "live" if not USE_MOCK else "mock",
-            "call": get_active_provider(),
-            "sms": os.getenv('SMS_PROVIDER', 'mock')
-        }
-    }), 200
-
-
-@app.route("/audio/<filename>", methods=["GET"])
-def serve_audio(filename):
-    """Serve local audio files for mock mode."""
-    try:
-        return send_from_directory("data/voice_memory", filename)
-    except Exception as e:
-        return jsonify({
-            "success": False,
-            "error": str(e)
-        }), 404
-
-
-# ==================== SCHEME ENDPOINTS ====================
-
-@app.route("/api/schemes", methods=["GET"])
-def get_schemes():
-    """Get all 10 welfare schemes."""
-    try:
-        schemes = get_all_schemes()
-        return jsonify({
-            "success": True,
-            "schemes": schemes,
-            "total": len(schemes)
-        }), 200
-    except Exception as e:
-        return jsonify({
-            "success": False,
-            "error": str(e),
-            "code": "SERVICE_ERROR"
-        }), 500
-
-
-@app.route("/api/eligibility-check", methods=["POST"])
-def eligibility_check():
-    """Check which schemes a farmer qualifies for."""
-    try:
-        data = request.get_json()
-        farmer_data = data.get("farmer_profile")
-        
-        if not farmer_data:
-            return jsonify({
-                "success": False,
-                "error": "farmer_profile is required",
-                "code": "INVALID_INPUT"
-            }), 400
-        
-        farmer = FarmerProfile.from_dict(farmer_data)
-        
-        if not farmer.is_valid():
-            return jsonify({
-                "success": False,
-                "error": "Invalid farmer profile: land_acres must be > 0 and state must be specified",
-                "code": "INVALID_INPUT"
-            }), 400
-        
-        eligible_schemes = check_eligibility(farmer)
-        
-        # Calculate total benefit summary
-        total_summary_parts = []
-        for scheme in eligible_schemes[:3]:  # Top 3
-            total_summary_parts.append(f"{scheme['name_hi']}: {scheme['benefit'][:50]}...")
-        total_benefit_summary = " | ".join(total_summary_parts) if total_summary_parts else "No schemes"
-        
-        return jsonify({
-            "success": True,
-            "eligible_schemes": [
-                {
-                    "scheme_id": s["scheme_id"],
-                    "name_en": s["name_en"],
-                    "name_hi": s["name_hi"],
-                    "benefit": s["benefit"],
-                    "reason_eligible": s.get("reason_eligible", "")
-                }
-                for s in eligible_schemes
-            ],
-            "total_eligible": len(eligible_schemes),
-            "total_schemes": 10,
-            "total_benefit_summary": total_benefit_summary
-        }), 200
-    
-    except Exception as e:
-        return jsonify({
-            "success": False,
-            "error": str(e),
-            "code": "SERVICE_ERROR"
-        }), 500
-
-
-# ==================== AI CONVERSATION ====================
-
-@app.route("/api/chat", methods=["POST"])
-def chat():
-    """Main conversation endpoint."""
-    try:
-        data = request.get_json()
-        message = data.get("message", "").strip()
-        farmer_data = data.get("farmer_profile")
-        conversation_history = data.get("conversation_history", [])
-        
-        if not message:
-            return jsonify({
-                "success": False,
-                "error": "message is required and cannot be empty",
-                "code": "INVALID_INPUT"
-            }), 400
-        
-        if not farmer_data:
-            return jsonify({
-                "success": False,
-                "error": "farmer_profile is required",
-                "code": "INVALID_INPUT"
-            }), 400
-        
-        farmer = FarmerProfile.from_dict(farmer_data)
-        
-        # Match schemes based on message
-        matched_schemes = match_schemes_to_message(message)
-        
-        # Generate response
-        response_data = generate_response(message, matched_schemes, farmer, conversation_history)
-        
-        conversation_id = str(uuid.uuid4())
-        
-        return jsonify({
-            "success": response_data.get("success", True),
-            "response_text": response_data["response_text"],
-            "voice_memory_clip": response_data.get("voice_memory_clip"),
-            "matched_schemes": matched_schemes,
-            "conversation_id": conversation_id
-        }), 200
-    
-    except Exception as e:
-        return jsonify({
-            "success": False,
-            "error": str(e),
-            "code": "SERVICE_ERROR"
-        }), 500
-
-
-# ==================== SPEECH SERVICES ====================
-
-@app.route("/api/speech-to-text", methods=["POST"])
-def speech_to_text():
-    """Convert audio to Hindi text."""
-    try:
-        # Check if audio file present
-        if "audio" not in request.files:
-            return jsonify({
-                "success": False,
-                "error": "audio file is required",
-                "code": "INVALID_INPUT"
-            }), 400
-        
-        audio_file = request.files["audio"]
-        if not audio_file:
-            return jsonify({
-                "success": False,
-                "error": "audio file is empty",
-                "code": "INVALID_INPUT"
-            }), 400
-        
-        # Read file bytes
-        audio_bytes = audio_file.read()
-        filename = audio_file.filename or "audio.mp3"
-        
-        # Transcribe
-        result = transcribe_audio(audio_bytes, filename)
-        
-        if result["success"]:
-            return jsonify({
-                "success": True,
-                "transcript": result["transcript"],
-                "confidence": result.get("confidence", 0.9)
-            }), 200
-        else:
-            return jsonify({
-                "success": False,
-                "error": result.get("error", "Transcription failed"),
-                "code": "SERVICE_ERROR"
-            }), 500
-    
-    except Exception as e:
-        return jsonify({
-            "success": False,
-            "error": str(e),
-            "code": "SERVICE_ERROR"
-        }), 500
-
-
-@app.route("/api/text-to-speech", methods=["POST"])
-def text_to_speech():
-    """Convert Hindi text to audio."""
-    try:
-        data = request.get_json()
-        text = data.get("text", "").strip()
-        voice = data.get("voice", "Kajal")
-        
-        if not text:
-            return jsonify({
-                "success": False,
-                "error": "text is required and cannot be empty",
-                "code": "INVALID_INPUT"
-            }), 400
-        
-        # Synthesize
-        result = synthesize_speech(text)
-        
-        if result["success"]:
-            return jsonify({
-                "success": True,
-                "audio_url": result.get("audio_url"),
-                "duration_seconds": result.get("duration_seconds", 0)
-            }), 200
-        else:
-            return jsonify({
-                "success": False,
-                "error": result.get("error", "Synthesis failed"),
-                "code": "SERVICE_ERROR"
-            }), 500
-    
-    except Exception as e:
-        return jsonify({
-            "success": False,
-            "error": str(e),
-            "code": "SERVICE_ERROR"
-        }), 500
-
-
-# ==================== VOICE MEMORY ====================
-
-@app.route("/api/voice-memory/<scheme_id>", methods=["GET"])
-def voice_memory(scheme_id):
-    """Get peer success story audio clip."""
-    try:
-        result = get_clip(scheme_id)
-        
-        if result["success"]:
-            return jsonify({
-                "success": True,
-                "audio_url": result.get("audio_url"),
-                "farmer_name": result.get("farmer_name"),
-                "district": result.get("district"),
-                "scheme": result.get("scheme")
-            }), 200
-        else:
-            return jsonify({
-                "success": False,
-                "error": result.get("error", "Clip not found"),
-                "code": "NOT_FOUND"
-            }), 404
-    
-    except Exception as e:
-        return jsonify({
-            "success": False,
-            "error": str(e),
-            "code": "SERVICE_ERROR"
-        }), 500
-
-
-# ==================== SMS ====================
-
-@app.route("/api/send-sms", methods=["POST"])
-def send_sms():
-    """Send document checklist SMS."""
-    try:
-        data = request.get_json()
-        phone_number = data.get("phone_number", "").strip()
-        scheme_ids = data.get("scheme_ids", [])
-        
-        if not phone_number:
-            return jsonify({
-                "success": False,
-                "error": "phone_number is required",
-                "code": "INVALID_INPUT"
-            }), 400
-        
-        if not isinstance(scheme_ids, list) or len(scheme_ids) == 0:
-            return jsonify({
-                "success": False,
-                "error": "scheme_ids must be a non-empty array",
-                "code": "INVALID_INPUT"
-            }), 400
-        
-        # Send SMS
-        result = send_checklist(phone_number, scheme_ids)
-        
-        return jsonify({
-            "success": result["success"],
-            "message_preview": result.get("message_preview"),
-            "mock_mode": result.get("mock_mode", False)
-        }), 200
-    
-    except Exception as e:
-        return jsonify({
-            "success": False,
-            "error": str(e),
-            "code": "SERVICE_ERROR"
-        }), 500
-
-
-# ==================== CALL INITIATION ====================
-
-@app.route("/api/initiate-call", methods=["POST"])
-def initiate_call():
-    """
-    Initiate outbound call to farmer.
-    Body: { farmer_phone, farmer_name, scheme_ids[] }
-    Provider switches via CALL_PROVIDER env var.
-    """
-    try:
-        data = request.get_json()
-        farmer_phone = data.get('farmer_phone', '').strip()
-        farmer_name = data.get('farmer_name', 'Kisan bhai')
-        scheme_ids = data.get('scheme_ids', ['PM_KISAN'])
-        
-        if not farmer_phone:
-            return jsonify({
-                'success': False,
-                'error': 'farmer_phone required',
-                'code': 'INVALID_INPUT'
-            }), 400
-        
-        result = initiate_sahaya_call(farmer_phone, farmer_name, scheme_ids)
-        result['active_provider'] = get_active_provider()
-        
-        return jsonify(result), 200 if result['success'] else 400
-    
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': str(e),
-            'code': 'SERVICE_ERROR'
-        }), 500
-
-
-# ==================== ERROR HANDLERS ====================
-
-@app.errorhandler(404)
-def not_found(e):
-    return jsonify({
-        "success": False,
-        "error": "Endpoint not found",
-        "code": "NOT_FOUND"
-    }), 404
-
-
-@app.errorhandler(500)
-def server_error(e):
-    return jsonify({
-        "success": False,
-        "error": "Internal server error",
-        "code": "SERVER_ERROR"
-    }), 500
-
-
-# ==================== REGISTER BLUEPRINTS ====================
-
+# ── Register blueprints ───────────────────────────────────
 from routes.call_routes import call_bp
 app.register_blueprint(call_bp)
-logger.info(f"Registered blueprints: call_bp")
+
+# ── Serve local audio files (mock mode) ──────────────────
+from flask import send_from_directory
+import os
+
+@app.route('/audio/<path:filename>')
+def serve_audio(filename):
+    """Serve local Voice Memory clips in mock mode."""
+    return send_from_directory(
+        os.path.join(_BASE_DIR, 'data', 'voice_memory'),
+        filename
+    )
+
+# ── API Routes ────────────────────────────────────────────
+
+@app.route('/api/health', methods=['GET'])
+def health():
+    return jsonify({
+        'status': 'ok',
+        'mock_mode': USE_MOCK,
+        'version': '1.0.0',
+        'service': 'VoiceBridge AI — Sahaya'
+    })
 
 
-# ==================== RUN ====================
+@app.route('/api/schemes', methods=['GET'])
+def get_schemes():
+    try:
+        from services.scheme_service import get_all_schemes
+        schemes = get_all_schemes()
+        return jsonify({'success': True, 'schemes': schemes, 'total': len(schemes)})
+    except Exception as e:
+        logger.error(f"Schemes error: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
 
-if __name__ == "__main__":
-    logger.info(f"{'='*80}")
-    logger.info(f"VoiceBridge AI — Flask Server Starting")
-    logger.info(f"{'='*80}")
-    logger.info(f"Environment:  {FLASK_ENV}")
-    logger.info(f"Mock Mode:    {USE_MOCK}")
-    logger.info(f"Port:         {FLASK_PORT}")
-    logger.info(f"{'='*80}")
-    logger.info(f"Flask app started. Listening for Twilio webhooks...")
-    logger.info(f"Expected ngrok URL: https://164a-43-229-91-78.ngrok-free.app/api/call/twiml")
-    logger.info(f"{'='*80}\n")
-    
-    app.run(host="0.0.0.0", port=FLASK_PORT, debug=(FLASK_ENV == "development"), use_reloader=False)
+
+@app.route('/api/eligibility-check', methods=['POST'])
+def eligibility_check():
+    try:
+        data = request.get_json() or {}
+        fp = data.get('farmer_profile', {})
+        from models.farmer import FarmerProfile
+        from services.scheme_service import check_eligibility
+        farmer = FarmerProfile.from_dict(fp)
+        if not farmer.is_valid():
+            return jsonify({'success': False, 'error': 'Invalid farmer profile',
+                           'code': 'INVALID_INPUT'}), 400
+        eligible = check_eligibility(farmer)
+        total_benefit = f"₹{sum_benefit(eligible)}+ per year" if eligible else "₹0"
+        return jsonify({
+            'success': True,
+            'eligible_schemes': eligible,
+            'total_eligible': len(eligible),
+            'total_schemes': 10,
+            'total_benefit_summary': total_benefit
+        })
+    except Exception as e:
+        logger.error(f"Eligibility error: {e}")
+        return jsonify({'success': False, 'error': str(e), 'code': 'SERVICE_ERROR'}), 500
+
+
+def sum_benefit(schemes):
+    """Rough benefit sum for display."""
+    total = 0
+    benefit_map = {
+        'PM_KISAN': 6000, 'MGNREGS': 22000, 'AYUSHMAN_BHARAT': 500000,
+        'PMFBY': 5000, 'KCC': 0, 'SOIL_HEALTH_CARD': 0,
+        'PM_AWAS_GRAMIN': 120000, 'NFSA_RATION': 3600,
+        'ATAL_PENSION': 12000, 'SUKANYA_SAMRIDDHI': 0
+    }
+    for s in schemes:
+        total += benefit_map.get(s.get('scheme_id', ''), 0)
+    return total
+
+
+@app.route('/api/chat', methods=['POST'])
+def chat():
+    try:
+        data = request.get_json() or {}
+        message = (data.get('message') or '').strip()
+        if not message:
+            return jsonify({'success': False, 'error': 'Message is required',
+                           'code': 'INVALID_INPUT'}), 400
+        fp = data.get('farmer_profile', {})
+        history = data.get('conversation_history', [])
+        from models.farmer import FarmerProfile
+        from services.scheme_service import match_schemes_to_message
+        from services.ai_service import generate_response
+        import uuid
+        farmer = FarmerProfile.from_dict(fp)
+        scheme_ids = match_schemes_to_message(message)
+        result = generate_response(message, scheme_ids, farmer, history)
+        return jsonify({
+            'success': True,
+            'response_text': result.get('response_text', ''),
+            'voice_memory_clip': result.get('voice_memory_clip'),
+            'matched_schemes': result.get('matched_schemes', scheme_ids),
+            'conversation_id': uuid.uuid4().hex
+        })
+    except Exception as e:
+        logger.error(f"Chat error: {e}")
+        return jsonify({'success': False, 'error': str(e), 'code': 'SERVICE_ERROR'}), 500
+
+
+@app.route('/api/speech-to-text', methods=['POST'])
+def speech_to_text():
+    try:
+        if 'audio' not in request.files:
+            return jsonify({'success': False, 'error': 'No audio file',
+                           'code': 'INVALID_INPUT'}), 400
+        audio_file = request.files['audio']
+        audio_bytes = audio_file.read()
+        from services.stt_service import transcribe_audio
+        result = transcribe_audio(audio_bytes, audio_file.filename or 'audio.mp3')
+        return jsonify(result)
+    except Exception as e:
+        logger.error(f"STT error: {e}")
+        return jsonify({'success': False, 'error': str(e), 'code': 'SERVICE_ERROR'}), 500
+
+
+@app.route('/api/text-to-speech', methods=['POST'])
+def text_to_speech():
+    try:
+        data = request.get_json() or {}
+        text = (data.get('text') or '').strip()
+        if not text:
+            return jsonify({'success': False, 'error': 'Text is required',
+                           'code': 'INVALID_INPUT'}), 400
+        from services.tts_service import synthesize_speech
+        result = synthesize_speech(text)
+        return jsonify(result)
+    except Exception as e:
+        logger.error(f"TTS error: {e}")
+        return jsonify({'success': False, 'error': str(e), 'code': 'SERVICE_ERROR'}), 500
+
+
+@app.route('/api/voice-memory/<scheme_id>', methods=['GET'])
+def voice_memory(scheme_id):
+    try:
+        from services.voice_memory_service import get_clip
+        result = get_clip(scheme_id.upper())
+        return jsonify(result)
+    except Exception as e:
+        logger.error(f"Voice memory error: {e}")
+        return jsonify({'success': False, 'error': str(e), 'code': 'SERVICE_ERROR'}), 500
+
+
+@app.route('/api/send-sms', methods=['POST'])
+def send_sms():
+    try:
+        data = request.get_json() or {}
+        phone = (data.get('phone_number') or '').strip()
+        scheme_ids = data.get('scheme_ids', [])
+        if not phone:
+            return jsonify({'success': False, 'error': 'Phone number required',
+                           'code': 'INVALID_INPUT'}), 400
+        if not isinstance(scheme_ids, list):
+            return jsonify({'success': False, 'error': 'scheme_ids must be a list',
+                           'code': 'INVALID_INPUT'}), 400
+        from services.sms_service import send_checklist
+        result = send_checklist(phone, scheme_ids)
+        return jsonify(result)
+    except Exception as e:
+        logger.error(f"SMS error: {e}")
+        return jsonify({'success': False, 'error': str(e), 'code': 'SERVICE_ERROR'}), 500
+
+
+@app.route('/api/initiate-call', methods=['POST'])
+def initiate_call():
+    """Initiate Sahaya outbound call via configured provider."""
+    try:
+        data = request.get_json() or {}
+        farmer_phone = (data.get('farmer_phone') or '').strip()
+        farmer_name = (data.get('farmer_name') or 'Kisan bhai').strip()
+        scheme_ids = data.get('scheme_ids', ['PM_KISAN', 'PMFBY'])
+        if not farmer_phone:
+            return jsonify({'success': False, 'error': 'farmer_phone required',
+                           'code': 'INVALID_INPUT'}), 400
+        from services.call_service import initiate_sahaya_call, get_active_provider
+        result = initiate_sahaya_call(farmer_phone, farmer_name, scheme_ids)
+        result['active_provider'] = get_active_provider()
+        return jsonify(result)
+    except Exception as e:
+        logger.error(f"Call error: {e}")
+        return jsonify({'success': False, 'error': str(e), 'code': 'SERVICE_ERROR'}), 500
+
+
+# ── Run ───────────────────────────────────────────────────
+if __name__ == '__main__':
+    logger.info(f"Starting VoiceBridge AI on port {FLASK_PORT}")
+    logger.info(f"Mock mode: {USE_MOCK}")
+    app.run(host='0.0.0.0', port=FLASK_PORT, debug=True)
