@@ -222,7 +222,17 @@ const VoiceMemoryClip = ({ clip, schemeId }) => {
       <p className="text-xs text-amber-700 mb-3">
         "Real success story from a farmer in your region — how they benefited from this scheme"
       </p>
-      <audio controls src={clip} className="w-full h-8 rounded" />
+      <audio 
+        controls 
+        crossOrigin="anonymous"
+        preload="metadata"
+        className="w-full h-8 rounded" 
+      >
+        <source src={clip} type="audio/mpeg" />
+        <source src={clip} type="audio/wav" />
+        <source src={clip} type="audio/ogg" />
+        Your browser does not support audio.
+      </audio>
     </div>
   )
 }
@@ -943,7 +953,17 @@ function App() {
                             <div style={{fontWeight:'bold',fontSize:'12px',color:'#92400e'}}>🎙️ Voice Memory Network — Real Farmer Story</div>
                             <div style={{fontSize:'12px',color:'#78350f'}}>{CLIP_INFO[msg.voiceMemoryScheme].farmer} • {CLIP_INFO[msg.voiceMemoryScheme].district}</div>
                             <div style={{fontSize:'13px',fontStyle:'italic',color:'#92400e',margin:'4px 0'}}>{CLIP_INFO[msg.voiceMemoryScheme].quote}</div>
-                            <audio controls src={msg.voiceMemoryUrl} style={{width:'100%',height:'32px'}} />
+                            <audio 
+                              controls 
+                              crossOrigin="anonymous"
+                              preload="metadata"
+                              style={{width:'100%',height:'32px'}} 
+                            >
+                              <source src={msg.voiceMemoryUrl} type="audio/mpeg" />
+                              <source src={msg.voiceMemoryUrl} type="audio/wav" />
+                              <source src={msg.voiceMemoryUrl} type="audio/ogg" />
+                              Your browser does not support audio.
+                            </audio>
                             <div style={{fontSize:'11px',color:'#9ca3af',marginTop:'4px'}}>🔒 Auto-deleted after 90 days • DPDP Compliant</div>
                           </div>
                         )}
