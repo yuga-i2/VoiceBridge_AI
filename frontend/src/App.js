@@ -598,6 +598,18 @@ function App() {
         audio_url: chatRes.data.audio_url
       }
 
+      // Fetch voice memory audio if available
+      if (aiResponse.voice_memory_clip) {
+        try {
+          const vmRes = await fetch(`/api/voice-memory/${aiResponse.voice_memory_clip}`)
+          const vmData = await vmRes.json()
+          aiResponse.voiceMemoryUrl = vmData.audio_url
+          aiResponse.voiceMemoryScheme = aiResponse.voice_memory_clip
+        } catch(e) {
+          console.log('[VoiceBridge] Failed to fetch voice memory:', e)
+        }
+      }
+
       // Update matched schemes
       if (aiResponse.schemes && aiResponse.schemes.length > 0) {
         setMatchedSchemes(prev => [...new Set([...prev, ...aiResponse.schemes])])
@@ -607,7 +619,12 @@ function App() {
       setConversationHistory(prev => [
         ...prev,
         { role: 'user', content: userMessage },
-        { role: 'assistant', content: aiResponse.text }
+        { 
+          role: 'assistant', 
+          content: aiResponse.text,
+          voiceMemoryUrl: aiResponse.voiceMemoryUrl,
+          voiceMemoryScheme: aiResponse.voiceMemoryScheme
+        }
       ])
 
       setIsProcessing(false)
@@ -733,6 +750,18 @@ function App() {
         audio_url: chatRes.data.audio_url
       }
 
+      // Fetch voice memory audio if available
+      if (aiResponse.voice_memory_clip) {
+        try {
+          const vmRes = await fetch(`/api/voice-memory/${aiResponse.voice_memory_clip}`)
+          const vmData = await vmRes.json()
+          aiResponse.voiceMemoryUrl = vmData.audio_url
+          aiResponse.voiceMemoryScheme = aiResponse.voice_memory_clip
+        } catch(e) {
+          console.log('[VoiceBridge] Failed to fetch voice memory:', e)
+        }
+      }
+
       // Update matched schemes
       if (aiResponse.schemes && aiResponse.schemes.length > 0) {
         setMatchedSchemes(prev => [...new Set([...prev, ...aiResponse.schemes])])
@@ -742,7 +771,12 @@ function App() {
       setConversationHistory(prev => [
         ...prev,
         { role: 'user', content: userMessage },
-        { role: 'assistant', content: aiResponse.text }
+        { 
+          role: 'assistant', 
+          content: aiResponse.text,
+          voiceMemoryUrl: aiResponse.voiceMemoryUrl,
+          voiceMemoryScheme: aiResponse.voiceMemoryScheme
+        }
       ])
 
       // Handle audio playback with fallback
@@ -859,24 +893,31 @@ function App() {
                 {conversationHistory.length > 0 && (
                   <div className="mb-3 p-3 bg-gray-50 rounded max-h-48 overflow-y-auto space-y-2 border">
                     {conversationHistory.map((msg, idx) => (
-                      <div key={idx} className={`text-sm p-2 rounded flex items-start justify-between gap-2 ${
+                      <div key={idx} className={`text-sm p-2 rounded ${
                         msg.role === 'user' 
                           ? 'bg-blue-100 text-blue-900' 
                           : 'bg-green-100 text-green-900'
                       }`}>
-                        <div>
-                          {msg.role === 'user' ? '👨 आप: ' : '🎙️ सहाया: '}
-                          {msg.content.substring(0, 120)}
-                          {msg.content.length > 120 ? '...' : ''}
+                        <div className="flex items-start justify-between gap-2 mb-2">
+                          <div className="flex-1">
+                            {msg.role === 'user' ? '👨 आप: ' : '🎙️ सहाया: '}
+                            {msg.content.substring(0, 120)}
+                            {msg.content.length > 120 ? '...' : ''}
+                          </div>
+                          {msg.role === 'assistant' && (
+                            <button
+                              onClick={() => speakHindi(msg.content)}
+                              className="ml-2 text-lg hover:scale-125 transition-transform flex-shrink-0"
+                              title="Replay"
+                            >
+                              🔊
+                            </button>
+                          )}
                         </div>
-                        {msg.role === 'assistant' && (
-                          <button
-                            onClick={() => speakHindi(msg.content)}
-                            className="ml-2 text-lg hover:scale-125 transition-transform flex-shrink-0"
-                            title="Replay"
-                          >
-                            🔊
-                          </button>
+                        {msg.voiceMemoryUrl && (
+                          <div className="mt-2">
+                            <VoiceMemoryClip audio_url={msg.voiceMemoryUrl} schemeId={msg.voiceMemoryScheme} />
+                          </div>
                         )}
                       </div>
                     ))}
