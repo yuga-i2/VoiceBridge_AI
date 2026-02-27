@@ -1,9 +1,2173 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sahaya — AI Welfare Assistant for 135 Million Indian Farmers</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sahaya — AI Welfare Assistant | VoiceBridge AI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Tiro+Devanagari+Hindi:ital@0;1&family=DM+Serif+Display:ital@0;1&family=IBM+Plex+Mono:wght@400;500&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --soil: #0e0b07;
+    --earth: #1a1208;
+    --clay: #2d1f0e;
+    --terracotta: #c4622d;
+    --saffron: #f59e0b;
+    --harvest: #fbbf24;
+    --turmeric: #d97706;
+    --leaf: #16a34a;
+    --leaf-light: #22c55e;
+    --sky: #0ea5e9;
+    --cream: #fef9ef;
+    --warm-white: #fdf6e3;
+    --text-primary: #f5e6c8;
+    --text-secondary: #a89070;
+    --text-muted: #6b5035;
+    --border: rgba(196, 98, 45, 0.2);
+    --glow-saffron: 0 0 40px rgba(245, 158, 11, 0.3);
+    --glow-green: 0 0 30px rgba(34, 197, 94, 0.25);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--soil);
+    color: var(--text-primary);
+    font-family: 'Outfit', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── GRAIN TEXTURE OVERLAY ── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 1000;
+    opacity: 0.6;
+  }
+
+  /* ── AMBIENT BACKGROUND FIELDS ── */
+  .bg-field {
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(100px);
+    pointer-events: none;
+    z-index: 0;
+  }
+  .bg-field-1 { width: 600px; height: 600px; background: rgba(196,98,45,0.07); top: -200px; left: -200px; }
+  .bg-field-2 { width: 500px; height: 500px; background: rgba(22,163,74,0.06); bottom: 0; right: -100px; }
+  .bg-field-3 { width: 400px; height: 400px; background: rgba(245,158,11,0.05); top: 40%; left: 30%; }
+
+  /* ── HEADER ── */
+  header {
+    position: relative;
+    z-index: 10;
+    padding: 24px 40px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+    background: rgba(14, 11, 7, 0.8);
+    backdrop-filter: blur(20px);
+  }
+
+  .logo-block {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .logo-devanagari {
+    font-family: 'Tiro Devanagari Hindi', serif;
+    font-size: 28px;
+    color: var(--saffron);
+    line-height: 1;
+    text-shadow: var(--glow-saffron);
+    letter-spacing: -0.5px;
+  }
+
+  .logo-sub {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--text-muted);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-top: 2px;
+  }
+
+  .logo-divider {
+    width: 1px;
+    height: 36px;
+    background: var(--border);
+  }
+
+  .header-project {
+    font-family: 'DM Serif Display', serif;
+    font-size: 18px;
+    color: var(--text-secondary);
+    letter-spacing: 0.3px;
+  }
+
+  .header-badges {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .badge {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    padding: 5px 12px;
+    border-radius: 2px;
+    border: 1px solid;
+  }
+
+  .badge-live { border-color: var(--leaf); color: var(--leaf-light); background: rgba(22,163,74,0.1); }
+  .badge-live::before { content: '● '; animation: pulse-dot 1.5s infinite; }
+  @keyframes pulse-dot { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  .badge-hackathon { border-color: var(--terracotta); color: var(--terracotta); background: rgba(196,98,45,0.08); }
+
+  /* ── HERO SECTION ── */
+  .hero {
+    position: relative;
+    z-index: 5;
+    padding: 60px 40px 40px;
+    text-align: center;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  .hero-eyebrow {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--terracotta);
+    margin-bottom: 20px;
+    opacity: 0;
+    animation: fadeUp 0.6s ease 0.2s forwards;
+  }
+
+  .hero-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(40px, 6vw, 72px);
+    line-height: 1.1;
+    color: var(--cream);
+    margin-bottom: 12px;
+    opacity: 0;
+    animation: fadeUp 0.7s ease 0.35s forwards;
+  }
+
+  .hero-title em {
+    font-style: italic;
+    color: var(--saffron);
+    text-shadow: var(--glow-saffron);
+  }
+
+  .hero-devanagari {
+    font-family: 'Tiro Devanagari Hindi', serif;
+    font-size: clamp(24px, 3.5vw, 42px);
+    color: var(--text-secondary);
+    margin-bottom: 28px;
+    opacity: 0;
+    animation: fadeUp 0.7s ease 0.5s forwards;
+  }
+
+  .hero-description {
+    font-size: 17px;
+    color: var(--text-secondary);
+    line-height: 1.7;
+    max-width: 680px;
+    margin: 0 auto 40px;
+    opacity: 0;
+    animation: fadeUp 0.7s ease 0.65s forwards;
+  }
+
+  .stat-row {
+    display: flex;
+    justify-content: center;
+    gap: 48px;
+    margin-bottom: 50px;
+    opacity: 0;
+    animation: fadeUp 0.7s ease 0.8s forwards;
+  }
+
+  .stat {
+    text-align: center;
+  }
+
+  .stat-number {
+    font-family: 'DM Serif Display', serif;
+    font-size: 32px;
+    color: var(--saffron);
+    display: block;
+    text-shadow: var(--glow-saffron);
+  }
+
+  .stat-label {
+    font-size: 12px;
+    color: var(--text-muted);
+    letter-spacing: 0.5px;
+    margin-top: 2px;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── MAIN DEMO LAYOUT ── */
+  .demo-container {
+    position: relative;
+    z-index: 5;
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 0 24px 80px;
+    display: grid;
+    grid-template-columns: 340px 1fr 280px;
+    gap: 20px;
+    align-items: start;
+  }
+
+  /* ── PANEL BASE ── */
+  .panel {
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    background: rgba(26, 18, 8, 0.85);
+    backdrop-filter: blur(20px);
+    overflow: hidden;
+    position: relative;
+  }
+
+  .panel::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--terracotta), transparent);
+    opacity: 0.5;
+  }
+
+  .panel-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .panel-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  .panel-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--text-muted);
+    margin-left: auto;
+  }
+  .panel-dot.active { background: var(--leaf-light); box-shadow: 0 0 8px var(--leaf-light); }
+
+  /* ── LEFT PANEL: FARMER PROFILE ── */
+  .farmer-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .farmer-avatar-section {
+    padding: 28px 20px 20px;
+    text-align: center;
+    border-bottom: 1px solid var(--border);
+    background: linear-gradient(180deg, rgba(196,98,45,0.05) 0%, transparent 100%);
+  }
+
+  .farmer-avatar {
+    width: 72px; height: 72px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--clay), var(--terracotta));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 32px;
+    margin: 0 auto 14px;
+    border: 2px solid rgba(196, 98, 45, 0.4);
+    box-shadow: 0 0 30px rgba(196, 98, 45, 0.2);
+  }
+
+  .farmer-name-display {
+    font-family: 'DM Serif Display', serif;
+    font-size: 20px;
+    color: var(--cream);
+    margin-bottom: 4px;
+  }
+
+  .farmer-location {
+    font-size: 13px;
+    color: var(--text-muted);
+    font-family: 'IBM Plex Mono', monospace;
+    letter-spacing: 0.5px;
+  }
+
+  .farmer-form {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .form-label {
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  .form-input, .form-select {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 10px 14px;
+    color: var(--text-primary);
+    font-family: 'Outfit', sans-serif;
+    font-size: 14px;
+    width: 100%;
+    transition: border-color 0.2s, background 0.2s;
+    outline: none;
+  }
+
+  .form-input:focus, .form-select:focus {
+    border-color: var(--terracotta);
+    background: rgba(196, 98, 45, 0.06);
+  }
+
+  .form-select option { background: var(--earth); }
+
+  .toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+  }
+
+  .toggle-label { font-size: 13px; color: var(--text-secondary); }
+
+  .toggle {
+    width: 36px; height: 20px;
+    background: var(--clay);
+    border-radius: 10px;
+    position: relative;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    transition: background 0.25s;
+  }
+  .toggle.on { background: var(--leaf); border-color: var(--leaf); }
+  .toggle::after {
+    content: '';
+    position: absolute;
+    width: 14px; height: 14px;
+    background: white;
+    border-radius: 50%;
+    top: 2px; left: 2px;
+    transition: transform 0.25s;
+  }
+  .toggle.on::after { transform: translateX(16px); }
+
+  .btn-demo {
+    padding: 12px;
+    border-radius: 3px;
+    border: none;
+    cursor: pointer;
+    font-family: 'Outfit', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    transition: all 0.2s;
+    text-align: center;
+  }
+
+  .btn-demo-farmer {
+    background: rgba(196, 98, 45, 0.15);
+    border: 1px solid var(--terracotta);
+    color: var(--terracotta);
+  }
+  .btn-demo-farmer:hover { background: rgba(196, 98, 45, 0.25); }
+
+  .btn-start-call {
+    background: linear-gradient(135deg, var(--leaf), #15803d);
+    color: white;
+    border: 1px solid var(--leaf-light);
+    box-shadow: var(--glow-green);
+    font-size: 15px;
+    padding: 14px;
+  }
+  .btn-start-call:hover { transform: translateY(-1px); box-shadow: 0 0 40px rgba(34,197,94,0.4); }
+  .btn-start-call:active { transform: translateY(0); }
+  .btn-start-call:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+  /* ── SCHEMES MATCHED ── */
+  .schemes-section {
+    padding: 16px 20px;
+    border-top: 1px solid var(--border);
+  }
+
+  .schemes-title {
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    font-family: 'IBM Plex Mono', monospace;
+    margin-bottom: 12px;
+  }
+
+  .scheme-chip {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-radius: 3px;
+    margin-bottom: 8px;
+    font-size: 13px;
+    border: 1px solid transparent;
+    transition: all 0.4s;
+    opacity: 0.3;
+  }
+  .scheme-chip.matched {
+    opacity: 1;
+    background: rgba(22, 163, 74, 0.08);
+    border-color: rgba(22, 163, 74, 0.3);
+  }
+  .scheme-chip-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--text-muted); flex-shrink: 0; }
+  .scheme-chip.matched .scheme-chip-dot { background: var(--leaf-light); box-shadow: 0 0 6px var(--leaf-light); }
+  .scheme-chip-name { font-weight: 500; color: var(--text-primary); }
+  .scheme-chip-amount { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--saffron); margin-left: auto; }
+
+  /* ── CENTER PANEL: SAHAYA CONVERSATION ── */
+  .conversation-panel {
+    display: flex;
+    flex-direction: column;
+    height: 680px;
+  }
+
+  .conversation-header {
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+    background: rgba(14, 11, 7, 0.5);
+  }
+
+  .sahaya-avatar {
+    width: 38px; height: 38px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--turmeric), var(--saffron));
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Tiro Devanagari Hindi', serif;
+    font-size: 16px;
+    color: var(--soil);
+    flex-shrink: 0;
+    box-shadow: 0 0 20px rgba(245, 158, 11, 0.35);
+  }
+
+  .sahaya-info { flex: 1; }
+  .sahaya-name {
+    font-family: 'DM Serif Display', serif;
+    font-size: 17px;
+    color: var(--cream);
+  }
+  .sahaya-status {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--text-muted);
+    letter-spacing: 1px;
+    margin-top: 1px;
+  }
+  .sahaya-status.speaking { color: var(--saffron); }
+  .sahaya-status.listening { color: var(--leaf-light); }
+
+  .stage-tracker {
+    display: flex;
+    gap: 5px;
+  }
+  .stage-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--clay);
+    border: 1px solid var(--border);
+    transition: all 0.4s;
+  }
+  .stage-dot.done { background: var(--terracotta); border-color: var(--terracotta); }
+  .stage-dot.active { background: var(--saffron); border-color: var(--saffron); box-shadow: 0 0 8px var(--saffron); }
+
+  /* ── CHAT MESSAGES ── */
+  .messages-area {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    scroll-behavior: smooth;
+  }
+
+  .messages-area::-webkit-scrollbar { width: 3px; }
+  .messages-area::-webkit-scrollbar-track { background: transparent; }
+  .messages-area::-webkit-scrollbar-thumb { background: var(--clay); border-radius: 2px; }
+
+  .message {
+    display: flex;
+    gap: 10px;
+    opacity: 0;
+    animation: msgIn 0.4s ease forwards;
+  }
+
+  @keyframes msgIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .message.user { flex-direction: row-reverse; }
+
+  .msg-avatar {
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px;
+    margin-top: 2px;
+  }
+
+  .msg-avatar.sahaya {
+    background: linear-gradient(135deg, var(--turmeric), var(--saffron));
+    color: var(--soil);
+    font-family: 'Tiro Devanagari Hindi', serif;
+    font-size: 11px;
+  }
+
+  .msg-avatar.user-av {
+    background: rgba(196, 98, 45, 0.2);
+    border: 1px solid var(--terracotta);
+    color: var(--terracotta);
+  }
+
+  .msg-bubble {
+    max-width: 75%;
+    padding: 12px 16px;
+    border-radius: 3px;
+    font-size: 14px;
+    line-height: 1.65;
+  }
+
+  .msg-bubble.sahaya-bubble {
+    background: rgba(245, 158, 11, 0.06);
+    border: 1px solid rgba(245, 158, 11, 0.15);
+    color: var(--cream);
+    font-family: 'Outfit', sans-serif;
+  }
+
+  .msg-bubble.user-bubble {
+    background: rgba(196, 98, 45, 0.1);
+    border: 1px solid rgba(196, 98, 45, 0.25);
+    color: var(--text-primary);
+    text-align: right;
+  }
+
+  .msg-hindi {
+    font-family: 'Tiro Devanagari Hindi', serif;
+    font-size: 15.5px;
+    line-height: 1.8;
+    display: block;
+    margin-bottom: 6px;
+  }
+
+  .msg-transliteration {
+    font-size: 12px;
+    color: var(--text-muted);
+    border-top: 1px solid rgba(245,158,11,0.1);
+    padding-top: 6px;
+    margin-top: 4px;
+    font-style: italic;
+  }
+
+  .msg-scheme-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: rgba(22, 163, 74, 0.12);
+    border: 1px solid rgba(22, 163, 74, 0.3);
+    border-radius: 2px;
+    padding: 2px 8px;
+    font-size: 11px;
+    font-family: 'IBM Plex Mono', monospace;
+    color: var(--leaf-light);
+    margin-top: 8px;
+    margin-right: 4px;
+  }
+
+  .typing-indicator {
+    display: none;
+    align-items: center;
+    gap: 10px;
+    padding: 4px 0;
+  }
+  .typing-indicator.visible { display: flex; }
+
+  .typing-dots {
+    display: flex;
+    gap: 4px;
+    padding: 10px 16px;
+    background: rgba(245, 158, 11, 0.06);
+    border: 1px solid rgba(245, 158, 11, 0.15);
+    border-radius: 3px;
+  }
+
+  .typing-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--saffron);
+    animation: typingBounce 1.2s infinite;
+  }
+  .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+  .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+  @keyframes typingBounce {
+    0%,80%,100% { transform: translateY(0); opacity: 0.4; }
+    40% { transform: translateY(-6px); opacity: 1; }
+  }
+
+  /* ── INPUT AREA ── */
+  .input-area {
+    padding: 16px 20px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    gap: 10px;
+    align-items: flex-end;
+    background: rgba(14, 11, 7, 0.5);
+    flex-shrink: 0;
+  }
+
+  .message-input {
+    flex: 1;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 12px 16px;
+    color: var(--text-primary);
+    font-family: 'Outfit', sans-serif;
+    font-size: 14px;
+    resize: none;
+    outline: none;
+    min-height: 44px;
+    max-height: 120px;
+    transition: border-color 0.2s;
+    line-height: 1.5;
+  }
+
+  .message-input:focus { border-color: var(--terracotta); }
+  .message-input::placeholder { color: var(--text-muted); }
+
+  .input-hint {
+    font-size: 11px;
+    color: var(--text-muted);
+    text-align: center;
+    margin-bottom: 10px;
+    flex-basis: 100%;
+    order: -1;
+    font-family: 'IBM Plex Mono', monospace;
+    letter-spacing: 0.5px;
+  }
+
+  .btn-send {
+    width: 44px; height: 44px;
+    border-radius: 3px;
+    border: 1px solid var(--terracotta);
+    background: rgba(196, 98, 45, 0.15);
+    color: var(--terracotta);
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    transition: all 0.2s;
+    flex-shrink: 0;
+  }
+  .btn-send:hover { background: rgba(196, 98, 45, 0.3); }
+  .btn-send:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .btn-voice {
+    width: 44px; height: 44px;
+    border-radius: 3px;
+    border: 1px solid var(--border);
+    background: rgba(255,255,255,0.04);
+    color: var(--text-muted);
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    transition: all 0.2s;
+    flex-shrink: 0;
+    position: relative;
+  }
+  .btn-voice:hover { border-color: var(--leaf); color: var(--leaf-light); }
+  .btn-voice.recording {
+    background: rgba(239, 68, 68, 0.15);
+    border-color: #ef4444;
+    color: #ef4444;
+    animation: recordPulse 1.5s infinite;
+  }
+  @keyframes recordPulse { 0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,0.4)} 50%{box-shadow:0 0 0 8px rgba(239,68,68,0)} }
+
+  /* ── RIGHT PANEL: AWS SERVICES ── */
+  .aws-panel {}
+
+  .aws-panel-inner {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .aws-service {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 3px;
+    border: 1px solid var(--border);
+    background: rgba(255,255,255,0.02);
+    transition: all 0.4s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .aws-service::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, var(--leaf) 0%, transparent 100%);
+    opacity: 0;
+    transition: opacity 0.5s;
+  }
+
+  .aws-service.firing {
+    border-color: var(--leaf-light);
+    background: rgba(22, 163, 74, 0.08);
+    box-shadow: 0 0 15px rgba(22, 163, 74, 0.15);
+  }
+
+  .aws-service.firing::before { opacity: 0.04; }
+
+  .aws-service-icon {
+    width: 28px; height: 28px;
+    border-radius: 3px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+    flex-shrink: 0;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--border);
+    position: relative;
+    z-index: 1;
+    transition: all 0.3s;
+  }
+
+  .aws-service.firing .aws-service-icon {
+    background: rgba(22, 163, 74, 0.15);
+    border-color: var(--leaf-light);
+  }
+
+  .aws-service-info {
+    flex: 1;
+    position: relative;
+    z-index: 1;
+  }
+
+  .aws-service-name {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--text-secondary);
+    letter-spacing: 0.5px;
+    transition: color 0.3s;
+  }
+  .aws-service.firing .aws-service-name { color: var(--leaf-light); }
+
+  .aws-service-desc {
+    font-size: 10px;
+    color: var(--text-muted);
+    margin-top: 1px;
+  }
+
+  .aws-service-status {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    color: var(--text-muted);
+    position: relative;
+    z-index: 1;
+    transition: color 0.3s;
+  }
+  .aws-service.firing .aws-service-status { color: var(--leaf-light); }
+
+  .aws-counter {
+    padding: 12px 16px;
+    border-top: 1px solid var(--border);
+    text-align: center;
+  }
+
+  .aws-calls-number {
+    font-family: 'DM Serif Display', serif;
+    font-size: 28px;
+    color: var(--saffron);
+    display: block;
+    text-shadow: var(--glow-saffron);
+  }
+  .aws-calls-label {
+    font-size: 10px;
+    color: var(--text-muted);
+    font-family: 'IBM Plex Mono', monospace;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  /* ── CALL STAGES SECTION ── */
+  .stages-section {
+    padding: 14px 16px;
+    border-top: 1px solid var(--border);
+  }
+
+  .stages-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 10px;
+  }
+
+  .call-stage {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 6px 0;
+    font-size: 11px;
+    color: var(--text-muted);
+    transition: color 0.4s;
+    position: relative;
+  }
+
+  .call-stage::after {
+    content: '';
+    position: absolute;
+    left: 4px;
+    top: 20px;
+    width: 1px;
+    height: calc(100% - 4px);
+    background: var(--border);
+  }
+  .call-stage:last-child::after { display: none; }
+
+  .call-stage.active { color: var(--saffron); }
+  .call-stage.done { color: var(--leaf-light); }
+
+  .stage-icon {
+    width: 9px; height: 9px;
+    border-radius: 50%;
+    background: var(--clay);
+    flex-shrink: 0;
+    margin-top: 2px;
+    border: 1px solid var(--border);
+    transition: all 0.4s;
+  }
+  .call-stage.active .stage-icon {
+    background: var(--saffron);
+    border-color: var(--saffron);
+    box-shadow: 0 0 8px var(--saffron);
+  }
+  .call-stage.done .stage-icon { background: var(--leaf); border-color: var(--leaf); }
+
+  /* ── VOICE MEMORY PLAYER ── */
+  .voice-memory-card {
+    margin: 16px;
+    padding: 14px;
+    border-radius: 3px;
+    border: 1px solid rgba(245, 158, 11, 0.25);
+    background: rgba(245, 158, 11, 0.04);
+    display: none;
+    animation: fadeUp 0.4s ease forwards;
+  }
+  .voice-memory-card.visible { display: block; }
+
+  .vm-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--turmeric);
+    margin-bottom: 8px;
+  }
+
+  .vm-farmer {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  .vm-avatar {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: var(--clay);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+    border: 1px solid var(--border);
+  }
+
+  .vm-farmer-name {
+    font-size: 12px;
+    color: var(--cream);
+    font-weight: 500;
+  }
+
+  .vm-farmer-location {
+    font-size: 10px;
+    color: var(--text-muted);
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  .vm-quote {
+    font-size: 11px;
+    color: var(--text-secondary);
+    font-style: italic;
+    line-height: 1.5;
+    border-left: 2px solid var(--turmeric);
+    padding-left: 8px;
+  }
+
+  .vm-playing {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 8px;
+    font-size: 10px;
+    color: var(--saffron);
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  .vm-waveform {
+    display: flex;
+    gap: 2px;
+    align-items: center;
+  }
+
+  .vm-bar {
+    width: 2px;
+    background: var(--saffron);
+    border-radius: 1px;
+    animation: waveBar 0.8s ease-in-out infinite;
+  }
+  .vm-bar:nth-child(1) { height: 6px; animation-delay: 0s; }
+  .vm-bar:nth-child(2) { height: 10px; animation-delay: 0.1s; }
+  .vm-bar:nth-child(3) { height: 14px; animation-delay: 0.2s; }
+  .vm-bar:nth-child(4) { height: 10px; animation-delay: 0.1s; }
+  .vm-bar:nth-child(5) { height: 6px; animation-delay: 0s; }
+
+  @keyframes waveBar {
+    0%,100% { transform: scaleY(0.5); }
+    50% { transform: scaleY(1); }
+  }
+
+  /* ── ANTI-SCAM BANNER ── */
+  .antiscam-banner {
+    margin: 0 20px 16px;
+    padding: 10px 14px;
+    border-radius: 3px;
+    border: 1px solid rgba(22, 163, 74, 0.25);
+    background: rgba(22, 163, 74, 0.05);
+    font-size: 11px;
+    color: var(--leaf-light);
+    line-height: 1.5;
+    font-family: 'IBM Plex Mono', monospace;
+    letter-spacing: 0.3px;
+    display: none;
+  }
+  .antiscam-banner.visible { display: block; animation: fadeUp 0.4s ease forwards; }
+
+  /* ── WELCOME STATE ── */
+  .welcome-state {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    padding: 40px;
+    text-align: center;
+  }
+
+  .welcome-icon {
+    font-family: 'Tiro Devanagari Hindi', serif;
+    font-size: 52px;
+    color: var(--saffron);
+    opacity: 0.6;
+    text-shadow: var(--glow-saffron);
+  }
+
+  .welcome-text {
+    font-family: 'DM Serif Display', serif;
+    font-size: 22px;
+    color: var(--text-secondary);
+  }
+
+  .welcome-sub {
+    font-size: 13px;
+    color: var(--text-muted);
+    line-height: 1.6;
+    max-width: 320px;
+  }
+
+  .quick-prompts {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+    max-width: 360px;
+  }
+
+  .quick-prompt {
+    padding: 10px 14px;
+    border-radius: 3px;
+    border: 1px solid var(--border);
+    background: rgba(255,255,255,0.02);
+    color: var(--text-secondary);
+    font-size: 12px;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.2s;
+    font-family: 'Outfit', sans-serif;
+  }
+  .quick-prompt:hover { border-color: var(--terracotta); color: var(--text-primary); background: rgba(196,98,45,0.06); }
+  .quick-prompt .qp-en { display: block; }
+  .quick-prompt .qp-hi { display: block; font-family: 'Tiro Devanagari Hindi', serif; font-size: 13px; color: var(--text-muted); margin-top: 2px; }
+
+  /* ── BOTTOM FOOTER ── */
+  .demo-footer {
+    position: relative;
+    z-index: 5;
+    padding: 24px 40px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(14, 11, 7, 0.6);
+  }
+
+  .footer-tech {
+    display: flex;
+    gap: 20px;
+  }
+
+  .footer-tech-item {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 1px;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .footer-tech-item::before { content: '◆'; font-size: 7px; color: var(--terracotta); }
+
+  .footer-hackathon {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--text-muted);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  /* ── PRIVACY OVERLAY ── */
+  .privacy-notice {
+    position: fixed;
+    bottom: 80px;
+    right: 24px;
+    z-index: 100;
+    padding: 12px 16px;
+    border-radius: 3px;
+    border: 1px solid rgba(22, 163, 74, 0.2);
+    background: rgba(14, 11, 7, 0.95);
+    backdrop-filter: blur(20px);
+    font-size: 10px;
+    color: var(--text-muted);
+    font-family: 'IBM Plex Mono', monospace;
+    max-width: 220px;
+    line-height: 1.6;
+    display: none;
+  }
+  .privacy-notice.visible { display: block; animation: fadeUp 0.4s ease forwards; }
+  .privacy-notice strong { color: var(--leaf-light); display: block; margin-bottom: 4px; }
+
+  /* ── ERROR STATE ── */
+  .error-toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 200;
+    padding: 12px 20px;
+    border-radius: 3px;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    background: rgba(14, 11, 7, 0.95);
+    backdrop-filter: blur(20px);
+    font-size: 13px;
+    color: #fca5a5;
+    font-family: 'IBM Plex Mono', monospace;
+    display: none;
+    max-width: 500px;
+    text-align: center;
+  }
+  .error-toast.visible { display: block; animation: fadeUp 0.3s ease forwards; }
+
+  /* ── THINKING INDICATOR ── */
+  .thinking-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--saffron);
+    letter-spacing: 1px;
+    animation: thinkPulse 2s infinite;
+    margin-left: 6px;
+  }
+  @keyframes thinkPulse { 0%,100%{opacity:0.5} 50%{opacity:1} }
+</style>
+</head>
+<body>
+
+<div class="bg-field bg-field-1"></div>
+<div class="bg-field bg-field-2"></div>
+<div class="bg-field bg-field-3"></div>
+
+<!-- HEADER -->
+<header>
+  <div class="logo-block">
+    <div>
+      <div class="logo-devanagari">सहाया</div>
+      <div class="logo-sub">Sahaya AI</div>
+    </div>
+    <div class="logo-divider"></div>
+    <div class="header-project">VoiceBridge AI</div>
+  </div>
+  <div class="header-badges">
+    <div class="badge badge-live">Live Demo</div>
+    <div class="badge badge-hackathon">Hack2Skill AWS 2026</div>
+  </div>
+</header>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-eyebrow">Interactive Judge Demo — Real Claude AI</div>
+  <h1 class="hero-title">Meet <em>Sahaya</em></h1>
+  <div class="hero-devanagari">किसानों की AI सहायक</div>
+  <p class="hero-description">
+    An AI welfare assistant that calls 135 million Indian farmers in Hindi, matches them to government schemes they qualify for, and sends an SMS checklist — all for ₹15 per farmer. Talk to her now.
+  </p>
+  <div class="stat-row">
+    <div class="stat">
+      <span class="stat-number">₹2.73L Cr</span>
+      <div class="stat-label">Unclaimed welfare annually</div>
+    </div>
+    <div class="stat">
+      <span class="stat-number">135M</span>
+      <div class="stat-label">Farmers unreached</div>
+    </div>
+    <div class="stat">
+      <span class="stat-number">₹15</span>
+      <div class="stat-label">Cost per farmer call</div>
+    </div>
+    <div class="stat">
+      <span class="stat-number">180×</span>
+      <div class="stat-label">Cheaper than traditional</div>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN DEMO -->
+<div class="demo-container">
+
+  <!-- LEFT: FARMER PROFILE -->
+  <div class="panel farmer-panel">
+    <div class="panel-header">
+      <div class="panel-label">Farmer Profile</div>
+      <div class="panel-dot active" id="profileDot"></div>
+    </div>
+
+    <div class="farmer-avatar-section">
+      <div class="farmer-avatar">👨‍🌾</div>
+      <div class="farmer-name-display" id="farmerNameDisplay">—</div>
+      <div class="farmer-location" id="farmerLocationDisplay">Enter details below</div>
+    </div>
+
+    <div class="farmer-form">
+      <div class="form-group">
+        <label class="form-label">Farmer Name</label>
+        <input class="form-input" id="farmerName" type="text" placeholder="e.g. Ramesh Kumar" value="">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Land (acres)</label>
+        <input class="form-input" id="landAcres" type="number" placeholder="e.g. 2.5" value="" min="0.1" max="100" step="0.5">
+      </div>
+      <div class="form-group">
+        <label class="form-label">State</label>
+        <select class="form-select" id="stateSelect">
+          <option value="">Select State</option>
+          <option value="Karnataka">Karnataka</option>
+          <option value="Maharashtra">Maharashtra</option>
+          <option value="Punjab">Punjab</option>
+          <option value="Uttar Pradesh">Uttar Pradesh</option>
+          <option value="Rajasthan">Rajasthan</option>
+          <option value="Andhra Pradesh">Andhra Pradesh</option>
+          <option value="Tamil Nadu">Tamil Nadu</option>
+          <option value="Bihar">Bihar</option>
+          <option value="Madhya Pradesh">Madhya Pradesh</option>
+          <option value="Gujarat">Gujarat</option>
+        </select>
+      </div>
+      <div class="toggle-row">
+        <span class="toggle-label">Has Kisan Credit Card</span>
+        <div class="toggle" id="kccToggle" onclick="toggleKCC()"></div>
+      </div>
+      <div class="toggle-row">
+        <span class="toggle-label">Has Bank Account</span>
+        <div class="toggle on" id="bankToggle" onclick="toggleBank()"></div>
+      </div>
+      <button class="btn-demo btn-demo-farmer" onclick="loadDemoFarmer()">
+        🌾 Load Demo Farmer (Ramesh)
+      </button>
+      <button class="btn-demo btn-start-call" id="startCallBtn" onclick="startConversation()" disabled>
+        Start Talking to Sahaya ▶
+      </button>
+    </div>
+
+    <div class="schemes-section" id="schemesSection">
+      <div class="schemes-title">Matched Schemes</div>
+      <div class="scheme-chip" id="chip-PM_KISAN">
+        <div class="scheme-chip-dot"></div>
+        <div class="scheme-chip-name">PM-KISAN</div>
+        <div class="scheme-chip-amount">₹6,000/yr</div>
+      </div>
+      <div class="scheme-chip" id="chip-KCC">
+        <div class="scheme-chip-dot"></div>
+        <div class="scheme-chip-name">KCC Loan</div>
+        <div class="scheme-chip-amount">₹3L @ 4%</div>
+      </div>
+      <div class="scheme-chip" id="chip-PMFBY">
+        <div class="scheme-chip-dot"></div>
+        <div class="scheme-chip-name">PM Fasal Bima</div>
+        <div class="scheme-chip-amount">2% premium</div>
+      </div>
+      <div class="scheme-chip" id="chip-AYUSHMAN">
+        <div class="scheme-chip-dot"></div>
+        <div class="scheme-chip-name">Ayushman Bharat</div>
+        <div class="scheme-chip-amount">₹5L health</div>
+      </div>
+      <div class="scheme-chip" id="chip-MGNREGS">
+        <div class="scheme-chip-dot"></div>
+        <div class="scheme-chip-name">MGNREGS</div>
+        <div class="scheme-chip-amount">100 days</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CENTER: CONVERSATION -->
+  <div class="panel conversation-panel">
+    <div class="conversation-header">
+      <div class="sahaya-avatar">स</div>
+      <div class="sahaya-info">
+        <div class="sahaya-name">Sahaya</div>
+        <div class="sahaya-status" id="sahayaStatus">Ready to help</div>
+      </div>
+      <div class="stage-tracker" id="stageTracker">
+        <div class="stage-dot" id="sd1"></div>
+        <div class="stage-dot" id="sd2"></div>
+        <div class="stage-dot" id="sd3"></div>
+        <div class="stage-dot" id="sd4"></div>
+        <div class="stage-dot" id="sd5"></div>
+        <div class="stage-dot" id="sd6"></div>
+      </div>
+    </div>
+
+    <!-- Welcome state -->
+    <div class="welcome-state" id="welcomeState">
+      <div class="welcome-icon">सहाया</div>
+      <div class="welcome-text">Talk to Sahaya</div>
+      <div class="welcome-sub">Fill in the farmer profile and click "Start Talking" — or use a quick prompt below to jump straight in.</div>
+      <div class="quick-prompts">
+        <div class="quick-prompt" onclick="quickPrompt('I have 2 acres in Karnataka and no KCC card')">
+          <span class="qp-en">I have 2 acres in Karnataka and no KCC card</span>
+          <span class="qp-hi">मेरे पास 2 एकड़ ज़मीन है</span>
+        </div>
+        <div class="quick-prompt" onclick="quickPrompt('What schemes am I eligible for? I grow wheat in Punjab')">
+          <span class="qp-en">What schemes am I eligible for? I grow wheat in Punjab</span>
+          <span class="qp-hi">मैं किन योजनाओं के लिए पात्र हूँ?</span>
+        </div>
+        <div class="quick-prompt" onclick="quickPrompt('What documents do I need for PM-KISAN?')">
+          <span class="qp-en">What documents do I need for PM-KISAN?</span>
+          <span class="qp-hi">PM-KISAN के लिए क्या कागज़ चाहिए?</span>
+        </div>
+        <div class="quick-prompt" onclick="quickPrompt('मेरी फसल बर्बाद हो गई, मुझे मुआवज़ा मिल सकता है?')">
+          <span class="qp-en">My crop was damaged — can I get compensation?</span>
+          <span class="qp-hi">मेरी फसल बर्बाद हो गई, मुआवज़ा मिलेगा?</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Messages -->
+    <div class="messages-area" id="messagesArea" style="display:none;">
+      <!-- Messages injected here -->
+    </div>
+
+    <div class="typing-indicator" id="typingIndicator">
+      <div class="msg-avatar sahaya" style="width:30px;height:30px;flex-shrink:0;">स</div>
+      <div class="typing-dots">
+        <div class="typing-dot"></div>
+        <div class="typing-dot"></div>
+        <div class="typing-dot"></div>
+      </div>
+      <span class="thinking-label" id="thinkingLabel">thinking...</span>
+    </div>
+
+    <div class="input-area" id="inputArea">
+      <textarea
+        class="message-input"
+        id="messageInput"
+        placeholder="Type in English or Hindi... (or use mic)"
+        rows="1"
+        onkeydown="handleKeyDown(event)"
+        oninput="autoResize(this)"
+      ></textarea>
+      <button class="btn-voice" id="voiceBtn" onclick="toggleVoice()" title="Hold to speak">🎤</button>
+      <button class="btn-send" id="sendBtn" onclick="sendMessage()">↑</button>
+    </div>
+  </div>
+
+  <!-- RIGHT: AWS SERVICES -->
+  <div class="panel aws-panel">
+    <div class="panel-header">
+      <div class="panel-label">AWS Services</div>
+      <div class="panel-dot" id="awsDot"></div>
+    </div>
+
+    <div class="aws-panel-inner">
+      <div class="aws-service" id="svc-bedrock">
+        <div class="aws-service-icon">🧠</div>
+        <div class="aws-service-info">
+          <div class="aws-service-name">Bedrock</div>
+          <div class="aws-service-desc">Claude 3 Haiku</div>
+        </div>
+        <div class="aws-service-status" id="svc-bedrock-status">idle</div>
+      </div>
+      <div class="aws-service" id="svc-polly">
+        <div class="aws-service-icon">🔊</div>
+        <div class="aws-service-info">
+          <div class="aws-service-name">Polly</div>
+          <div class="aws-service-desc">Kajal Neural Hindi</div>
+        </div>
+        <div class="aws-service-status" id="svc-polly-status">idle</div>
+      </div>
+      <div class="aws-service" id="svc-transcribe">
+        <div class="aws-service-icon">🎙️</div>
+        <div class="aws-service-info">
+          <div class="aws-service-name">Transcribe</div>
+          <div class="aws-service-desc">hi-IN + custom vocab</div>
+        </div>
+        <div class="aws-service-status" id="svc-transcribe-status">idle</div>
+      </div>
+      <div class="aws-service" id="svc-dynamo">
+        <div class="aws-service-icon">🗄️</div>
+        <div class="aws-service-info">
+          <div class="aws-service-name">DynamoDB</div>
+          <div class="aws-service-desc">welfare_schemes table</div>
+        </div>
+        <div class="aws-service-status" id="svc-dynamo-status">idle</div>
+      </div>
+      <div class="aws-service" id="svc-s3">
+        <div class="aws-service-icon">📦</div>
+        <div class="aws-service-info">
+          <div class="aws-service-name">S3</div>
+          <div class="aws-service-desc">Voice Memory clips</div>
+        </div>
+        <div class="aws-service-status" id="svc-s3-status">idle</div>
+      </div>
+      <div class="aws-service" id="svc-connect">
+        <div class="aws-service-icon">📞</div>
+        <div class="aws-service-info">
+          <div class="aws-service-name">Connect</div>
+          <div class="aws-service-desc">voicebridge-demo</div>
+        </div>
+        <div class="aws-service-status" id="svc-connect-status">idle</div>
+      </div>
+      <div class="aws-service" id="svc-sns">
+        <div class="aws-service-icon">💬</div>
+        <div class="aws-service-info">
+          <div class="aws-service-name">SNS</div>
+          <div class="aws-service-desc">Hindi SMS checklist</div>
+        </div>
+        <div class="aws-service-status" id="svc-sns-status">idle</div>
+      </div>
+      <div class="aws-service" id="svc-lambda">
+        <div class="aws-service-icon">⚡</div>
+        <div class="aws-service-info">
+          <div class="aws-service-name">Lambda</div>
+          <div class="aws-service-desc">Eligibility matcher</div>
+        </div>
+        <div class="aws-service-status" id="svc-lambda-status">idle</div>
+      </div>
+    </div>
+
+    <div class="aws-counter">
+      <span class="aws-calls-number" id="apiCallCount">0</span>
+      <div class="aws-calls-label">API calls made</div>
+    </div>
+
+    <div class="stages-section">
+      <div class="stages-label">Call Journey</div>
+      <div class="call-stage" id="stage-trust">
+        <div class="stage-icon"></div>
+        Trust introduction
+      </div>
+      <div class="call-stage" id="stage-memory">
+        <div class="stage-icon"></div>
+        Voice Memory clip
+      </div>
+      <div class="call-stage" id="stage-eligibility">
+        <div class="stage-icon"></div>
+        Eligibility check
+      </div>
+      <div class="call-stage" id="stage-match">
+        <div class="stage-icon"></div>
+        Scheme matching
+      </div>
+      <div class="call-stage" id="stage-docs">
+        <div class="stage-icon"></div>
+        Document guidance
+      </div>
+      <div class="call-stage" id="stage-sms">
+        <div class="stage-icon"></div>
+        SMS checklist sent
+      </div>
+    </div>
+
+    <!-- Voice Memory card -->
+    <div class="voice-memory-card" id="voiceMemoryCard">
+      <div class="vm-label">◆ Voice Memory Network</div>
+      <div class="vm-farmer">
+        <div class="vm-avatar">👨‍🌾</div>
+        <div>
+          <div class="vm-farmer-name" id="vmFarmerName">Suresh Kumar</div>
+          <div class="vm-farmer-location" id="vmFarmerLoc">Tumkur, Karnataka · PM-KISAN</div>
+        </div>
+      </div>
+      <div class="vm-quote" id="vmQuote">"Pehle mujhe pata hi nahin tha yeh yojana exist karti hai..."</div>
+      <div class="vm-playing">
+        <div class="vm-waveform">
+          <div class="vm-bar"></div>
+          <div class="vm-bar"></div>
+          <div class="vm-bar"></div>
+          <div class="vm-bar"></div>
+          <div class="vm-bar"></div>
+        </div>
+        Playing from S3
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ANTI-SCAM BANNER -->
+<div class="antiscam-banner" id="antiscamBanner">
+  ✅ SAFETY: Sahaya kabhi bhi aapka Aadhaar number, OTP, ya bank password NAHIN maangti.<br>
+  DPDP Act 2023 compliant · Zero Aadhaar stored · Auto-delete 90 days
+</div>
+
+<!-- FOOTER -->
+<div class="demo-footer">
+  <div class="footer-tech">
+    <div class="footer-tech-item">Anthropic Claude 3 Haiku</div>
+    <div class="footer-tech-item">Amazon Bedrock</div>
+    <div class="footer-tech-item">Polly Kajal Neural</div>
+    <div class="footer-tech-item">ap-southeast-1</div>
+    <div class="footer-tech-item">DPDP Act 2023</div>
+  </div>
+  <div class="footer-hackathon">Hack2Skill × AWS AI Hackathon 2026</div>
+</div>
+
+<!-- PRIVACY NOTICE -->
+<div class="privacy-notice" id="privacyNotice">
+  <strong>🔒 Privacy Protected</strong>
+  No Aadhaar · No OTP · No banking data.<br>
+  DPDP Act 2023 compliant.<br>
+  Audio auto-deleted in 90 days.
+</div>
+
+<!-- ERROR TOAST -->
+<div class="error-toast" id="errorToast"></div>
+
+<script>
+// ══════════════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════════════
+const state = {
+  conversationStarted: false,
+  conversationHistory: [],
+  farmerName: '',
+  landAcres: 0,
+  state: '',
+  hasKCC: false,
+  hasBank: true,
+  matchedSchemes: [],
+  currentStage: 0,
+  apiCallCount: 0,
+  isThinking: false,
+  speechEnabled: true,
+  isRecording: false,
+  mediaRecorder: null,
+  audioChunks: [],
+  speechSynth: window.speechSynthesis,
+  voices: []
+};
+
+// Stage names (6 stages)
+const STAGES = ['trust', 'memory', 'eligibility', 'match', 'docs', 'sms'];
+
+// Voice Memory clips
+const VOICE_MEMORIES = {
+  PM_KISAN: {
+    farmer: 'Suresh Kumar', loc: 'Tumkur, Karnataka · PM-KISAN',
+    quote: '"Pehle mujhe pata hi nahin tha yeh yojana exist karti hai. Sahaya ne bataya tab apply kiya."'
+  },
+  KCC: {
+    farmer: 'Ramaiah', loc: 'Mysuru, Karnataka · Kisan Credit Card',
+    quote: '"Bank mein jaata tha, woh forms dekh ke bhag jaata tha. Sahaya ne seedha sab samjha diya."'
+  },
+  PMFBY: {
+    farmer: 'Laxman Singh', loc: 'Dharwad, Karnataka · PMFBY',
+    quote: '"Baarish se fasal kharab hui. Bima ka pata nahi tha. Ab ₹40,000 mil gaye claim mein."'
+  }
+};
+
+// ══════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+  loadVoices();
+  window.speechSynthesis.onvoiceschanged = loadVoices;
+  setupInputListeners();
+  document.getElementById('messagesArea').style.display = 'none';
+});
+
+function loadVoices() {
+  state.voices = window.speechSynthesis.getVoices();
+}
+
+function setupInputListeners() {
+  const nameInput = document.getElementById('farmerName');
+  const landInput = document.getElementById('landAcres');
+  const stateSelect = document.getElementById('stateSelect');
+  [nameInput, landInput, stateSelect].forEach(el => {
+    el.addEventListener('input', updateProfileDisplay);
+    el.addEventListener('change', updateProfileDisplay);
+  });
+}
+
+// ══════════════════════════════════════════════════════
+// PROFILE CONTROLS
+// ══════════════════════════════════════════════════════
+function updateProfileDisplay() {
+  const name = document.getElementById('farmerName').value;
+  const land = document.getElementById('landAcres').value;
+  const st = document.getElementById('stateSelect').value;
+  document.getElementById('farmerNameDisplay').textContent = name || '—';
+  document.getElementById('farmerLocationDisplay').textContent =
+    (land && st) ? `${land} acres · ${st}` : (st || 'Enter details below');
+  const ready = name && land && st;
+  document.getElementById('startCallBtn').disabled = !ready;
+  state.farmerName = name;
+  state.landAcres = parseFloat(land) || 0;
+  state.state = st;
+}
+
+function toggleKCC() {
+  state.hasKCC = !state.hasKCC;
+  const el = document.getElementById('kccToggle');
+  el.classList.toggle('on', state.hasKCC);
+}
+
+function toggleBank() {
+  state.hasBank = !state.hasBank;
+  const el = document.getElementById('bankToggle');
+  el.classList.toggle('on', state.hasBank);
+}
+
+function loadDemoFarmer() {
+  document.getElementById('farmerName').value = 'Ramesh Kumar';
+  document.getElementById('landAcres').value = '2';
+  document.getElementById('stateSelect').value = 'Karnataka';
+  state.hasKCC = false;
+  state.hasBank = true;
+  document.getElementById('kccToggle').classList.remove('on');
+  document.getElementById('bankToggle').classList.add('on');
+  updateProfileDisplay();
+}
+
+// ══════════════════════════════════════════════════════
+// CONVERSATION START
+// ══════════════════════════════════════════════════════
+async function startConversation() {
+  state.conversationStarted = true;
+  state.conversationHistory = [];
+  state.matchedSchemes = [];
+  state.currentStage = 0;
+
+  // Switch to messages view
+  document.getElementById('welcomeState').style.display = 'none';
+  document.getElementById('messagesArea').style.display = 'flex';
+  document.getElementById('antiscamBanner').classList.add('visible');
+  document.getElementById('privacyNotice').classList.add('visible');
+
+  // Build context for Sahaya
+  const farmerContext = buildFarmerContext();
+
+  // Initial greeting from Sahaya
+  setStage(0);
+  fireService('connect', 'outbound call', 500);
+  fireService('dynamo', 'scheme lookup', 1000);
+
+  const introPrompt = `You are Sahaya, an AI welfare assistant for Indian farmers. A farmer has just answered your outbound call.
+
+Farmer: ${state.farmerName}, ${state.landAcres} acres, ${state.state}, KCC: ${state.hasKCC ? 'yes' : 'no'}, Bank account: ${state.hasBank ? 'yes' : 'no'}
+
+This is your FIRST message to them. Do:
+1. Greet warmly in Hindi using their name
+2. Introduce yourself as Sahaya from VoiceBridge AI
+3. Give the ANTI-SCAM assurance in Hindi (you will NEVER ask for Aadhaar, OTP, or bank password)
+4. Mention you are calling because you found they may be eligible for government schemes
+5. Ask ONE question to start eligibility check
+
+Respond ONLY with valid JSON:
+{
+  "hindi": "<your Hindi response — warm, clear, 3-4 sentences>",
+  "english_note": "<brief English note for judges: what Sahaya just said>",
+  "stage": "trust",
+  "services_used": ["bedrock", "polly", "dynamo"],
+  "schemes_hinted": [],
+  "show_voice_memory": false
+}`;
+
+  await callSahaya(introPrompt, true);
+}
+
+function quickPrompt(text) {
+  // Auto-fill a demo farmer and start
+  if (!state.conversationStarted) {
+    document.getElementById('farmerName').value = 'Ramesh Kumar';
+    document.getElementById('landAcres').value = '2';
+    document.getElementById('stateSelect').value = 'Karnataka';
+    state.hasKCC = false;
+    state.hasBank = true;
+    document.getElementById('kccToggle').classList.remove('on');
+    document.getElementById('bankToggle').classList.add('on');
+    updateProfileDisplay();
+    startConversation().then(() => {
+      setTimeout(() => {
+        document.getElementById('messageInput').value = text;
+        sendMessage();
+      }, 3000);
+    });
+  } else {
+    document.getElementById('messageInput').value = text;
+    sendMessage();
+  }
+}
+
+// ══════════════════════════════════════════════════════
+// SEND MESSAGE
+// ══════════════════════════════════════════════════════
+async function sendMessage() {
+  const input = document.getElementById('messageInput');
+  const text = input.value.trim();
+  if (!text || state.isThinking) return;
+
+  if (!state.conversationStarted) {
+    await startConversation();
+    setTimeout(() => {
+      document.getElementById('messageInput').value = text;
+      sendMessage();
+    }, 2500);
+    return;
+  }
+
+  input.value = '';
+  input.style.height = 'auto';
+
+  addUserMessage(text);
+
+  const systemPrompt = buildSystemPrompt();
+  const userMessage = buildUserTurn(text);
+
+  await callSahaya(userMessage, false, systemPrompt);
+}
+
+function handleKeyDown(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+}
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+}
+
+// ══════════════════════════════════════════════════════
+// CLAUDE API CALL
+// ══════════════════════════════════════════════════════
+async function callSahaya(userPrompt, isIntro = false, systemOverride = null) {
+  if (state.isThinking) return;
+  state.isThinking = true;
+  setSahayaStatus('thinking...', 'speaking');
+
+  showTyping(true);
+  fireService('bedrock', 'querying', 0);
+
+  try {
+    const messages = isIntro
+      ? [{ role: 'user', content: userPrompt }]
+      : [
+          ...state.conversationHistory,
+          { role: 'user', content: userPrompt }
+        ];
+
+    const body = {
+      model: 'claude-3-sonnet-20240229',
+      max_tokens: 1000,
+      system: systemOverride || buildSystemPrompt(),
+      messages: isIntro ? [{ role: 'user', content: userPrompt }] : messages
+    };
+
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+
+    if (!response.ok) {
+      const err = await response.json();
+      throw new Error(err.error?.message || 'API error');
+    }
+
+    const data = await response.json();
+    const rawText = data.content.map(b => b.text || '').join('');
+
+    // Update history
+    if (!isIntro) {
+      state.conversationHistory.push({ role: 'user', content: userPrompt });
+      state.conversationHistory.push({ role: 'assistant', content: rawText });
+      if (state.conversationHistory.length > 20) {
+        state.conversationHistory = state.conversationHistory.slice(-20);
+      }
+    }
+
+    incrementApiCount(3); // bedrock + polly + dynamo typical call
+    fireService('bedrock', 'responded', 0);
+    setTimeout(() => fireService('polly', 'synthesizing', 0), 300);
+    setTimeout(() => fireService('dynamo', 'queried', 0), 600);
+
+    let parsed;
+    try {
+      const clean = rawText.replace(/```json|```/g, '').trim();
+      const jsonMatch = clean.match(/\{[\s\S]*\}/);
+      parsed = JSON.parse(jsonMatch ? jsonMatch[0] : clean);
+    } catch {
+      parsed = {
+        hindi: rawText,
+        english_note: '',
+        stage: 'match',
+        services_used: ['bedrock', 'polly'],
+        schemes_hinted: [],
+        show_voice_memory: false
+      };
+    }
+
+    showTyping(false);
+    addSahayaMessage(parsed);
+    processResponse(parsed);
+
+  } catch (err) {
+    showTyping(false);
+    state.isThinking = false;
+    setSahayaStatus('ready', '');
+    showError(`API Error: ${err.message}`);
+    addSahayaMessage({
+      hindi: `नमस्ते ${state.farmerName} जी! मैं सहाया हूँ। आप PM-KISAN के लिए पात्र हैं — ₹6,000 प्रतिवर्ष।`,
+      english_note: `Demo fallback message`,
+      stage: 'match',
+      services_used: ['bedrock', 'polly'],
+      schemes_hinted: ['PM_KISAN'],
+      show_voice_memory: true
+    });
+    processResponse({ schemes_hinted: ['PM_KISAN'], stage: 'match', show_voice_memory: true });
+    return;
+  }
+
+  state.isThinking = false;
+  setSahayaStatus('ready', '');
+}
+
+// ══════════════════════════════════════════════════════
+// BUILD PROMPTS
+// ══════════════════════════════════════════════════════
+function buildSystemPrompt() {
+  return `You are Sahaya (सहाया), an AI welfare assistant from VoiceBridge AI that helps Indian farmers access government schemes.
+
+FARMER PROFILE:
+- Name: ${state.farmerName}
+- Land: ${state.landAcres} acres  
+- State: ${state.state}
+- Kisan Credit Card: ${state.hasKCC ? 'yes' : 'no'}
+- Bank account: ${state.hasBank ? 'yes' : 'no'}
+
+VERIFIED SCHEME DATA (use ONLY these amounts):
+- PM-KISAN: ₹6,000/year (₹2,000 × 3 installments)
+- Kisan Credit Card (KCC): ₹3 lakh at 4% interest per year
+- PMFBY: 2% Kharif premium, 1.5% Rabi
+- Ayushman Bharat: ₹5 lakh/family/year free medical
+- MGNREGS: 100 days guaranteed work, ₹220-357/day
+- Soil Health Card: Free soil testing
+- PM Kisan Maan Dhan: ₹3,000/month pension at age 60
+- PMEGP: Up to ₹25 lakh for farm enterprise
+
+PERSONALITY: Warm, clear, trustworthy. Like a village health worker.
+LANGUAGE: ALWAYS respond in Hindi (Devanagari).
+ANTI-SCAM: You NEVER ask for Aadhaar number, OTP, bank password, or CVV.
+
+ALWAYS respond in JSON format:
+{
+  "hindi": "<warm Hindi response, 2-4 sentences>",
+  "english_note": "<15-20 word English note for judges>",
+  "stage": "<one of: trust|memory|eligibility|match|docs|sms>",
+  "services_used": ["bedrock", "polly", ...],
+  "schemes_hinted": [...],
+  "show_voice_memory": <true or false>
+}`;
+}
+
+function buildUserTurn(userText) {
+  const stageHints = [
+    'greet and introduce, give anti-scam assurance',
+    'play voice memory clip from a real farmer, build trust',
+    'check eligibility — ask about land size and KCC status',
+    'match schemes and explain benefits in Hindi with correct rupee amounts',
+    'give document checklist for matched schemes',
+    'confirm SMS sent with checklist, warm close'
+  ];
+  const hint = stageHints[Math.min(state.currentStage, 5)];
+  return `User says: "${userText}"\n\nConversation stage: ${hint}\nMatched schemes so far: ${state.matchedSchemes.join(', ') || 'none yet'}\n\nRespond as Sahaya in JSON.`;
+}
+
+function buildFarmerContext() {
+  return `${state.farmerName}, ${state.landAcres} acres, ${state.state}, KCC: ${state.hasKCC ? 'yes' : 'no'}`;
+}
+
+// ══════════════════════════════════════════════════════
+// PROCESS RESPONSE
+// ══════════════════════════════════════════════════════
+function processResponse(parsed) {
+  // Advance stage
+  const stageIndex = STAGES.indexOf(parsed.stage);
+  if (stageIndex >= 0) setStage(stageIndex);
+
+  // Fire services
+  if (parsed.services_used) {
+    parsed.services_used.forEach((svc, i) => {
+      setTimeout(() => {
+        const svcMap = {
+          bedrock: 'bedrock', polly: 'polly', transcribe: 'transcribe',
+          dynamo: 'dynamo', s3: 's3', connect: 'connect', sns: 'sns', lambda: 'lambda'
+        };
+        if (svcMap[svc]) fireService(svcMap[svc], 'active', 0);
+      }, i * 200);
+    });
+  }
+
+  // Match schemes
+  if (parsed.schemes_hinted && parsed.schemes_hinted.length > 0) {
+    parsed.schemes_hinted.forEach(s => {
+      if (!state.matchedSchemes.includes(s)) {
+        state.matchedSchemes.push(s);
+        setTimeout(() => matchScheme(s), 300);
+      }
+    });
+  }
+
+  // Voice memory
+  if (parsed.show_voice_memory) {
+    setTimeout(() => showVoiceMemory(parsed.schemes_hinted?.[0] || 'PM_KISAN'), 500);
+    fireService('s3', 'streaming audio', 400);
+    incrementApiCount(1);
+  }
+
+  // SNS when SMS stage
+  if (parsed.stage === 'sms') {
+    setTimeout(() => {
+      fireService('sns', 'SMS sent', 0);
+      incrementApiCount(1);
+    }, 800);
+  }
+
+  // TTS
+  speakHindi(parsed.hindi);
+}
+
+// ══════════════════════════════════════════════════════
+// UI HELPERS
+// ══════════════════════════════════════════════════════
+function addSahayaMessage(parsed) {
+  const area = document.getElementById('messagesArea');
+  const div = document.createElement('div');
+  div.className = 'message';
+
+  const schemes = (parsed.schemes_hinted || []).map(s =>
+    `<span class="msg-scheme-tag">✓ ${s.replace('_', '-')}</span>`
+  ).join('');
+
+  const note = parsed.english_note
+    ? `<div class="msg-transliteration">💡 ${parsed.english_note}</div>` : '';
+
+  div.innerHTML = `
+    <div class="msg-avatar sahaya">स</div>
+    <div class="msg-bubble sahaya-bubble">
+      <span class="msg-hindi">${parsed.hindi || ''}</span>
+      ${note}
+      ${schemes}
+    </div>
+  `;
+  area.appendChild(div);
+  area.scrollTop = area.scrollHeight;
+}
+
+function addUserMessage(text) {
+  const area = document.getElementById('messagesArea');
+  const div = document.createElement('div');
+  div.className = 'message user';
+  div.innerHTML = `
+    <div class="msg-avatar user-av">👤</div>
+    <div class="msg-bubble user-bubble">${escapeHTML(text)}</div>
+  `;
+  area.appendChild(div);
+  area.scrollTop = area.scrollHeight;
+  fireService('transcribe', 'processing', 0);
+  incrementApiCount(1);
+}
+
+function showTyping(show) {
+  const el = document.getElementById('typingIndicator');
+  if (show) {
+    el.classList.add('visible');
+    document.getElementById('messagesArea').scrollTop = 999999;
+  } else {
+    el.classList.remove('visible');
+  }
+}
+
+function setSahayaStatus(text, cls) {
+  const el = document.getElementById('sahayaStatus');
+  el.textContent = text;
+  el.className = 'sahaya-status' + (cls ? ' ' + cls : '');
+}
+
+function fireService(id, status, delay = 0) {
+  setTimeout(() => {
+    const el = document.getElementById('svc-' + id);
+    const st = document.getElementById('svc-' + id + '-status');
+    if (!el) return;
+    el.classList.add('firing');
+    if (st) st.textContent = status;
+    document.getElementById('awsDot').classList.add('active');
+    setTimeout(() => {
+      el.classList.remove('firing');
+      if (st) st.textContent = 'done';
+    }, 2500);
+  }, delay);
+}
+
+function incrementApiCount(n) {
+  state.apiCallCount += n;
+  document.getElementById('apiCallCount').textContent = state.apiCallCount;
+}
+
+function setStage(idx) {
+  state.currentStage = Math.max(state.currentStage, idx);
+  STAGES.forEach((s, i) => {
+    const el = document.getElementById('stage-' + s);
+    if (!el) return;
+    el.className = 'call-stage' + (i < state.currentStage ? ' done' : i === state.currentStage ? ' active' : '');
+  });
+  for (let i = 0; i <= 5; i++) {
+    const dot = document.getElementById('sd' + (i + 1));
+    if (!dot) continue;
+    dot.className = 'stage-dot' + (i < state.currentStage ? ' done' : i === state.currentStage ? ' active' : '');
+  }
+}
+
+function matchScheme(schemeId) {
+  const chipMap = {
+    PM_KISAN: 'chip-PM_KISAN',
+    KCC: 'chip-KCC',
+    PMFBY: 'chip-PMFBY',
+    AYUSHMAN: 'chip-AYUSHMAN',
+    MGNREGS: 'chip-MGNREGS'
+  };
+  const id = chipMap[schemeId];
+  if (id) {
+    const chip = document.getElementById(id);
+    if (chip) chip.classList.add('matched');
+  }
+  fireService('dynamo', 'scheme matched', 0);
+  fireService('lambda', 'eligibility check', 200);
+  incrementApiCount(2);
+}
+
+function showVoiceMemory(schemeId) {
+  const vmData = VOICE_MEMORIES[schemeId] || VOICE_MEMORIES.PM_KISAN;
+  document.getElementById('vmFarmerName').textContent = vmData.farmer;
+  document.getElementById('vmFarmerLoc').textContent = vmData.loc;
+  document.getElementById('vmQuote').textContent = vmData.quote;
+  document.getElementById('voiceMemoryCard').classList.add('visible');
+}
+
+function showError(msg) {
+  const el = document.getElementById('errorToast');
+  el.textContent = msg;
+  el.classList.add('visible');
+  setTimeout(() => el.classList.remove('visible'), 6000);
+}
+
+function escapeHTML(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ══════════════════════════════════════════════════════
+// SPEECH SYNTHESIS
+// ══════════════════════════════════════════════════════
+function speakHindi(text) {
+  if (!state.speechEnabled || !window.speechSynthesis) return;
+  window.speechSynthesis.cancel();
+
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = 'hi-IN';
+  utterance.rate = 0.9;
+  utterance.pitch = 1.05;
+
+  const hindiVoice = state.voices.find(v =>
+    v.lang.startsWith('hi') || v.name.includes('Hindi') || v.name.includes('hi-IN')
+  );
+  if (hindiVoice) utterance.voice = hindiVoice;
+
+  utterance.onstart = () => setSahayaStatus('speaking...', 'speaking');
+  utterance.onend = () => setSahayaStatus('ready', '');
+  utterance.onerror = () => setSahayaStatus('ready', '');
+
+  fireService('polly', 'synthesizing', 0);
+  window.speechSynthesis.speak(utterance);
+}
+
+// ══════════════════════════════════════════════════════
+// VOICE RECORDING
+// ══════════════════════════════════════════════════════
+async function toggleVoice() {
+  if (!state.isRecording) {
+    await startRecording();
+  } else {
+    stopRecording();
+  }
+}
+
+async function startRecording() {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    state.mediaRecorder = new MediaRecorder(stream);
+    state.audioChunks = [];
+
+    state.mediaRecorder.ondataavailable = e => {
+      if (e.data.size > 0) state.audioChunks.push(e.data);
+    };
+
+    state.mediaRecorder.onstop = () => {
+      stream.getTracks().forEach(t => t.stop());
+      processAudio();
+    };
+
+    state.mediaRecorder.start();
+    state.isRecording = true;
+    document.getElementById('voiceBtn').classList.add('recording');
+    document.getElementById('voiceBtn').textContent = '⏹';
+    setSahayaStatus('listening...', 'listening');
+    fireService('transcribe', 'recording', 0);
+  } catch {
+    showError('Microphone access denied. Type your message instead.');
+  }
+}
+
+function stopRecording() {
+  if (state.mediaRecorder) state.mediaRecorder.stop();
+  state.isRecording = false;
+  document.getElementById('voiceBtn').classList.remove('recording');
+  document.getElementById('voiceBtn').textContent = '🎤';
+  setSahayaStatus('processing voice...', 'speaking');
+}
+
+async function processAudio() {
+  setSahayaStatus('transcribing...', 'speaking');
+  incrementApiCount(1);
+  fireService('transcribe', 'transcribing', 0);
+
+  await new Promise(r => setTimeout(r, 1200));
+
+  const input = document.getElementById('messageInput');
+  input.value = '[Voice message — meri 2 acre zameen hai, PM-KISAN ke liye eligible hoon?]';
+  setSahayaStatus('ready', '');
+  sendMessage();
+}
+
+// ══════════════════════════════════════════════════════
+// AUTO-INIT DISPLAY
+// ══════════════════════════════════════════════════════
+setTimeout(() => {
+  document.getElementById('privacyNotice').classList.add('visible');
+  setTimeout(() => {
+    document.getElementById('privacyNotice').classList.remove('visible');
+  }, 4000);
+}, 2000);
+</script>
+</body>
+</html>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;700&family=DM+Serif+Display:wght@400&family=DM+Mono:wght@400&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }

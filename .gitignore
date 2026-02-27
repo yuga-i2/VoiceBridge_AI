@@ -1,11 +1,66 @@
+# ──────────────────────────────────────────────────────────
+# Environment & Secrets
+# ──────────────────────────────────────────────────────────
 .env
+.env.local
+.env.*.local
+
+# ──────────────────────────────────────────────────────────
+# Python
+# ──────────────────────────────────────────────────────────
 __pycache__/
-*.pyc
+*.py[cod]
 *.pyo
+*.pyd
+*.egg-info/
+dist/
+build/
 .pytest_cache/
+
+# ──────────────────────────────────────────────────────────
+# Virtual Environments
+# ──────────────────────────────────────────────────────────
 venv/
+env/
+ENV/
 .venv/
+
+# ──────────────────────────────────────────────────────────
+# Audio Files (Voice Recordings & Demos — too large)
+# ──────────────────────────────────────────────────────────
+demo_audio/*.mp3
+demo_audio/*.wav
+data/voice_memory/*.mp3
+data/voice_memory/*.wav
 *.mp3
 *.wav
-upload_schemes.py
-!data/voice_memory/.gitkeep
+
+# ──────────────────────────────────────────────────────────
+# IDE & Editors
+# ──────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*.sublime-project
+*.sublime-workspace
+
+# ──────────────────────────────────────────────────────────
+# OS
+# ──────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+
+# ──────────────────────────────────────────────────────────
+# Node/Frontend
+# ──────────────────────────────────────────────────────────
+node_modules/
+voicebridge-frontend/node_modules/
+voicebridge-frontend/dist/
+voicebridge-frontend/.env
+voicebridge-frontend/.env.local
+
+# ──────────────────────────────────────────────────────────
+# EXCEPT: Keep .gitkeep files (empty directory markers)
+# ──────────────────────────────────────────────────────────
+!.gitkeep
