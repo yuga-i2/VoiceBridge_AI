@@ -99,7 +99,9 @@ def twiml_stage2_land():
 
 </Response>'''
 
-    return Response(twiml, mimetype='text/xml')
+    response = Response(twiml)
+    response.headers['Content-Type'] = 'text/xml'
+    return response
 
 
 # ─────────────────────────────────────────────
@@ -192,7 +194,9 @@ def twiml_stage3_schemes():
     # Send SMS in background
     _send_sms_background(farmer_name, matched_schemes)
 
-    return Response(twiml, mimetype='text/xml')
+    response = Response(twiml)
+    response.headers['Content-Type'] = 'text/xml'
+    return response
 
 
 # ─────────────────────────────────────────────
@@ -221,7 +225,9 @@ def twiml_stage4_docs():
         Dhanyavaad. Jai Kisan.
     </Say>
 </Response>'''
-        return Response(twiml, mimetype='text/xml')
+        response = Response(twiml)
+        response.headers['Content-Type'] = 'text/xml'
+        return response
     
     from services.call_conversation import get_scheme_details_for_call
     scheme = get_scheme_details_for_call(primary_scheme)
@@ -284,7 +290,9 @@ def twiml_stage4_docs():
 
 </Response>'''
 
-    return Response(twiml, mimetype='text/xml')
+    response = Response(twiml)
+    response.headers['Content-Type'] = 'text/xml'
+    return response
 
 
 # ─────────────────────────────────────────────
@@ -348,7 +356,9 @@ def twiml_stage5_close():
     </Say>
 </Response>'''
 
-    return Response(twiml, mimetype='text/xml')
+    response = Response(twiml)
+    response.headers['Content-Type'] = 'text/xml'
+    return response
 
 
 # ─────────────────────────────────────────────
@@ -365,6 +375,24 @@ def call_status():
         f"Call {call_sid}: status={status}, duration={duration}s"
     )
     return '', 200
+
+
+@call_bp.route('/api/call/ping', methods=['GET', 'POST'])
+def twiml_ping():
+    """
+    Simplest possible valid TwiML for server health check.
+    Use this to verify Twilio can reach your server and parse TwiML correctly.
+    Test with: curl https://your-ngrok-url/api/call/ping
+    """
+    twiml = '''<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+    <Say voice="Polly.Kajal" language="hi-IN">
+        Namaste! Main Sahaya hoon. Server working hai.
+    </Say>
+</Response>'''
+    response = Response(twiml)
+    response.headers['Content-Type'] = 'text/xml'
+    return response
 
 
 @call_bp.route('/api/call/preview', methods=['GET'])
@@ -451,7 +479,9 @@ def twiml_simple_test():
 </Response>'''
         
         logger.info(f"Simple test TwiML returned for {farmer_name}")
-        return Response(twiml, mimetype='text/xml')
+        response = Response(twiml)
+        response.headers['Content-Type'] = 'text/xml'
+        return response
         
     except Exception as e:
         logger.error(f"ERROR in simple test: {e}", exc_info=True)
@@ -461,5 +491,7 @@ def twiml_simple_test():
         Error. Namaste.
     </Say>
 </Response>'''
-        return Response(error_twiml, mimetype='text/xml')
+        response = Response(error_twiml)
+        response.headers['Content-Type'] = 'text/xml'
+        return response
 
