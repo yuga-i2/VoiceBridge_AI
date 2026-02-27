@@ -10,7 +10,7 @@
 
 | Component | File | Status |
 |-----------|------|--------|
-| Configuration | config/settings.py | ✅ Complete |
+| Configuration | config/settings.py | ✅ Complete (Fixed: fresh load_dotenv) |
 | Farmer Model | models/farmer.py | ✅ Complete |
 | Scheme Service | services/scheme_service.py | ✅ Complete |
 | AI Service | services/ai_service.py | ✅ Complete |
@@ -18,7 +18,12 @@
 | TTS Service | services/tts_service.py | ✅ Complete |
 | SMS Service | services/sms_service.py | ✅ Complete |
 | Voice Memory Service | services/voice_memory_service.py | ✅ Complete |
-| Main App | app.py | ✅ Complete |
+| Call Service Router | services/call_service.py | ✅ Complete (Fresh .env reading) |
+| Twilio Provider | services/providers/twilio_call_provider.py | ✅ Complete |
+| Connect Provider | services/providers/connect_call_provider.py | ✅ Complete (Fixed: fresh .env) |
+| Mock Provider | services/providers/mock_call_provider.py | ✅ Complete |
+| Call Routes (6-stage flow) | routes/call_routes.py | ✅ Complete (TwiML headers fixed) |
+| Main App | app.py | ✅ Complete (10 endpoints) |
 | Schemes Data | data/schemes.json | ✅ Complete |
 
 ---
@@ -27,14 +32,21 @@
 
 | Method | Endpoint | Status | Description |
 |--------|----------|--------|-------------|
-| GET | /api/health | ✅ Built | Health check |
+| GET | /api/health | ✅ Tested | Health check + mode status |
 | POST | /api/chat | ✅ Built | Main conversation |
 | POST | /api/speech-to-text | ✅ Built | Audio to Hindi text |
 | POST | /api/text-to-speech | ✅ Built | Hindi text to audio |
-| GET | /api/voice-memory/<scheme_id> | ✅ Built | Get peer success clip |
+| GET | /api/voice-memory/<scheme_id> | ✅ Built | Get peer success clip from S3 |
 | POST | /api/eligibility-check | ✅ Built | Check scheme eligibility |
-| POST | /api/send-sms | ✅ Built | Send document checklist |
-| GET | /api/schemes | ✅ Built | Get all schemes |
+| POST | /api/send-sms | ✅ Built | Send document checklist via SNS |
+| GET | /api/schemes | ✅ Tested | Get all 10 schemes |
+| POST | /api/initiate-call | ✅ Built | Start outbound Twilio/Connect call |
+| GET | /api/call/ping | ✅ Tested | Minimal TwiML response test |
+| POST | /api/call/stage1 | ✅ Built | Trust intro + Voice Memory |
+| POST | /api/call/stage2 | ✅ Built | Land size question (1/2/3 acres) |
+| POST | /api/call/stage3 | ✅ Built | KCC status + scheme matching |
+| POST | /api/call/stage4 | ✅ Built | Document guidance |
+| POST | /api/call/stage5 | ✅ Built | Close or second scheme offer |
 
 ---
 
