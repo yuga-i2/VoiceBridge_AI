@@ -2,7 +2,6 @@
   "dev": {
     "app_function": "app.app",
     "aws_region": "ap-southeast-1",
-    "profile_name": "default",
     "project_name": "voicebridge",
     "runtime": "python3.11",
     "s3_bucket": "voicebridge-zappa-deployments-yuga",
