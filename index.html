@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sahaya — AI Welfare Assistant for 135 Million Indian Farmers</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;700&family=DM+Serif+Display:wght@400&family=DM+Mono:wght@400&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        html { scroll-behavior: smooth; }
+        
+        body {
+            font-family: 'Noto Sans Devanagari', sans-serif;
+            background: linear-gradient(135deg, #2C1810 0%, #1a0f08 100%);
+            color: #f5f5f5;
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+        
+        /* Grain texture overlay */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' result='noise' /%3E%3C/filter%3E%3Crect width='400' height='400' fill='%23000' filter='url(%23noiseFilter)' opacity='0.02'/%3E%3C/svg%3E");
+            pointer-events: none;
+            z-index: -1;
+            opacity: 0.1;
+        }
+        
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
+        
+        /* ─────────────────────────────────────────────────────────────────────────────── */
+        /* HERO SECTION */
+        /* ─────────────────────────────────────────────────────────────────────────────── */
+        
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .hero::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 200px;
+            background: linear-gradient(to top, rgba(44, 90, 39, 0.2), transparent);
+            pointer-events: none;
+        }
+        
+        .hero-content { position: relative; z-index: 1; animation: fadeInDown 1s ease-out; }
+        
+        .hero h1 {
+            font-family: 'DM Serif Display', serif;
+            font-size: clamp(2rem, 8vw, 5rem);
+            margin-bottom: 0.5rem;
+            color: #DAA520;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+        
+        .hero h2 {
+            font-size: clamp(1rem, 3vw, 2rem);
+            color: #4A7C44;
+            margin-bottom: 3rem;
+            font-weight: 400;
+        }
+        
+        .hero-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 2rem;
+            margin: 4rem 0;
+            max-width: 800px;
+        }
+        
+        .stat-box {
+            background: rgba(74, 124, 68, 0.1);
+            border: 2px solid #4A7C44;
+            border-radius: 8px;
+            padding: 2rem;
+            backdrop-filter: blur(10px);
+            animation: slideInUp 0.8s ease-out;
+        }
+        
+        .stat-number {
+            font-size: 2.5rem;
+            color: #DAA520;
+            font-weight: 700;
+            font-family: 'DM Mono', monospace;
+        }
+        
+        .stat-label { font-size: 0.9rem; color: #ccc; margin-top: 0.5rem; }
+        
+        .cta-buttons {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 3rem;
+        }
+        
+        .btn {
+            padding: 0.8rem 2rem;
+            border: none;
+            border-radius: 4px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .btn-primary {
+            background: #DAA520;
+            color: #1a0f08;
+        }
+        
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(218, 165, 32, 0.3); }
+        
+        .btn-secondary {
+            background: rgba(74, 124, 68, 0.3);
+            color: #4A7C44;
+            border: 2px solid #4A7C44;
+        }
+        
+        .btn-secondary:hover { background: rgba(74, 124, 68, 0.5); }
+        
+        /* ─────────────────────────────────────────────────────────────────────────────── */
+        /* PROBLEM SECTION */
+        /* ─────────────────────────────────────────────────────────────────────────────── */
+        
+        .problem {
+            padding: 5rem 0;
+            background: rgba(0,0,0,0.3);
+        }
+        
+        .section-title {
+            font-family: 'DM Serif Display', serif;
+            font-size: clamp(1.5rem, 4vw, 3rem);
+            color: #DAA520;
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+        
+        .problem-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 2rem;
+        }
+        
+        .problem-card {
+            background: linear-gradient(135deg, rgba(139, 69, 19, 0.2), rgba(74, 124, 68, 0.2));
+            border: 2px solid;
+            border-radius: 8px;
+            padding: 2rem;
+            text-align: center;
+            animation: slideInUp 0.8s ease-out;
+            transition: all 0.3s ease;
+        }
+        
+        .problem-card:nth-child(1) { border-color: #d32f2f; }
+        .problem-card:nth-child(2) { border-color: #DAA520; }
+        .problem-card:nth-child(3) { border-color: #1976d2; }
+        .problem-card:nth-child(4) { border-color: #2D5A27; }
+        
+        .problem-card:hover { transform: translateY(-5px); box-shadow: 0 10px 30px rgba(218,165,32,0.2); }
+        
+        .problem-card-number {
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            color: inherit;
+        }
+        
+        .problem-card:nth-child(1) .problem-card-number { color: #d32f2f; }
+        .problem-card:nth-child(2) .problem-card-number { color: #DAA520; }
+        .problem-card:nth-child(3) .problem-card-number { color: #1976d2; }
+        .problem-card:nth-child(4) .problem-card-number { color: #2D5A27; }
+        
+        /* ─────────────────────────────────────────────────────────────────────────────── */
+        /* INTERACTIVE CALL DEMO */
+        /* ─────────────────────────────────────────────────────────────────────────────── */
+        
+        .demo-section {
+            padding: 5rem 0;
+            background: rgba(0,0,0,0.5);
+        }
+        
+        .demo-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 3rem;
+            align-items: center;
+        }
+        
+        @media (max-width: 768px) {
+            .demo-container { grid-template-columns: 1fr; }
+        }
+        
+        .phone-mockup {
+            background: linear-gradient(135deg, #333 0%, #1a1a1a 100%);
+            border: 15px solid #222;
+            border-radius: 40px;
+            padding: 2rem;
+            height: 500px;
+            display: flex;
+            flex-direction: column;
+            max-width: 300px;
+            margin: 0 auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5), inset 0 0 20px rgba(255,255,255,0.1);
+            position: relative;
+        }
+        
+        .phone-screen {
+            background: #000;
+            flex: 1;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            padding: 1rem;
+            overflow: hidden;
+        }
+        
+        .call-display {
+            text-align: center;
+            padding: 1rem;
+            border-bottom: 1px solid #333;
+        }
+        
+        .call-status {
+            color: #4A7C44;
+            font-weight: 700;
+            font-size: 0.9rem;
+        }
+        
+        .conversation-area {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            font-size: 0.8rem;
+            padding: 1rem 0;
+        }
+        
+        .message {
+            padding: 0.5rem;
+            border-radius: 4px;
+            max-width: 250px;
+            word-wrap: break-word;
+            animation: slideInUp 0.5s ease-out;
+        }
+        
+        .message.bot {
+            background: #4A7C44;
+            align-self: flex-start;
+            color: #f5f5f5;
+        }
+        
+        .message.user {
+            background: #DAA520;
+            align-self: flex-end;
+            color: #1a0f08;
+        }
+        
+        .dtmf-buttons {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.3rem;
+            margin-top: 1rem;
+        }
+        
+        .dtmf-btn {
+            background: #2C1810;
+            border: 1px solid #4A7C44;
+            color: #4A7C44;
+            padding: 0.5rem;
+            font-weight: 700;
+            cursor: pointer;
+            border-radius: 3px;
+            font-size: 0.8rem;
+            transition: all 0.2s ease;
+        }
+        
+        .dtmf-btn:hover { background: #4A7C44; color: #f5f5f5; }
+        
+        .demo-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: #DAA520;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        
+        .stage-indicator {
+            color: #ccc;
+            font-size: 0.9rem;
+            font-family: 'DM Mono', monospace;
+        }
+        
+        .aws-services-list {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+        }
+        
+        .service {
+            padding: 0.8rem;
+            background: rgba(45, 90, 39, 0.2);
+            border: 1px solid rgba(74, 124, 68, 0.3);
+            border-radius: 4px;
+            font-size: 0.85rem;
+            transition: all 0.3s ease;
+        }
+        
+        .service.active {
+            background: rgba(74, 124, 68, 0.4);
+            border-color: #4A7C44;
+            box-shadow: 0 0 10px rgba(74, 124, 68, 0.3);
+        }
+        
+        /* ─────────────────────────────────────────────────────────────────────────────── */
+        /* AWS ARCHITECTURE */
+        /* ─────────────────────────────────────────────────────────────────────────────── */
+        
+        .aws-section {
+            padding: 5rem 0;
+            background: rgba(0,0,0,0.3);
+        }
+        
+        .aws-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 2rem;
+        }
+        
+        .aws-card {
+            background: linear-gradient(135deg, rgba(255, 153, 0, 0.1), rgba(74, 124, 68, 0.1));
+            border: 2px solid rgba(255, 153, 0, 0.3);
+            border-radius: 8px;
+            padding: 1.5rem;
+            text-align: center;
+            animation: slideInUp 0.8s ease-out;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .aws-card.active {
+            border-color: #4A7C44;
+            background: rgba(74, 124, 68, 0.2);
+            box-shadow: 0 0 20px rgba(74, 124, 68, 0.5);
+            transform: scale(1.05);
+        }
+        
+        .aws-card-title {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #DAA520;
+            margin-bottom: 0.5rem;
+        }
+        
+        .aws-card-desc {
+            font-size: 0.75rem;
+            color: #ccc;
+            line-height: 1.4;
+        }
+        
+        /* ─────────────────────────────────────────────────────────────────────────────── */
+        /* ECONOMICS */
+        /* ─────────────────────────────────────────────────────────────────────────────── */
+        
+        .economics {
+            padding: 5rem 0;
+            background: rgba(0,0,0,0.5);
+        }
+        
+        .economics-comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 3rem;
+            align-items: center;
+            margin: 3rem 0;
+        }
+        
+        @media (max-width: 768px) {
+            .economics-comparison { grid-template-columns: 1fr; }
+        }
+        
+        .comparison-box {
+            background: rgba(0,0,0,0.4);
+            border: 3px solid;
+            border-radius: 8px;
+            padding: 2rem;
+            text-align: center;
+        }
+        
+        .comparison-box:nth-child(1) {
+            border-color: #d32f2f;
+            background: rgba(211, 47, 47, 0.1);
+        }
+        
+        .comparison-box:nth-child(2) {
+            border-color: #4A7C44;
+            background: rgba(74, 124, 68, 0.1);
+        }
+        
+        .comparison-cost {
+            font-size: 3rem;
+            font-weight: 700;
+            font-family: 'DM Mono', monospace;
+            margin: 1rem 0;
+        }
+        
+        .comparison-box:nth-child(1) .comparison-cost { color: #d32f2f; }
+        .comparison-box:nth-child(2) .comparison-cost { color: #4A7C44; }
+        
+        .multiplier {
+            text-align: center;
+            font-size: 3rem;
+            color: #DAA520;
+            font-weight: 700;
+            font-family: 'DM Mono', monospace;
+            margin: 2rem 0;
+            transform: rotate(-15deg);
+        }
+        
+        /* ─────────────────────────────────────────────────────────────────────────────── */
+        /* FOOTER */
+        /* ─────────────────────────────────────────────────────────────────────────────── */
+        
+        footer {
+            background: rgba(0,0,0,0.7);
+            padding: 2rem 0;
+            text-align: center;
+            border-top: 2px solid #4A7C44;
+        }
+        
+        footer p { color: #ccc; margin: 0.5rem 0; font-size: 0.9rem; }
+        
+        footer a {
+            color: #DAA520;
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+        
+        footer a:hover { color: #4A7C44; }
+        
+        /* ─────────────────────────────────────────────────────────────────────────────── */
+        /* ANIMATIONS */
+        /* ─────────────────────────────────────────────────────────────────────────────── */
+        
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes slideInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* ─────────────────────────────────────────────────────────────────────────────── */
+        /* UTILITY */
+        /* ─────────────────────────────────────────────────────────────────────────────── */
+        
+        .hidden { display: none; }
+        
+        section { scroll-margin-top: 80px; }
+    </style>
+</head>
+<body>
+    <!-- HERO SECTION -->
+    <section class="hero">
+        <div class="hero-content">
+            <h1>सहाया</h1>
+            <h1>Sahaya</h1>
+            <h2>Every farmer deserves to know what they've earned</h2>
+            
+            <div class="hero-stats">
+                <div class="stat-box">
+                    <div class="stat-number">135M</div>
+                    <div class="stat-label">Farmers Eligible</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-number">₹15</div>
+                    <div class="stat-label">Cost Per Farmer</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-number">180×</div>
+                    <div class="stat-label">Cost Reduction</div>
+                </div>
+            </div>
+            
+            <div class="cta-buttons">
+                <button class="btn btn-primary" onclick="scrollTo('demo')">▶ Try Interactive Demo</button>
+                <a href="https://github.com/yuga-i2/VoiceBridge_AI" class="btn btn-secondary">🔗 View GitHub</a>
+            </div>
+        </div>
+    </section>
+    
+    <!-- PROBLEM SECTION -->
+    <section class="problem">
+        <div class="container">
+            <h2 class="section-title">The Problem</h2>
+            <div class="problem-grid">
+                <div class="problem-card">
+                    <div class="problem-card-number">70%</div>
+                    <p>Farmers never receive benefits they qualify for</p>
+                </div>
+                <div class="problem-card">
+                    <div class="problem-card-number">₹2,700</div>
+                    <p>Traditional government outreach cost per farmer</p>
+                </div>
+                <div class="problem-card">
+                    <div class="problem-card-number">6+</div>
+                    <p>Average office visits required to apply</p>
+                </div>
+                <div class="problem-card">
+                    <div class="problem-card-number">2G</div>
+                    <p>Only technology most farmers have</p>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- INTERACTIVE CALL DEMO -->
+    <section class="demo-section" id="demo">
+        <div class="container">
+            <h2 class="section-title">Interactive Call Demo</h2>
+            <div class="demo-container">
+                <!-- Phone Mockup -->
+                <div class="phone-mockup">
+                    <div class="phone-screen">
+                        <div class="call-display">
+                            <div class="call-status" id="callStatus">🔴 Ready to call</div>
+                            <div style="color: #999; font-size: 0.8rem; margin-top: 0.5rem;">Ramesh Kumar<br>+917736448307</div>
+                        </div>
+                        <div class="conversation-area" id="conversationArea"></div>
+                        <div class="dtmf-buttons" id="dtmfButtons" style="display: none;">
+                            <button class="dtmf-btn" onclick="handleDTMF('1')">1</button>
+                            <button class="dtmf-btn" onclick="handleDTMF('2')">2</button>
+                            <button class="dtmf-btn" onclick="handleDTMF('3')">3</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Demo Controls -->
+                <div class="demo-controls">
+                    <div>
+                        <button class="btn btn-primary" onclick="startDemoCall()" id="startBtn">Start Call</button>
+                        <button class="btn btn-secondary" onclick="resetDemo()" id="resetBtn" style="display: none;">Reset Call</button>
+                    </div>
+                    
+                    <div>
+                        <div class="stage-indicator" id="stageIndicator">Waiting to start...</div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progressFill"></div>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <p style="font-size: 0.9rem; color: #888; margin-bottom: 0.5rem;">AWS Services Active</p>
+                        <div class="aws-services-list">
+                            <div class="service" id="svc-polly">🔊 Polly</div>
+                            <div class="service" id="svc-bedrock">🤖 Bedrock</div>
+                            <div class="service" id="svc-dynamodb">📦 DynamoDB</div>
+                            <div class="service" id="svc-s3">💾 S3</div>
+                            <div class="service" id="svc-sns">📨 SNS</div>
+                            <div class="service" id="svc-connect">☎️ Connect</div>
+                        </div>
+                    </div>
+                    
+                    <div style="background: rgba(74, 124, 68, 0.1); border: 1px solid #4A7C44; border-radius: 4px; padding: 0.8rem; font-size: 0.8rem;">
+                        <strong>Farmer Profile:</strong><br>
+                        Ramesh Kumar, 45<br>
+                        Karnataka, 2 acres<br>
+                        No KCC • Has savings account
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- AWS ARCHITECTURE -->
+    <section class="aws-section">
+        <div class="container">
+            <h2 class="section-title">AWS Architecture</h2>
+            <div class="aws-grid">
+                <div class="aws-card" onclick="highlightService('polly')">
+                    <div class="aws-card-title">Amazon Polly</div>
+                    <div class="aws-card-desc">Hindi neural voice (Kajal). Natural, warm, trustworthy.</div>
+                </div>
+                <div class="aws-card" onclick="highlightService('bedrock')">
+                    <div class="aws-card-title">Amazon Bedrock</div>
+                    <div class="aws-card-desc">Claude 3 Haiku AI. Personalised Hindi explanations.</div>
+                </div>
+                <div class="aws-card" onclick="highlightService('dynamodb')">
+                    <div class="aws-card-title">Amazon DynamoDB</div>
+                    <div class="aws-card-desc">10 welfare schemes database. Real benefits, real amounts.</div>
+                </div>
+                <div class="aws-card" onclick="highlightService('s3')">
+                    <div class="aws-card-title">Amazon S3</div>
+                    <div class="aws-card-desc">Voice Memory clips. Real farmers, real success stories.</div>
+                </div>
+                <div class="aws-card" onclick="highlightService('sns')">
+                    <div class="aws-card-title">Amazon SNS</div>
+                    <div class="aws-card-desc">Hindi SMS checklists. Works on 2G phones.</div>
+                </div>
+                <div class="aws-card" onclick="highlightService('connect')">
+                    <div class="aws-card-title">Amazon Connect</div>
+                    <div class="aws-card-desc">Outbound calling. Proactive farmer engagement.</div>
+                </div>
+            </div>
+            <p style="text-align: center; color: #999; margin-top: 2rem; font-size: 0.9rem;">All services live in ap-southeast-1 (Singapore region)</p>
+        </div>
+    </section>
+    
+    <!-- ECONOMICS -->
+    <section class="economics">
+        <div class="container">
+            <h2 class="section-title">Economics: 180× Cheaper</h2>
+            <div class="economics-comparison">
+                <div class="comparison-box">
+                    <h3 style="font-size: 1.2rem; margin-bottom: 1rem;">Traditional Outreach</h3>
+                    <div class="comparison-cost">₹2,700</div>
+                    <p style="font-size: 0.9rem;">per farmer</p>
+                    <p style="font-size: 0.8rem; color: #aaa; margin-top: 1rem;">• Field officers<br>• Office visits<br>• Limited scale</p>
+                </div>
+                <div class="comparison-box">
+                    <h3 style="font-size: 1.2rem; margin-bottom: 1rem;">Sahaya</h3>
+                    <div class="comparison-cost">₹15</div>
+                    <p style="font-size: 0.9rem;">per farmer</p>
+                    <p style="font-size: 0.8rem; color: #aaa; margin-top: 1rem;">• Automated AI<br>• One phone call<br>• Unlimited scale</p>
+                </div>
+            </div>
+            <div class="multiplier">↓ 180× ↓</div>
+            <p style="text-align: center; color: #ddd; margin: 2rem 0;">
+                At 135 million farmers: <strong>₹36,000 crore saved</strong> using Sahaya
+            </p>
+        </div>
+    </section>
+    
+    <!-- FOOTER -->
+    <footer>
+        <div class="container">
+            <p><strong>VoiceBridge AI — Sahaya</strong></p>
+            <p>Built for Hack2Skill AWS AI Hackathon 2026</p>
+            <p><a href="https://github.com/yuga-i2/VoiceBridge_AI">GitHub Repository</a> • <a href="https://github.com/yuga-i2/VoiceBridge_AI/docs">Documentation</a></p>
+            <p style="font-size: 0.8rem; color: #666; margin-top: 1rem;">© 2026 Yuga Team. DPDP Act 2023 Compliant.</p>
+        </div>
+    </footer>
+    
+    <script>
+        // Global demo state
+        let demoState = {
+            stage: 0,
+            running: false,
+            farmerParams: { name: 'Ramesh Kumar', land: '2', kcc: 'no' }
+        };
+        
+        // Conversation script
+        const conversationScript = [
+            {stage: 1, speaker: 'bot', text: 'नमस्ते Ramesh Kumar जी! मैं सहाया हूँ।', service: 'polly'},
+            {stage: 1, speaker: 'bot', text: 'एक सरकारी कल्याण सहायक।', service: 'polly'},
+            {stage: 2, speaker: 'bot', text: 'आपकी थोड़ी जानकारी लेना चाहती हूँ।', service: 'bedrock'},
+            {stage: 2, speaker: 'bot', text: 'आपके पास कितनी ज़मीन है? (1:2एकड़ से कम, 2:2-5एकड़, 3:5+ एकड़)', service: 'bedrock', needsDTMF: true},
+            {stage: 3, speaker: 'user', text: '2', isAnswer: true},
+            {stage: 3, speaker: 'bot', text: 'क्या आपके पास Kisan Credit Card है? (1:हाँ, 2:नहीं)', service: 'bedrock', needsDTMF: true},
+            {stage: 4, speaker: 'user', text: '2', isAnswer: true},
+            {stage: 4, speaker: 'bot', text: 'आपके लिए PM-KISAN मिली है।', service: 'bedrock'},
+            {stage: 4, speaker: 'bot', text: 'आपको ₹6,000 प्रतिसाल मिलेंगे।', service: 'bedrock'},
+            {stage: 5, speaker: 'bot', text: 'तीन दस्तावेज़ चाहिए: Aadhaar, Khatauni, Bank account', service: 'dynamodb'},
+            {stage: 5, speaker: 'bot', text: 'SMS आपको भेज दिया गया।', service: 'sns'},
+            {stage: 6, speaker: 'bot', text: 'धन्यवाद! 3 दिन में दोबारा call करूँगी।', service: 'polly'},
+        ];
+        
+        function startDemoCall() {
+            if (demoState.running) return;
+            demoState.running = true;
+            demoState.stage = 0;
+            document.getElementById('conversationArea').innerHTML = '';
+            document.getElementById('startBtn').style.display = 'none';
+            document.getElementById('resetBtn').style.display = 'inline-block';
+            document.getElementById('callStatus').textContent = '🟢 Call connected';
+            playConversationSequence();
+        }
+        
+        function playConversationSequence() {
+            if (demoState.stage >= conversationScript.length) {
+                document.getElementById('callStatus').textContent = '🔚 Call ended';
+                demoState.running = false;
+                return;
+            }
+            
+            const msg = conversationScript[demoState.stage];
+            setTimeout(() => {
+                addMessage(msg.speaker, msg.text, msg.isAnswer);
+                if (msg.service) highlightService(msg.service);
+                updateProgress();
+                
+                if (msg.needsDTMF) {
+                    document.getElementById('dtmfButtons').style.display = 'grid';
+                } else {
+                    document.getElementById('dtmfButtons').style.display = 'none';
+                    demoState.stage++;
+                    playConversationSequence();
+                }
+            }, 1000);
+        }
+        
+        function handleDTMF(digit) {
+            if (!demoState.running) return;
+            document.getElementById('dtmfButtons').style.display = 'none';
+            demoState.stage++;
+            playConversationSequence();
+        }
+        
+        function addMessage(speaker, text, isAnswer) {
+            const area = document.getElementById('conversationArea');
+            const msg = document.createElement('div');
+            msg.className = `message ${isAnswer ? 'user' : 'bot'}`;
+            msg.textContent = text;
+            area.appendChild(msg);
+            area.scrollTop = area.scrollHeight;
+        }
+        
+        function highlightService(svc) {
+            document.querySelectorAll('.service').forEach(el => el.classList.remove('active'));
+            const target = document.getElementById(`svc-${svc}`);
+            if (target) target.classList.add('active');
+        }
+        
+        function updateProgress() {
+            const progress = (demoState.stage / conversationScript.length) * 100;
+            document.getElementById('progressFill').style.width = progress + '%';
+            document.getElementById('stageIndicator').textContent = `Stage ${Math.ceil(demoState.stage / 2)}/6`;
+        }
+        
+        function resetDemo() {
+            demoState.running = false;
+            demoState.stage = 0;
+            document.getElementById('conversationArea').innerHTML = '';
+            document.getElementById('dtmfButtons').style.display = 'none';
+            document.getElementById('startBtn').style.display = 'inline-block';
+            document.getElementById('resetBtn').style.display = 'none';
+            document.getElementById('callStatus').textContent = '🔴 Ready to call';
+            document.getElementById('progressFill').style.width = '0%';
+            document.getElementById('stageIndicator').textContent = 'Waiting to start...';
+            document.querySelectorAll('.service').forEach(el => el.classList.remove('active'));
+        }
+        
+        function scrollTo(id) {
+            document.getElementById(id).scrollIntoView({behavior: 'smooth'});
+        }
+    </script>
+</body>
+</html>
