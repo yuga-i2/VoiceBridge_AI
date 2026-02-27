@@ -381,6 +381,14 @@ function App() {
     }
   }, [allSchemes, farmerProfile])
 
+  // Safety net: if eligibility-check fails, fallback to all scheme IDs
+  useEffect(() => {
+    if (allSchemes.length > 0 && farmerProfile && eligibleSchemes.length === 0) {
+      setEligibleSchemes(allSchemes.map(s => s.scheme_id))
+      console.log('[VoiceBridge] Fallback: set all scheme IDs')
+    }
+  }, [allSchemes, farmerProfile])
+
   const loadSchemes = async () => {
     try {
       const res = await axios.get(API.schemes)
@@ -406,6 +414,18 @@ function App() {
     setCallState(CALL_STATES.IDLE)
     setInputEnabled(false)
     setIsSpeaking(false)
+    
+    // Check eligibility
+    try {
+      const res = await axios.post(
+        'https://bkzd32abpg.execute-api.ap-southeast-1.amazonaws.com/dev/api/eligibility-check',
+        { farmer_profile: DEMO_FARMER }
+      )
+      setEligibleSchemes(res.data.eligible_schemes || [])
+      console.log('[VoiceBridge] Eligible:', res.data.eligible_schemes)
+    } catch(e) {
+      console.error('Eligibility check failed:', e)
+    }
   }
 
   // ========== SAHAYA OPENING SPEECH ==========
@@ -630,7 +650,7 @@ function App() {
       // Fetch voice memory audio if available
       if (aiResponse.voice_memory_clip) {
         try {
-          const vmRes = await fetch(`${API.voiceMemory}/${aiResponse.voice_memory_clip}`)
+          const vmRes = await fetch(`https://bkzd32abpg.execute-api.ap-southeast-1.amazonaws.com/dev/api/voice-memory/${aiResponse.voice_memory_clip}`)
           const vmData = await vmRes.json()
           aiResponse.voiceMemoryUrl = vmData.audio_url
           aiResponse.voiceMemoryScheme = aiResponse.voice_memory_clip
@@ -784,7 +804,7 @@ function App() {
       // Fetch voice memory audio if available
       if (aiResponse.voice_memory_clip) {
         try {
-          const vmRes = await fetch(`${API.voiceMemory}/${aiResponse.voice_memory_clip}`)
+          const vmRes = await fetch(`https://bkzd32abpg.execute-api.ap-southeast-1.amazonaws.com/dev/api/voice-memory/${aiResponse.voice_memory_clip}`)
           const vmData = await vmRes.json()
           aiResponse.voiceMemoryUrl = vmData.audio_url
           aiResponse.voiceMemoryScheme = aiResponse.voice_memory_clip
