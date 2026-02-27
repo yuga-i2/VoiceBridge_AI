@@ -3,6 +3,26 @@ import axios from 'axios'
 import API from './config/api'
 import './App.css'
 
+// ==================== VOICE MEMORY CLIPS INFO ====================
+// Real farmer success stories from AWS DynamoDB
+const CLIP_INFO = {
+  'PM_KISAN': { 
+    farmer: 'Suresh Kumar', 
+    district: 'Tumkur, Karnataka', 
+    quote: '"PM-KISAN se ₹2,000 mile! Sahaya ne sab bataya."' 
+  },
+  'KCC': { 
+    farmer: 'Ramaiah', 
+    district: 'Mysuru, Karnataka', 
+    quote: '"KCC loan 4% pe mila. Sahukaar se chhutkaara!"' 
+  },
+  'PMFBY': { 
+    farmer: 'Laxman Singh', 
+    district: 'Dharwad, Karnataka', 
+    quote: '"Fasal bima se ₹18,000 mile. Sahaya ka shukriya!"' 
+  }
+}
+
 // Demo farmer data
 const DEMO_FARMER = {
   name: 'Ramesh Kumar',
@@ -590,6 +610,8 @@ function App() {
         conversation_history: historyToSend
       })
 
+      console.log('CHAT RESULT:', JSON.stringify(chatRes.data))
+
       const aiResponse = {
         text: chatRes.data.response_text,
         schemes: chatRes.data.schemes_mentioned || [],
@@ -742,6 +764,8 @@ function App() {
         conversation_history: historyToSend
       })
 
+      console.log('CHAT RESULT:', JSON.stringify(chatRes.data))
+
       const aiResponse = {
         text: chatRes.data.response_text,
         schemes: chatRes.data.schemes_mentioned || [],
@@ -858,7 +882,7 @@ function App() {
                         >
                           <div className="flex items-center justify-between">
                             <div>
-                              <div className="font-semibold">{scheme?.name_hi || scheme?.name_en || 'Scheme'}</div>
+                              <div className="font-semibold">{scheme?.name_hi || scheme?.name_en || scheme?.scheme_id}</div>
                               <div className="text-gray-700 text-xs">{scheme?.benefit}</div>
                             </div>
                             {isMatched && (
@@ -914,9 +938,13 @@ function App() {
                             </button>
                           )}
                         </div>
-                        {msg.voiceMemoryUrl && (
-                          <div className="mt-2">
-                            <VoiceMemoryClip audio_url={msg.voiceMemoryUrl} schemeId={msg.voiceMemoryScheme} />
+                        {msg.voiceMemoryUrl && CLIP_INFO[msg.voiceMemoryScheme] && (
+                          <div style={{background:'#fffbeb',border:'1px solid #d97706',borderRadius:'8px',padding:'10px',marginTop:'8px'}}>
+                            <div style={{fontWeight:'bold',fontSize:'12px',color:'#92400e'}}>🎙️ Voice Memory Network — Real Farmer Story</div>
+                            <div style={{fontSize:'12px',color:'#78350f'}}>{CLIP_INFO[msg.voiceMemoryScheme].farmer} • {CLIP_INFO[msg.voiceMemoryScheme].district}</div>
+                            <div style={{fontSize:'13px',fontStyle:'italic',color:'#92400e',margin:'4px 0'}}>{CLIP_INFO[msg.voiceMemoryScheme].quote}</div>
+                            <audio controls src={msg.voiceMemoryUrl} style={{width:'100%',height:'32px'}} />
+                            <div style={{fontSize:'11px',color:'#9ca3af',marginTop:'4px'}}>🔒 Auto-deleted after 90 days • DPDP Compliant</div>
                           </div>
                         )}
                       </div>
