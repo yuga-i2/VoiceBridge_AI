@@ -135,13 +135,31 @@ def chat():
 @app.route('/api/speech-to-text', methods=['POST'])
 def speech_to_text():
     try:
-        if 'audio' not in request.files:
+        audio_bytes = None
+        filename = 'audio.mp3'
+        
+        # Try FormData first (from browser MediaRecorder)
+        if 'audio' in request.files:
+            audio_file = request.files['audio']
+            audio_bytes = audio_file.read()
+            filename = audio_file.filename or 'audio.mp3'
+        # Try JSON with base64 (fallback)
+        elif request.is_json:
+            import base64
+            data = request.get_json() or {}
+            audio_b64 = data.get('audio_data', '')
+            if audio_b64:
+                try:
+                    audio_bytes = base64.b64decode(audio_b64)
+                except Exception:
+                    audio_bytes = None
+        
+        if not audio_bytes:
             return jsonify({'success': False, 'error': 'No audio file',
                            'code': 'INVALID_INPUT'}), 400
-        audio_file = request.files['audio']
-        audio_bytes = audio_file.read()
+        
         from services.stt_service import transcribe_audio
-        result = transcribe_audio(audio_bytes, audio_file.filename or 'audio.mp3')
+        result = transcribe_audio(audio_bytes, filename)
         return jsonify(result)
     except Exception as e:
         logger.error(f"STT error: {e}")

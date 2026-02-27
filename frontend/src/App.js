@@ -266,20 +266,18 @@ function App() {
       chunksRef.current = []
 
       mediaRecorder.ondataavailable = (e) => {
-        chunksRef.current.push(e.data)
+        if (e.data.size > 0) {
+          chunksRef.current.push(e.data)
+        }
       }
 
       mediaRecorder.onstop = async () => {
         const audioBlob = new Blob(chunksRef.current, { type: 'audio/webm' })
-        const reader = new FileReader()
-        reader.onloadend = () => {
-          const base64 = reader.result.split(',')[1]
-          processAudio(base64)
-        }
-        reader.readAsDataURL(audioBlob)
+        stream.getTracks().forEach(track => track.stop())
+        processAudio(audioBlob)
       }
 
-      mediaRecorder.start()
+      mediaRecorder.start(100) // collect chunks every 100ms
       setIsRecording(true)
 
       // Auto-stop after 5 seconds
@@ -292,7 +290,7 @@ function App() {
       }, 5000)
     } catch(e) {
       console.error('Microphone error:', e)
-      alert('Microphone access denied')
+      alert('Microphone access denied. Please type your message instead.')
     }
   }
 
@@ -303,14 +301,29 @@ function App() {
     }
   }
 
-  const processAudio = async (base64) => {
+  const processAudio = async (audioBlob) => {
     try {
-      // Convert to text
-      const sttRes = await axios.post(API.stt, {
-        audio_data: base64,
-        mime_type: 'audio/webm'
+      if (!audioBlob || audioBlob.size === 0) {
+        console.error('Empty audio blob')
+        alert('No audio recorded. Please try again.')
+        return
+      }
+
+      // Send audio as FormData (required by backend)
+      const formData = new FormData()
+      formData.append('audio', audioBlob, 'recording.webm')
+
+      const sttRes = await axios.post(API.stt, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
       })
-      const userMessage = sttRes.data.text
+      
+      const userMessage = sttRes.data.transcription || sttRes.data.text || ''
+      if (!userMessage) {
+        console.error('No transcription returned')
+        alert('Could not understand audio. Please try again.')
+        return
+      }
+      
       setTranscript(userMessage)
 
       // Get AI response
