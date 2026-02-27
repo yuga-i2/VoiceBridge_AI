@@ -54,10 +54,7 @@ def transcribe_audio(audio_bytes: bytes, filename: str = "audio.mp3") -> dict:
                 TranscriptionJobName=job_name,
                 Media={"MediaFileUri": s3_uri},
                 MediaFormat=media_format,
-                LanguageCode="hi-IN",
-                Settings={
-                    "VocabularyName": "voicebridge-vocab"
-                }
+                LanguageCode="hi-IN"
             )
             
             # Poll for completion (max 60 seconds)

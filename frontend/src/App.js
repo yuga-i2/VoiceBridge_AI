@@ -331,9 +331,16 @@ function App() {
   const loadSchemes = async () => {
     try {
       const res = await axios.get(API.schemes)
-      setAllSchemes(res.data.schemes || [])
+      // Handle both array and {schemes:[]} response formats
+      const schemes = Array.isArray(res.data) ? res.data : (res.data.schemes || [])
+      console.log('[VoiceBridge] Schemes loaded:', schemes.length, 'items')
+      if (schemes.length > 0) {
+        console.log('[VoiceBridge] First scheme:', JSON.stringify(schemes[0]))
+      }
+      setAllSchemes(schemes)
     } catch(e) {
-      console.error('Failed to load schemes:', e)
+      console.error('[VoiceBridge] Failed to load schemes:', e)
+      setAllSchemes([])
     }
   }
 
@@ -473,22 +480,35 @@ function App() {
         headers: { 'Content-Type': 'multipart/form-data' }
       })
       
-      const userMessage = sttRes.data.transcription || sttRes.data.text || ''
+      const userMessage = sttRes.data.transcription || sttRes.data.text || sttRes.data.transcript || ''
       if (!userMessage) {
-        console.error('No transcription returned')
+        console.warn('[VoiceBridge] No transcription returned from STT service')
+        console.log('[VoiceBridge] STT Response:', sttRes.data)
+        // Graceful fallback: prompt user to type instead of crashing
         setCallState(CALL_STATES.WAITING)
-        alert('Could not understand audio. Please try again.')
+        setInputEnabled(true)
+        setResponse({ 
+          text: '🎤 मैं आपकी आवाज नहीं समझ पाई। कृपया अपना संदेश टाइप करें।',
+          error: true 
+        })
         return
       }
       
       setTranscript(userMessage)
       setCallState(CALL_STATES.THINKING)
 
+      // Build history BEFORE sending to Lambda (include current user message)
+      const historyToSend = [
+        ...conversationHistory,
+        { role: 'user', content: userMessage }
+      ]
+      console.log('[VoiceBridge] Sending to Lambda with history length:', historyToSend.length)
+
       // Get AI response
       const chatRes = await axios.post(API.chat, {
         message: userMessage,
         farmer_profile: farmerProfile,
-        conversation_history: conversationHistory
+        conversation_history: historyToSend
       })
 
       const aiResponse = {
@@ -584,10 +604,17 @@ function App() {
       setCallState(CALL_STATES.THINKING)
       setInputEnabled(false)
 
+      // Build history BEFORE sending to Lambda (include current user message)
+      const historyToSend = [
+        ...conversationHistory,
+        { role: 'user', content: userMessage }
+      ]
+      console.log('[VoiceBridge] Text input - sending to Lambda with history length:', historyToSend.length)
+
       const chatRes = await axios.post(API.chat, {
         message: userMessage,
         farmer_profile: farmerProfile,
-        conversation_history: conversationHistory
+        conversation_history: historyToSend
       })
 
       const aiResponse = {
@@ -689,7 +716,7 @@ function App() {
                         >
                           <div className="flex items-center justify-between">
                             <div>
-                              <div className="font-semibold">{scheme?.name}</div>
+                              <div className="font-semibold">{scheme?.name_hi || scheme?.name_en || 'Scheme'}</div>
                               <div className="text-gray-700 text-xs">{scheme?.benefit}</div>
                             </div>
                             {isMatched && (
