@@ -54,12 +54,26 @@ const speakHindi = (text, options = {}) => {
       return
     }
 
-    const utterance = new SpeechSynthesisUtterance(text)
+    // Clean text for speech (remove emojis, markdown symbols, etc.)
+    const cleanText = text
+      .replace(/[🎤🌾🔊📱⚡🙏✓•→🎁💰🏥📸🔄📞💻🎙️🔴🌍]/g, '')
+      .replace(/\*\*/g, '') // Remove markdown bold
+      .replace(/##/g, '') // Remove markdown headers
+      .replace(/Sahaya:/gi, '') // Remove speaker labels
+      .trim()
+
+    if (!cleanText) {
+      onError('Empty text after cleaning')
+      reject(new Error('Empty text'))
+      return
+    }
+
+    const utterance = new SpeechSynthesisUtterance(cleanText)
     
     // Language and voice selection
     utterance.lang = 'hi-IN'
-    utterance.rate = 0.95 // Slightly slower for clarity
-    utterance.pitch = 1.0
+    utterance.rate = 0.82 // Natural conversation pace
+    utterance.pitch = 1.08 // Warm tone
     utterance.volume = 1.0
 
     // Select Hindi voice if available
@@ -485,12 +499,15 @@ function App() {
         console.warn('[VoiceBridge] No transcription returned from STT service')
         console.log('[VoiceBridge] STT Response:', sttRes.data)
         // Graceful fallback: prompt user to type instead of crashing
+        const fallbackMsg = 'मैं आपकी आवाज नहीं समझ पाई। कृपया अपना संदेश टाइप करें।'
         setCallState(CALL_STATES.WAITING)
         setInputEnabled(true)
         setResponse({ 
-          text: '🎤 मैं आपकी आवाज नहीं समझ पाई। कृपया अपना संदेश टाइप करें।',
+          text: fallbackMsg,
           error: true 
         })
+        // SPEAK the fallback message
+        speakAndWait(fallbackMsg)
         return
       }
       
@@ -576,6 +593,10 @@ function App() {
           setIsSpeaking(false)
           setCallState(CALL_STATES.WAITING)
           setInputEnabled(true)
+          // Auto-focus text input for natural flow
+          setTimeout(() => {
+            document.getElementById('message-input')?.focus()
+          }, 100)
         },
         onError: () => {
           console.log('TTS failed, still enabling input')
@@ -599,6 +620,12 @@ function App() {
     
     e.target.value = ''
     setTranscript(userMessage)
+    
+    // If Sahaya is speaking, interrupt her to let user speak
+    if (isSpeaking) {
+      window.speechSynthesis.cancel()
+      setIsSpeaking(false)
+    }
     
     try {
       setCallState(CALL_STATES.THINKING)
@@ -751,14 +778,25 @@ function App() {
                 {conversationHistory.length > 0 && (
                   <div className="mb-3 p-3 bg-gray-50 rounded max-h-48 overflow-y-auto space-y-2 border">
                     {conversationHistory.map((msg, idx) => (
-                      <div key={idx} className={`text-sm p-2 rounded ${
+                      <div key={idx} className={`text-sm p-2 rounded flex items-start justify-between gap-2 ${
                         msg.role === 'user' 
-                          ? 'bg-blue-100 text-blue-900 text-right' 
+                          ? 'bg-blue-100 text-blue-900' 
                           : 'bg-green-100 text-green-900'
                       }`}>
-                        {msg.role === 'user' ? '👨 You: ' : '🎙️ Sahaya: '}
-                        {msg.content.substring(0, 100)}
-                        {msg.content.length > 100 ? '...' : ''}
+                        <div>
+                          {msg.role === 'user' ? '👨 आप: ' : '🎙️ सहाया: '}
+                          {msg.content.substring(0, 120)}
+                          {msg.content.length > 120 ? '...' : ''}
+                        </div>
+                        {msg.role === 'assistant' && (
+                          <button
+                            onClick={() => speakHindi(msg.content)}
+                            className="ml-2 text-lg hover:scale-125 transition-transform flex-shrink-0"
+                            title="Replay"
+                          >
+                            🔊
+                          </button>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -795,8 +833,26 @@ function App() {
                               : 'bg-gray-400 text-gray-200 cursor-not-allowed'
                           }`}
                         >
-                          {isRecording ? '🔴 Recording... Tap to stop' : '🎤 Speak your message'}
+                          {isRecording 
+                            ? '⏹ बोलना बंद करें (Release)' 
+                            : '🎤 बोलने के लिए दबाएं'}
                         </button>
+                      </div>
+                    )}
+
+                    {/* Sahaya Speaking Indicator */}
+                    {isSpeaking && (
+                      <div className="mb-3 p-3 bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-400 rounded-lg">
+                        <div className="flex items-center justify-center gap-2">
+                          <div className="flex gap-1">
+                            <div className="h-3 w-1 bg-green-600 rounded-full animate-pulse" style={{animationDelay: '0s'}}></div>
+                            <div className="h-4 w-1 bg-green-600 rounded-full animate-pulse" style={{animationDelay: '0.1s'}}></div>
+                            <div className="h-3 w-1 bg-green-600 rounded-full animate-pulse" style={{animationDelay: '0.2s'}}></div>
+                            <div className="h-5 w-1 bg-green-600 rounded-full animate-pulse" style={{animationDelay: '0.3s'}}></div>
+                            <div className="h-3 w-1 bg-green-600 rounded-full animate-pulse" style={{animationDelay: '0.4s'}}></div>
+                          </div>
+                          <span className="text-sm font-semibold text-green-700">🔊 Sahaya बोल रही है...</span>
+                        </div>
                       </div>
                     )}
 
@@ -804,11 +860,20 @@ function App() {
                     {callState === CALL_STATES.WAITING && !isSpeaking && (
                       <div className="mb-3">
                         <input
+                          id="message-input"
                           type="text"
-                          placeholder="Or type your message..."
+                          placeholder="या अपना संदेश टाइप करें..."
                           onKeyPress={(e) => {
                             if (e.key === 'Enter') {
                               handleTextInput(e)
+                            }
+                          }}
+                          onChange={(e) => {
+                            // If Sahaya is speaking and user starts typing, interrupt her
+                            if (isSpeaking && e.target.value.length === 1) {
+                              window.speechSynthesis.cancel()
+                              setIsSpeaking(false)
+                              setCallState(CALL_STATES.WAITING)
                             }
                           }}
                           disabled={!inputEnabled}
