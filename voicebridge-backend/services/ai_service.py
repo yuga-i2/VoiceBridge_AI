@@ -22,6 +22,26 @@ class DecimalEncoder(json.JSONEncoder):
         return super().default(obj)
 
 
+# Farmer success stories from Voice Memory Network
+FARMER_STORIES = {
+    'PM_KISAN': {
+        'farmer': 'Suresh Kumar',
+        'district': 'Tumkur, Karnataka',
+        'story': 'Suresh Kumar ne PM-KISAN se ₹6,000 haasil kiye aur apne bacchon ki school fees bhari.'
+    },
+    'KCC': {
+        'farmer': 'Ramaiah',
+        'district': 'Mysuru, Karnataka',
+        'story': 'Ramaiah ko KCC se sirf 4% byaaj par ₹3 lakh ka loan mila aur sahukaar ka chakkar band hua.'
+    },
+    'PMFBY': {
+        'farmer': 'Laxman Singh',
+        'district': 'Dharwad, Karnataka',
+        'story': 'Laxman Singh ki fasal barbaad hui lekin PMFBY se ₹18,000 mile aur parivar bachaa.'
+    }
+}
+
+
 SAHAYA_SYSTEM_PROMPT = """You are Sahaya, a compassionate AI assistant helping rural Indian farmers access government welfare schemes.
 
 RULES:
@@ -37,7 +57,11 @@ RULES:
 - If recommending PM_KISAN, end response with exactly: [PLAY_VOICE_MEMORY:PM_KISAN]
 - Keep responses under 150 words. Farmers are on a phone call.
 - If farmer is confused, ask ONE simple question to clarify.
-- If farmer says they got the benefit, congratulate them warmly."""
+- If farmer says they got the benefit, congratulate them warmly.
+- IMPORTANT: When mentioning a scheme (PM_KISAN, KCC, or PMFBY), ALWAYS include the farmer story:
+  Include this line naturally in your response: "{farmer_story}"
+  This is a REAL success story from {farmer_name} ji from {district}.
+  After mentioning the story, the audio clip of that farmer will play automatically."""
 
 
 MOCK_RESPONSES = {
@@ -134,11 +158,13 @@ def _build_bedrock_messages(
     message: str,
     history: list[dict],
     scheme_data: list[dict],
-    farmer: FarmerProfile
+    farmer: FarmerProfile,
+    matched_scheme: str = None
 ) -> list[dict]:
     """
     Builds messages array for Bedrock Claude API.
     Injects scheme data and farmer profile into system prompt.
+    Injects farmer story if matched scheme is PM_KISAN, KCC, or PMFBY.
     """
     # Inject data into system prompt - use custom encoder for Decimal objects
     scheme_data_str = json.dumps(scheme_data, ensure_ascii=False, indent=2, cls=DecimalEncoder)
@@ -146,6 +172,18 @@ def _build_bedrock_messages(
     
     system_with_data = SAHAYA_SYSTEM_PROMPT.replace("{scheme_data}", scheme_data_str)
     system_with_data = system_with_data.replace("{farmer_profile}", farmer_profile_str)
+    
+    # Inject farmer story if matched scheme has one
+    if matched_scheme and matched_scheme in FARMER_STORIES:
+        story = FARMER_STORIES[matched_scheme]
+        farmer_story_context = f"\n\nFARMER STORY TO SHARE: {story['farmer']} ji ne kaha: '{story['story']}' — yeh {story['district']} se hai."
+        system_with_data = system_with_data.replace(
+            "{farmer_story}",
+            f"{story['farmer']} ji ne kaha: '{story['story']}' — yeh {story['district']} se hai"
+        )
+        system_with_data = system_with_data.replace("{farmer_name}", story['farmer'])
+        system_with_data = system_with_data.replace("{district}", story['district'])
+        system_with_data += farmer_story_context
     
     # Build messages array
     messages = []
@@ -175,6 +213,7 @@ def generate_response(
     """
     Main function. Generates Sahaya's response.
     Returns dict with response_text, voice_memory_clip, matched_schemes, raw_response.
+    Automatically selects farmer story for the first matched scheme if available.
     """
     try:
         if USE_MOCK:
@@ -202,12 +241,16 @@ def generate_response(
                 if scheme:
                     scheme_data.append(scheme)
             
-            # Build messages
+            # Use first matched scheme for farmer story context (if available)
+            primary_scheme = scheme_ids[0] if scheme_ids else None
+            
+            # Build messages with primary scheme context
             messages, system_final = _build_bedrock_messages(
                 message,
                 conversation_history or [],
                 scheme_data,
-                farmer
+                farmer,
+                primary_scheme
             )
             
             # Call Bedrock with correct Claude Messages API format

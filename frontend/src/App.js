@@ -9,17 +9,17 @@ const CLIP_INFO = {
   'PM_KISAN': { 
     farmer: 'Suresh Kumar', 
     district: 'Tumkur, Karnataka', 
-    quote: '"PM-KISAN se ₹2,000 mile! Sahaya ne sab bataya."' 
+    quote: '"PM-KISAN se ₹6,000 mile. Bacchon ki fees bhari. Sahaya ne bataya tha!"' 
   },
   'KCC': { 
     farmer: 'Ramaiah', 
     district: 'Mysuru, Karnataka', 
-    quote: '"KCC loan 4% pe mila. Sahukaar se chhutkaara!"' 
+    quote: '"KCC se 4% pe loan mila. Sahukaar se hamesha ke liye chhutkaara!"' 
   },
   'PMFBY': { 
     farmer: 'Laxman Singh', 
     district: 'Dharwad, Karnataka', 
-    quote: '"Fasal bima se ₹18,000 mile. Sahaya ka shukriya!"' 
+    quote: '"Fasal barbaad hui par PMFBY se ₹18,000 mile. Parivar bachaa!"' 
   }
 }
 
@@ -192,7 +192,7 @@ const EligibilityScore = ({ schemes }) => {
 }
 
 // ==================== VOICE MEMORY CLIP ====================
-const VoiceMemoryClip = ({ clip, schemeId }) => {
+const VoiceMemoryClip = ({ clip, schemeId, isAutoPlaying = false }) => {
   if (!clip) return null
   
   const clips = {
@@ -215,6 +215,11 @@ const VoiceMemoryClip = ({ clip, schemeId }) => {
           <div className="w-1 h-4 bg-amber-600 rounded-full animate-pulse" style={{animationDelay: '0.4s'}}></div>
         </div>
         <span className="text-amber-600 font-bold text-sm">🎙️ Voice Memory Network</span>
+        {isAutoPlaying && (
+          <span className="ml-2 bg-amber-600 text-white text-xs px-2 py-1 rounded-full font-semibold animate-pulse">
+            ▶ Playing
+          </span>
+        )}
       </div>
       <p className="text-sm font-semibold text-amber-900 mb-1">
         {info.farmer}, {info.district} district, {info.state}
@@ -503,6 +508,50 @@ function App() {
     }
   }
 
+  // ========== SEQUENTIAL AUDIO PLAYBACK ==========
+  /**
+   * Plays Sahaya's audio, waits for it to finish, then auto-plays voice memory clip.
+   * Updates UI state to show "Now Playing" indicator.
+   * Optionally resumes listening after both audio clips finish.
+   */
+  const playSequentially = async (sahayaAudioUrl, voiceMemoryUrl, voiceMemoryScheme, onComplete) => {
+    try {
+      // Step 1: Play Sahaya's response
+      if (sahayaAudioUrl) {
+        await new Promise((resolve) => {
+          const audio = new Audio(sahayaAudioUrl)
+          audio.crossOrigin = 'anonymous'
+          audio.onended = resolve
+          audio.onerror = resolve
+          audio.play().catch(resolve)
+        })
+      }
+      
+      // Small pause between Sahaya and farmer story
+      await new Promise(resolve => setTimeout(resolve, 800))
+      
+      // Step 2: Auto-play voice memory clip with visual indicator
+      if (voiceMemoryUrl) {
+        await new Promise((resolve) => {
+          const vmAudio = new Audio(voiceMemoryUrl)
+          vmAudio.crossOrigin = 'anonymous'
+          vmAudio.onended = resolve
+          vmAudio.onerror = resolve
+          vmAudio.play().catch(resolve)
+        })
+      }
+      
+      // Pause after voice memory finishes
+      await new Promise(resolve => setTimeout(resolve, 500))
+      
+      // Resume listening if conversation is active
+      if (onComplete) onComplete()
+    } catch(e) {
+      console.log('[VoiceBridge] Sequential playback error:', e)
+      if (onComplete) onComplete()
+    }
+  }
+
   // ========== CONVERSATION MANAGEMENT ==========
   const startConversation = async () => {
     setIsConversationActive(true)
@@ -682,38 +731,37 @@ function App() {
 
       // Handle audio playback with auto-listen for continuous conversation
       if (aiResponse.audio_url && isConversationActiveRef.current) {
-        // Continuous conversation: auto-listen after audio ends
-        playSahayaAudio(aiResponse.audio_url, () => {
-          if (isConversationActiveRef.current) {
-            setTimeout(() => startListening(), 500)
-          } else {
+        // Continuous conversation: play Sahaya → voice memory → auto-listen
+        playSequentially(
+          aiResponse.audio_url,
+          aiResponse.voiceMemoryUrl,
+          aiResponse.voiceMemoryScheme,
+          () => {
+            if (isConversationActiveRef.current) {
+              setTimeout(() => startListening(), 500)
+            } else {
+              setIsSpeaking(false)
+              setCallState(CALL_STATES.WAITING)
+              setInputEnabled(true)
+            }
+          }
+        )
+        setIsSpeaking(true)
+        setCallState(CALL_STATES.SAHAYA_SPEAKING)
+      } else if (aiResponse.audio_url) {
+        // Manual button mode: play Sahaya audio, then voice memory without auto-listening
+        playSequentially(
+          aiResponse.audio_url,
+          aiResponse.voiceMemoryUrl,
+          aiResponse.voiceMemoryScheme,
+          () => {
             setIsSpeaking(false)
             setCallState(CALL_STATES.WAITING)
             setInputEnabled(true)
           }
-        })
+        )
         setIsSpeaking(true)
         setCallState(CALL_STATES.SAHAYA_SPEAKING)
-      } else if (aiResponse.audio_url) {
-        // Manual button mode: play audio without auto-listening
-        const audio = new Audio(aiResponse.audio_url)
-        audio.onplay = () => {
-          setIsSpeaking(true)
-          setCallState(CALL_STATES.SAHAYA_SPEAKING)
-        }
-        audio.onended = () => {
-          setIsSpeaking(false)
-          setCallState(CALL_STATES.WAITING)
-          setInputEnabled(true)
-        }
-        audio.onerror = () => {
-          console.log('Polly audio failed, falling back to browser TTS')
-          speakAndWait(aiResponse.text)
-        }
-        audio.play().catch(e => {
-          console.log('Audio playback failed:', e)
-          speakAndWait(aiResponse.text)
-        })
       } else if (isConversationActiveRef.current) {
         // Fallback to browser TTS with auto-listen for continuous conversation
         speakAndListen(aiResponse.text)
@@ -834,22 +882,18 @@ function App() {
 
       // Handle audio playback with fallback
       if (aiResponse.audio_url) {
-        const audio = new Audio(aiResponse.audio_url)
-        audio.onplay = () => {
-          setIsSpeaking(true)
-          setCallState(CALL_STATES.SAHAYA_SPEAKING)
-        }
-        audio.onended = () => {
-          setIsSpeaking(false)
-          setCallState(CALL_STATES.WAITING)
-          setInputEnabled(true)
-        }
-        audio.onerror = () => {
-          speakAndWait(aiResponse.text)
-        }
-        audio.play().catch(() => {
-          speakAndWait(aiResponse.text)
-        })
+        playSequentially(
+          aiResponse.audio_url,
+          aiResponse.voiceMemoryUrl,
+          aiResponse.voiceMemoryScheme,
+          () => {
+            setIsSpeaking(false)
+            setCallState(CALL_STATES.WAITING)
+            setInputEnabled(true)
+          }
+        )
+        setIsSpeaking(true)
+        setCallState(CALL_STATES.SAHAYA_SPEAKING)
       } else {
         speakAndWait(aiResponse.text)
       }
