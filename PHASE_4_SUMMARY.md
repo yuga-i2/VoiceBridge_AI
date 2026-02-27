@@ -178,9 +178,9 @@ npm start
 ```bash
 # Edit .env
 CALL_PROVIDER=twilio
-TWILIO_ACCOUNT_SID=ACee22e452eefb1b5f4cc8bde6cbd26238
+TWILIO_ACCOUNT_SID=ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 TWILIO_AUTH_TOKEN=your_real_token_from_console
-TWILIO_PHONE_NUMBER=+12282252952
+TWILIO_PHONE_NUMBER=+1XXXXXXXXXX
 
 # Restart backend: python app.py
 # Done! All calls now route through Twilio
