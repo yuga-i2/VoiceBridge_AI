@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'
 import axios from 'axios'
+import API from './config/api'
 import './App.css'
 
 // Demo farmer data
@@ -164,7 +165,7 @@ const CallInitiator = ({ farmerProfile, eligibleSchemeIds }) => {
   const initiateCall = async () => {
     setIsLoading(true)
     try {
-      const response = await axios.post('/api/initiate-call', {
+      const response = await axios.post(API.initiateCall, {
         farmer_phone: farmerProfile.phone,
         farmer_name: farmerProfile.name,
         scheme_ids: eligibleSchemeIds || ['PM_KISAN']
@@ -233,7 +234,7 @@ function App() {
 
   const loadSchemes = async () => {
     try {
-      const res = await axios.get('/api/schemes')
+      const res = await axios.get(API.schemes)
       setAllSchemes(res.data.schemes || [])
     } catch(e) {
       console.error('Failed to load schemes:', e)
@@ -248,7 +249,7 @@ function App() {
     
     // Check eligibility
     try {
-      const res = await axios.post('/api/eligibility-check', {
+      const res = await axios.post(API.eligibilityCheck, {
         farmer_profile: DEMO_FARMER
       })
       setEligibleSchemes(res.data.eligible_schemes || [])
@@ -305,7 +306,7 @@ function App() {
   const processAudio = async (base64) => {
     try {
       // Convert to text
-      const sttRes = await axios.post('/api/speech-to-text', {
+      const sttRes = await axios.post(API.stt, {
         audio_data: base64,
         mime_type: 'audio/webm'
       })
@@ -313,7 +314,7 @@ function App() {
       setTranscript(userMessage)
 
       // Get AI response
-      const chatRes = await axios.post('/api/chat', {
+      const chatRes = await axios.post(API.chat, {
         message: userMessage,
         farmer_profile: farmerProfile,
         conversation_history: conversationHistory
