@@ -1,0 +1,11 @@
+.env
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+venv/
+.venv/
+*.mp3
+*.wav
+upload_schemes.py
+!data/voice_memory/.gitkeep

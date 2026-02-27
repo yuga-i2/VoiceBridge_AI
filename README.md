@@ -1,9 +1,9 @@
 # 🌾 VoiceBridge AI — Sahaya (सहाया)
-### AI-Powered Proactive Welfare Assistant for 135 Million Indian Farmers
 
-[![Demo](https://img.shields.io/badge/DEMO%20VIDEO-Watch-red?style=for-the-badge)](https://your-demo-video-link-here)
-[![Live Demo](https://img.shields.io/badge/LIVE%20DEMO-Try%20It-green?style=for-the-badge)](https://yuga-i2.github.io/VoiceBridge_AI)
-[![GitHub](https://img.shields.io/badge/GitHub-Code-blue?style=for-the-badge)](https://github.com/yuga-i2/VoiceBridge_AI)
+> **AI that calls farmers. Farmers don't call AI.**
+
+[![Live Demo](https://img.shields.io/badge/Live_Demo-GitHub_Pages-brightgreen)](https://yuga-i2.github.io/VoiceBridge_AI)
+[![GitHub](https://img.shields.io/badge/GitHub-VoiceBridge_AI-blue)](https://github.com/yuga-i2/VoiceBridge_AI)
 
 ---
 
@@ -11,192 +11,196 @@
 
 **₹2.73 lakh crore** in welfare benefits go unclaimed every year in India.
 
-Not because farmers don't qualify. Because the system never reached them.
+Not because farmers don't qualify. Because nobody told them.
 
-- **135 million farmers** eligible for government schemes
-- **70% never receive** a single rupee
-- **6+ visits** average to complete application
-- **₹2,700** cost per farmer using traditional outreach
+| Barrier | Reality |
+|---------|---------|
+| Web portals | Assume English literacy → 95% dropout |
+| Mobile apps | Need smartphone → 58% excluded |
+| Call centres | Reactive → farmer must call → 5% completion |
+| Field officers | ₹2,700 per farmer → only 200,000/year reached |
+
+**135 million farmers are eligible. 70% receive nothing.**
 
 ---
 
 ## Sahaya's Solution
 
-Sahaya calls farmers. Farmers don't call Sahaya.
-
 In one 3-minute call on a basic 2G phone, Sahaya:
-1. **Builds trust** with the Voice Memory Network (peer farmer voices from S3)
-2. **Determines eligibility** with 2 DTMF questions
-3. **Explains matching schemes** in personalised Hindi (Bedrock AI)
-4. **Sends complete SMS checklist** (SNS)
-5. **Schedules follow-up** call in 3 days
+
+1. **Builds trust** — plays a 30-second peer success story from the farmer's district
+2. **Asks 2 questions** — land size + KCC status (press 1 or 2)
+3. **Matches schemes** — Bedrock AI + DynamoDB → correct schemes in seconds
+4. **Explains clearly** — personalised Hindi explanation with exact rupee amounts
+5. **Sends checklist** — SMS with documents needed + where to go
+6. **Follows up** — calls again in 3 days to check progress
 
 ---
 
-## Three Innovations No One Else Built
+## Three Innovations
 
-### 1. Proactive AI Outbound Calling
-AI reaches the farmer. Not the other way around. Works on the cheapest ₹500 phone.
+### 🔊 Voice Memory Network
+Real 30-second audio clips from farmers in the same district sharing their success.  
+Stored in Amazon S3. Played during every call before asking any question.  
+**Peer trust in 30 seconds.** No government worker can replicate this.
 
-### 2. Voice Memory Network
-Real farmers from the same region share 30-second success stories stored in S3. Peer trust in 30 seconds. No government worker can replicate this.
+### 📞 Proactive AI Outbound Calling
+The system calls the farmer. Farmer does nothing.  
+Works on any phone that can receive calls. No smartphone. No internet.  
+**Zero digital literacy required.**
 
-### 3. 2G Compatible, Literacy-Independent
-No smartphone. No internet. No literacy. Just answer the phone and press 1 or 2.
+### 🌾 2G Feature Phone Compatible
+A ₹500 Nokia from 2005 is enough.  
+Voice call + SMS = full welfare guidance delivered.  
+**Reaches 58% of rural India.**
+
+---
+
+## AWS Architecture — 8 Live Services
+
+| Service | How Sahaya Uses It |
+|---------|-------------------|
+| 🧠 **Amazon Bedrock** (Claude 3 Haiku) | Personalised Hindi scheme explanations |
+| 🔊 **Amazon Polly** (Kajal Neural) | Hindi voice on every call |
+| 🎙️ **Amazon Transcribe** | Hindi speech-to-text with custom vocabulary |
+| 🗄️ **Amazon DynamoDB** | 10 welfare schemes database with real rupee amounts |
+| 📦 **Amazon S3** | Voice Memory Network audio clips from real farmers |
+| 📞 **Amazon Connect** | Outbound call infrastructure |
+| 💬 **Amazon SNS** | Hindi SMS document checklist |
+| ⚡ **AWS Lambda** | Serverless event processing |
+
+**Region: ap-southeast-1 (Singapore) | All services LIVE | All REAL, not mocked**
 
 ---
 
 ## The Economics
 
-| | Traditional Outreach | Sahaya |
-|---|---|---|
-| **Cost per farmer** | ₹2,700 | ₹15 |
-| **Scale** | Limited by workforce | Unlimited |
-| **Languages** | English forms | Hindi voice |
-| **Availability** | 9am-5pm office hours | 24/7 |
-| **Follow-up** | Rare, manual | Automatic consecutive days |
+```
+Traditional outreach:     ₹2,700 per farmer
+Sahaya:                   ₹15 per farmer
+                          ─────────────────
+Cost reduction:           180× cheaper
 
-**180× cheaper. Unlimited scale. Zero offices.**
-
----
-
-## AWS Architecture (8 Services — All Live)
-
-| Service | How Sahaya Uses It |
-|---|---|
-| **Amazon Bedrock** (Claude 3 Haiku) | Personalised Hindi scheme explanations |
-| **Amazon Polly** (Kajal Neural) | Hindi voice for all calls |
-| **Amazon Transcribe** | Hindi speech-to-text with custom vocab |
-| **Amazon DynamoDB** | 10 welfare schemes database |
-| **Amazon S3** | Voice Memory Network audio clips |
-| **Amazon Connect** | Outbound call infrastructure |
-| **Amazon SNS** | Hindi SMS checklist delivery |
-| **AWS Lambda** | Serverless event processing |
-
-**Region: ap-southeast-1 (Singapore)**
+At 135 million farmers:   ₹36,000 crore in savings
+ROI:                      10:1 to 17:1 on welfare delivered
+```
 
 ---
 
-## How to Run the Backend
+## Running Locally
 
-### Prerequisites
-- Python 3.12+
-- AWS account with services enabled (Bedrock, Polly, DynamoDB, S3, Connect, SNS)
-- ngrok or similar tunnel for Twilio webhooks
-
-### Setup
+### Backend (Flask)
 ```bash
 cd voicebridge-backend
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+python -m venv venv && venv\Scripts\activate   # Windows
 pip install -r requirements.txt
-```
-
-### Environment Variables (.env)
-```
-USE_MOCK=False
-AWS_REGION=ap-southeast-1
-BEDROCK_MODEL_ID=anthropic.claude-3-haiku-20240307-v1:0
-DYNAMODB_TABLE_NAME=welfare_schemes
-S3_AUDIO_BUCKET=voicebridge-audio-yuga
-S3_ASSETS_BUCKET=voicebridge-assets-yuga
-TWILIO_ACCOUNT_SID=your_twilio_sid
-TWILIO_AUTH_TOKEN=your_twilio_token
-WEBHOOK_BASE_URL=https://your-ngrok-url
-FLASK_PORT=5000
-```
-
-### Run Flask Backend
-```bash
+# Edit .env — add your AWS and Twilio credentials
 python app.py
-# Backend runs at http://localhost:5000
 ```
 
-### Run Frontend
+### Frontend (React)  
 ```bash
-cd frontend
-npm install
-npm start
-# Frontend runs at http://localhost:3000
+cd voicebridge-frontend
+npm install && npm run dev
+# Opens on http://localhost:3000
 ```
 
 ### Run Tests
 ```bash
 cd voicebridge-backend
 python -m pytest tests/ -v
-# All 15 tests should pass
 ```
 
 ---
 
-## DPDP Act 2023 Compliance
+## Making a Live Call
 
-- ✅ Zero Aadhaar/OTP storage
-- ✅ No personal data retention beyond call session
-- ✅ Explicit anti-scam disclosure on every call
-- ✅ Farmer consent via DTMF confirmation
-- ✅ Data auto-deletion after 90 days
-
----
-
-## Impact at Scale
-
-- **135M farmers** reachable in 3 months
-- **₹6,000 average** annual benefit per farmer
-- **10–17× ROI** on welfare delivery cost
-- **Break-even:** 3 farmers successfully enrolled pays for 100 calls
-- **Scale economics:** ₹36,000 crore saved using Sahaya vs. traditional outreach
+```bash
+# Update .env: CALL_PROVIDER=twilio
+# Start ngrok: ngrok http 5000
+# Set WEBHOOK_BASE_URL in .env to your ngrok URL
+python tests/test_call_system.py
+# Phone rings → press any key to continue (Twilio trial message) → hear Sahaya in Hindi
+```
 
 ---
 
-## Demo Instructions
+## Privacy & Compliance
 
-### Try the Interactive Demo
-Visit: **[yuga-i2.github.io/VoiceBridge_AI](https://yuga-i2.github.io/VoiceBridge_AI)**
-
-Simulate a complete Sahaya call without any backend:
-1. Load farmer profile (pre-filled: Ramesh Kumar, Karnataka, 2 acres)
-2. Click "Start Call"
-3. Press DTMF buttons (1, 2, 3) to interact
-4. See all 6 stages of the conversation
-5. Watch real AWS services light up in real time
-
-### Watch the Video Demo
-[Insert video link here]
-
-This is a real recording of Sahaya calling Ramesh Kumar +917736448307 and successfully identifying 6 matching welfare schemes in 3 minutes.
+- ✅ **DPDP Act 2023 Compliant** by design
+- ✅ Zero Aadhaar storage — never collected
+- ✅ Zero OTP collection — never requested  
+- ✅ Auto-delete after 90 days
+- ✅ Anti-scam statement on every single call
+- ✅ Farmer consent via DTMF before any personal question
 
 ---
 
-## Farmer Profile (Demo)
+## Project Structure
 
-| Profile | Value |
-|---|---|
-| **Name** | Ramesh Kumar |
-| **Age** | 45 |
-| **State** | Karnataka |
-| **Phone** | +917736448307 |
-| **Land** | 2 acres |
-| **Has KCC** | No |
-| **Has bank account** | Yes |
-| **Annual income** | ₹50,000 |
-| **Matched schemes** | PM-KISAN, PMFBY, MGNREGS, KCC, Ayushman, Soil Health Card |
+```
+voicebridge-backend/      Flask API backend (8 endpoints)
+  ├── app.py              Flask app with all blueprints
+  ├── routes/call_routes.py  TwiML 6-stage call flow
+  ├── services/           AWS integrations + AI
+  ├── models/farmer.py    Farmer profile dataclass
+  ├── tests/              All 4 tests PASSING
+  └── docs/               Constraint docs + submission text
 
----
-
-## Team
-
-**Yuga** — Karnataka, India
-
-**Competition:** Hack2Skill AWS AI Hackathon 2026
-
-**Submission deadline:** March 3, 2026
+voicebridge-frontend/     React frontend (Amplify)
+  └── src/components/     7 components for farmer interaction
+```
 
 ---
 
-## Links
+## Key Metrics
 
-- **Live Demo:** https://yuga-i2.github.io/VoiceBridge_AI
-- **GitHub:** https://github.com/yuga-i2/VoiceBridge_AI
-- **Demo Video:** [Link to recording]
-- **Documentation:** See `docs/` folder
+| Metric | Value |
+|--------|-------|
+| Farmers currently excluded | 135 million |
+| Cost per farmer (traditional) | ₹2,700 |
+| Cost per farmer (Sahaya) | ₹15 |
+| Cost multiplier | 180× cheaper |
+| Annual investment needed | ₹2,025 crore |
+| Break-even | 3 successful farmers / 100 calls |
+| Call duration | 3 minutes avg |
+| Farmer profiles supported | All Indian states |
+
+---
+
+## Farmer Example
+
+**Ramesh Kumar** | 45 years old | Karnataka | 2 acres | No KCC
+
+Sahaya calls Ramesh at 2:30 PM.  
+Hears Suresh Kumar's success story from Tumkur (same district).  
+Presses "2" for 2-5 acres. Presses "2" (no KCC).  
+Sahaya identifies 6 matching schemes. Explains PM-KISAN (₹6,000/year).  
+Receives SMS with documents list + CSC location.  
+3 days later: Sahaya calls again. Ramesh applied. Documents approved.  
+Week 5: First ₹2,000 installment hits bank account.
+
+**Outcome:** Ramesh gets ₹6,000/year ongoing. Sahaya cost: ₹15. ROI: 400×
+
+---
+
+## The 10 Welfare Schemes
+
+All amounts verified against official government sources:
+
+1. **PM-KISAN** — ₹6,000/year in 3 installments
+2. **KCC** — Crop loan up to ₹3 lakh @ 4% interest
+3. **PMFBY** — Crop insurance @ 2% premium  
+4. **Ayushman Bharat** — ₹5 lakh/family/year health
+5. **MGNREGS** — 100 days work @ ₹220-357/day
+6. **Soil Health Card** — Free soil testing
+7. **PM Awas Gramin** — Housing subsidy ₹1.2L
+8. **NFSA Ration** — Subsidised grain ₹1-3/kg
+9. **Atal Pension** — Retirement ₹1,000-5,000/month
+10. **Sukanya Samriddhi** — Girl child savings @ 8.2%
+
+---
+
+*Hack2Skill AWS AI Hackathon 2026*  
+*Team: VoiceBridge AI*  
+*"135 million farmers. ₹15 per call. Sahaya calls them."*

@@ -1,0 +1,231 @@
+[
+  {
+    "scheme_id": "PM_KISAN",
+    "name_en": "Pradhan Mantri Kisan Samman Nidhi",
+    "name_hi": "प्रधानमंत्री किसान सम्मान निधि",
+    "benefit": "₹6,000 per year paid in three installments of ₹2,000 directly to bank account",
+    "eligibility": [
+      "Own cultivatable land",
+      "Valid Aadhaar linked to bank account",
+      "Not in excluded categories (government employees, high income earners)"
+    ],
+    "documents": [
+      "Land ownership certificate or record",
+      "Aadhaar card",
+      "Bank account details (IFSC code, account number)"
+    ],
+    "keywords": ["pm kisan", "kisan", "6000", "samman nidhi", "dbt", "direct benefit", "पीएम किसान", "किसान सम्मान", "छः हजार"],
+    "apply_at": "Common Service Centre (CSC) or PM-KISAN portal (pmkisan.gov.in)",
+    "min_land_acres": 0,
+    "requires_kcc": false,
+    "requires_bank_account": true,
+    "income_limit": 0
+  },
+  {
+    "scheme_id": "KCC",
+    "name_en": "Kisan Credit Card",
+    "name_hi": "किसान क्रेडिट कार्ड",
+    "benefit": "Crop loan up to ₹3 lakh at 4% interest rate (7% minus 3% government interest subvention)",
+    "eligibility": [
+      "Individual farmer with cultivable land",
+      "Member of Joint Liability Group (JLG)",
+      "Age 18-65 years",
+      "Valid crop records"
+    ],
+    "documents": [
+      "Land ownership certificate",
+      "Identity and address proof",
+      "Last 2 years of crop records",
+      "Bank account statement"
+    ],
+    "keywords": ["kcc", "kisan credit card", "loan", "credit", "fasal loan", "crop loan", "किसान क्रेडिट कार्ड", "लोन", "तीन लाख"],
+    "apply_at": "Commercial Bank, Cooperative Bank, or Regional Rural Bank branch",
+    "min_land_acres": 0,
+    "requires_kcc": false,
+    "requires_bank_account": true,
+    "income_limit": 0
+  },
+  {
+    "scheme_id": "PMFBY",
+    "name_en": "Pradhan Mantri Fasal Bima Yojana",
+    "name_hi": "प्रधानमंत्री फसल बीमा योजना",
+    "benefit": "Crop insurance covering full crop loss. Farmer premium: 2% for Kharif crops, 1.5% for Rabi crops, 5% for commercial/horticultural crops. Government pays rest.",
+    "eligibility": [
+      "Own or tenant farmers",
+      "Cultivating insurable crops",
+      "Farming in notified area",
+      "Not more than 2 hectares for small/marginal farmers"
+    ],
+    "documents": [
+      "Aadhaar card or ID proof",
+      "Land ownership/tenancy certificate",
+      "Bank account details",
+      "Photo of farm field"
+    ],
+    "keywords": ["pmfby", "fasal bima", "crop insurance", "bima", "kharif", "rabi", "फसल बीमा", "प्रधानमंत्री फसल बीमा", "बीमा", "नुकसान"],
+    "apply_at": "Insurance agent, Bank, CSC, or PMFBY portal (pmfby.gov.in)",
+    "min_land_acres": 0,
+    "requires_kcc": false,
+    "requires_bank_account": true,
+    "income_limit": 0
+  },
+  {
+    "scheme_id": "AYUSHMAN_BHARAT",
+    "name_en": "Ayushman Bharat PM-JAY",
+    "name_hi": "आयुष्मान भारत प्रधानमंत्री जन आरोग्य योजना",
+    "benefit": "₹5 lakh per family per year for health insurance covering 1,929 medical procedures at empaneled hospitals",
+    "eligibility": [
+      "SECC 2011 listed families",
+      "Families engaged in unorganized sector",
+      "BPL and APL families as per state list",
+      "All Indian residents can apply"
+    ],
+    "documents": [
+      "SECC list check (online)",
+      "Aadhaar card or ID proof",
+      "State government approval letter (if applicable)"
+    ],
+    "keywords": ["ayushman", "health insurance", "hospital", "ilaaj", "pm-jay", "5 lakh health", "medical", "आयुष्मान भारत", "स्वास्थ्य बीमा", "अस्पताल"],
+    "apply_at": "Government hospital or CSC or Ayushman Bharat portal (pmjay.gov.in)",
+    "min_land_acres": 0,
+    "requires_kcc": false,
+    "requires_bank_account": false,
+    "income_limit": 0
+  },
+  {
+    "scheme_id": "MGNREGS",
+    "name_en": "Mahatma Gandhi National Rural Employment Guarantee Scheme",
+    "name_hi": "महात्मा गांधी नेशनल रूरल एम्प्लॉयमेंट गारंटी स्कीम",
+    "benefit": "100 days guaranteed wage employment per year at ₹220 to ₹357 per day depending on state",
+    "eligibility": [
+      "Rural adult seeking work",
+      "18 years or older",
+      "Willing to do unskilled manual work",
+      "Indian citizen with local residency"
+    ],
+    "documents": [
+      "ID proof (Aadhaar, voter ID)",
+      "Address proof",
+      "Job card application form"
+    ],
+    "keywords": ["mgnrega", "manrega", "rozgar", "employment", "100 din", "job card", "panchayat work", "मनरेगा", "रोजगार", "सौ दिन"],
+    "apply_at": "Gram Panchayat office (apply for Job Card)",
+    "min_land_acres": 0,
+    "requires_kcc": false,
+    "requires_bank_account": true,
+    "income_limit": 0
+  },
+  {
+    "scheme_id": "SOIL_HEALTH_CARD",
+    "name_en": "Soil Health Card Scheme",
+    "name_hi": "मृदा स्वास्थ्य कार्ड योजना",
+    "benefit": "Free soil testing and personalized crop recommendation card issued every 2 years. Helps reduce fertilizer cost by 8-10%.",
+    "eligibility": [
+      "All farmers with cultivable land",
+      "Land must be in notified area",
+      "No income or age restrictions"
+    ],
+    "documents": [
+      "Land ownership certificate",
+      "ID proof",
+      "Soil sample submission"
+    ],
+    "keywords": ["soil health", "mitti", "soil test", "khad", "fertilizer", "माट्टी जांच", "मृदा स्वास्थ्य कार्ड", "खाद", "जांच", "सिफारिश"],
+    "apply_at": "Soil Testing Laboratory or Agricultural Department office",
+    "min_land_acres": 0,
+    "requires_kcc": false,
+    "requires_bank_account": false,
+    "income_limit": 0
+  },
+  {
+    "scheme_id": "PM_AWAS_GRAMIN",
+    "name_en": "PM Awas Yojana Gramin",
+    "name_hi": "प्रधानमंत्री आवास योजना ग्रामीण",
+    "benefit": "Housing subsidy of ₹1.2 lakh in plain areas and ₹1.3 lakh in hilly/difficult areas for BPL rural households to construct pucca house",
+    "eligibility": [
+      "BPL family (state-wise list)",
+      "No pucca house owned by family members",
+      "Willing to contribute labor",
+      "Rural area resident"
+    ],
+    "documents": [
+      "BPL certificate",
+      "Land ownership/possession proof",
+      "ID and address proof",
+      "Bank account details"
+    ],
+    "keywords": ["pm awas", "housing", "ghar", "makaan", "bpl", "pradhan mantri awas", "पीएम आवास", "आवास योजना", "घर", "मकान"],
+    "apply_at": "Gram Panchayat or Block Development Office",
+    "min_land_acres": 0,
+    "requires_kcc": false,
+    "requires_bank_account": true,
+    "income_limit": 0
+  },
+  {
+    "scheme_id": "NFSA_RATION",
+    "name_en": "National Food Security Act - Public Distribution System",
+    "name_hi": "राष्ट्रीय खाद्य सुरक्षा अधिनियम - सार्वजनिक वितरण प्रणाली",
+    "benefit": "Subsidized food grain: rice at ₹3/kg, wheat at ₹2/kg, coarse grain at ₹1/kg for priority household members under National Food Security Act",
+    "eligibility": [
+      "Priority household (as per state list)",
+      "Aadhaar seeded registration",
+      "No income restrictions in rural areas"
+    ],
+    "documents": [
+      "Ration card",
+      "Aadhaar card",
+      "ID and address proof"
+    ],
+    "keywords": ["ration", "ration card", "food", "anaj", "rice", "wheat", "राशन", "राशन कार्ड", "अनाज", "खाद्य सुरक्षा", "गेहूं"],
+    "apply_at": "Block Office or State Food and Public Distribution Department",
+    "min_land_acres": 0,
+    "requires_kcc": false,
+    "requires_bank_account": false,
+    "income_limit": 0
+  },
+  {
+    "scheme_id": "ATAL_PENSION",
+    "name_en": "Atal Pension Yojana",
+    "name_hi": "अटल पेंशन योजना",
+    "benefit": "Guaranteed pension of ₹1,000 to ₹5,000 per month after age 60. Contribution depends on age at joining and chosen pension amount.",
+    "eligibility": [
+      "Indian citizen aged 18-40 years",
+      "Not covered by any social security scheme",
+      "Regular income (self-employed or unorganized sector worker)"
+    ],
+    "documents": [
+      "Aadhaar card",
+      "Bank account details",
+      "Identity and address proof"
+    ],
+    "keywords": ["atal pension", "pension", "retirement", "budhapa", "apy", "अटल पेंशन", "पेंशन", "बुढ़ापा", "सेवानिवृत्ति"],
+    "apply_at": "Bank or Post Office APY enrollment center",
+    "min_land_acres": 0,
+    "requires_kcc": false,
+    "requires_bank_account": true,
+    "income_limit": 0
+  },
+  {
+    "scheme_id": "SUKANYA_SAMRIDDHI",
+    "name_en": "Sukanya Samriddhi Yojana",
+    "name_hi": "सुकन्या समृद्धि योजना",
+    "benefit": "8.2% annual interest savings scheme for girl child under 10 years. Tax exempt. Matures at age 21.",
+    "eligibility": [
+      "Girl child under 10 years",
+      "Parent or legal guardian opens account",
+      "Maximum 2 accounts per family",
+      "Indian citizen"
+    ],
+    "documents": [
+      "Girl child's birth certificate",
+      "Parent/guardian ID and address proof",
+      "Parent/guardian bank account details"
+    ],
+    "keywords": ["sukanya", "girl child", "beti", "daughter", "savings", "सुकन्या समृद्धि", "बेटी", "लड़की", "बचत", "ब्याज"],
+    "apply_at": "Post Office or Authorized Bank branch",
+    "min_land_acres": 0,
+    "requires_kcc": false,
+    "requires_bank_account": true,
+    "income_limit": 0
+  }
+]
