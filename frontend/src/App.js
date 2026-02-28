@@ -788,11 +788,6 @@ function App() {
     await new Promise(resolve => setTimeout(resolve, 600))
     if (onComplete) onComplete()
   }
-    
-    // Short pause then resume listening
-    await new Promise(resolve => setTimeout(resolve, 600))
-    if (onComplete) onComplete()
-  }
 
   // ========== LANGUAGE-AWARE AUDIO PLAYBACK ==========
   const playWithLanguage = async (sahayaAudioUrl, voiceMemoryUrl, responseText, onComplete) => {
