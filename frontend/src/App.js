@@ -837,7 +837,7 @@ function App() {
               }
             }
             
-            playAudioSequence()
+            await playAudioSequence()
             return
           }
         } catch (sarvamError) {
@@ -1030,12 +1030,21 @@ function App() {
       return
     }
     
+    // Stop any existing recognition to avoid conflicts
+    if (recognitionRef.current) {
+      try {
+        recognitionRef.current.abort()
+      } catch(e) {
+        console.log('[VoiceBridge] Error aborting previous recognition:', e.message)
+      }
+    }
+    
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
     const recognition = new SpeechRecognition()
     
     recognition.lang = selectedLanguage  // Use selected language
     recognition.interimResults = false
-    recognition.maxAlternatives = 1
+    recognition.maxAlternatives = 2  // Get top 2 alternatives for better confidence handling
     recognition.continuous = false
     
     recognition.onstart = () => {
@@ -1046,15 +1055,32 @@ function App() {
     }
     
     recognition.onresult = (event) => {
-      const transcript = event.results[0][0].transcript
-      console.log('[VoiceBridge] Web Speech transcript:', transcript)
+      // Only process the final result
+      if (!event.results[event.results.length - 1].isFinal) {
+        return
+      }
+      
+      let transcript = event.results[event.results.length - 1][0].transcript
+      const confidence = event.results[event.results.length - 1][0].confidence
+      
+      // For Malayalam and other regional languages, try alternative if low confidence
+      if ((selectedLanguage === 'ml-IN' || selectedLanguage === 'ta-IN') && 
+          confidence < 0.6 && event.results[event.results.length - 1].length > 1) {
+        const altTranscript = event.results[event.results.length - 1][1].transcript
+        const altConfidence = event.results[event.results.length - 1][1].confidence
+        console.log(`[VoiceBridge] Low confidence (${confidence.toFixed(2)}) - trying alternative (${altConfidence.toFixed(2)}): ${altTranscript}`)
+        if (altConfidence > confidence) {
+          transcript = altTranscript
+        }
+      }
+      
+      console.log('[VoiceBridge] Web Speech transcript:', transcript, 'confidence:', confidence.toFixed(2))
       
       // Auto-detect language from transcript
       const detectedLang = detectLanguageFromText(transcript)
       if (detectedLang !== selectedLanguage && detectedLang !== 'hi-IN') {
         console.log('[VoiceBridge] Auto-detected language:', detectedLang)
         setDetectedLanguage(detectedLang)
-        // Optionally auto-switch language here: setSelectedLanguage(detectedLang)
       }
       
       setIsRecording(false)
@@ -1066,18 +1092,40 @@ function App() {
     recognition.onerror = (event) => {
       console.log('[VoiceBridge] Speech error:', event.error)
       setIsRecording(false)
-      setIsProcessing(false)
-      setCallState(CALL_STATES.WAITING)
+      
+      // Only handle errors if we're still in conversation mode
+      if (!isConversationActiveRef.current) {
+        setIsProcessing(false)
+        setCallState(CALL_STATES.WAITING)
+        setInputEnabled(true)
+        return
+      }
       
       if (event.error === 'no-speech') {
-        // Silently ignore - user just didn't speak
-        setInputEnabled(true)
+        // Silently ignore - user just didn't speak, restart listening
+        setTimeout(() => {
+          if (isConversationActiveRef.current) {
+            startListening()
+          }
+        }, 300)
       } else if (event.error === 'not-allowed') {
         alert('Microphone permission denied. Please allow mic access and try again.')
+        setIsProcessing(false)
+        setCallState(CALL_STATES.WAITING)
         setInputEnabled(true)
       } else if (event.error === 'network') {
         alert('Network error. Please check your connection.')
+        setIsProcessing(false)
+        setCallState(CALL_STATES.WAITING)
         setInputEnabled(true)
+      } else {
+        // Other errors - try restarting
+        console.log('[VoiceBridge] Recovering from error:', event.error)
+        setTimeout(() => {
+          if (isConversationActiveRef.current) {
+            startListening()
+          }
+        }, 300)
       }
     }
     
@@ -1097,20 +1145,25 @@ function App() {
   // ========== CHAT MESSAGE HANDLING ==========
   const normalizeTranscript = (text) => {
     let t = text.toLowerCase()
-    // KCC variants — speech recognition says सीसीसी, केसीसी
+    // KCC variants — speech recognition says सीसीसी, केसीसी (Hindi) and കെസിസി, കെസെ (Malayalam)
     if (t.includes('सीसीसी') || t.includes('केसीसी') || 
+        t.includes('കെസിസി') || t.includes('കെസെ') || t.includes('കെ സി സി') ||
         t.includes('si si si') || t.includes('kcc') ||
-        t.includes('kisan credit') || t.includes('credit card'))
+        t.includes('ks si') || t.includes('kesee') || t.includes('kese') ||
+        t.includes('kisan credit') || t.includes('credit card')) {
       return 'kcc ke baare mein batao'
+    }
     // PM_KISAN variants
     if (t.includes('पीएम किसान') || t.includes('पी एम किसान') || 
         t.includes('pihem kisan') || t.includes('pm kisan') ||
-        t.includes('kisan samman'))
+        t.includes('kisan samman')) {
       return 'pm kisan ke baare mein batao'
+    }
     // PMFBY variants
     if (t.includes('पीएमएफबीवाई') || t.includes('फसल बीमा') ||
-        t.includes('pmfby') || t.includes('fasal bima'))
+        t.includes('pmfby') || t.includes('fasal bima')) {
       return 'pmfby fasal bima ke baare mein batao'
+    }
     return text
   }
 
