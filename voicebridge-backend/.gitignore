@@ -1,11 +1,15 @@
-.env
 __pycache__/
-*.pyc
-*.pyo
-.pytest_cache/
-venv/
+*.py[cod]
 .venv/
-*.mp3
-*.wav
-upload_schemes.py
-!data/voice_memory/.gitkeep
+venv/
+
+# NEVER COMMIT SECRETS
+.env
+
+.zappa/
+*.zip
+.pytest_cache/
+.coverage
+htmlcov/
+.DS_Store
+*.log

@@ -1,66 +1,48 @@
-# ──────────────────────────────────────────────────────────
-# Environment & Secrets
-# ──────────────────────────────────────────────────────────
+# Dependencies
+node_modules/
+.venv/
+venv/
+env/
+__pycache__/
+*.py[cod]
+
+# Build outputs
+build/
+dist/
+*.egg-info/
+*.zip
+*.tar.gz
+
+# Secrets
 .env
 .env.local
 .env.*.local
+voicebridge-backend/.env
 
-# ──────────────────────────────────────────────────────────
-# Python
-# ──────────────────────────────────────────────────────────
-__pycache__/
-*.py[cod]
-*.pyo
-*.pyd
-*.egg-info/
-dist/
-build/
-.pytest_cache/
+# AWS / Deployment
+.zappa/
 
-# ──────────────────────────────────────────────────────────
-# Virtual Environments
-# ──────────────────────────────────────────────────────────
-venv/
-env/
-ENV/
-.venv/
-
-# ──────────────────────────────────────────────────────────
-# Audio Files (Voice Recordings & Demos — too large)
-# ──────────────────────────────────────────────────────────
-demo_audio/*.mp3
-demo_audio/*.wav
-data/voice_memory/*.mp3
-data/voice_memory/*.wav
-*.mp3
-*.wav
-
-# ──────────────────────────────────────────────────────────
-# IDE & Editors
-# ──────────────────────────────────────────────────────────
+# IDE
 .vscode/
 .idea/
 *.swp
-*.swo
-*.sublime-project
-*.sublime-workspace
 
-# ──────────────────────────────────────────────────────────
 # OS
-# ──────────────────────────────────────────────────────────
 .DS_Store
 Thumbs.db
+desktop.ini
 
-# ──────────────────────────────────────────────────────────
-# Node/Frontend
-# ──────────────────────────────────────────────────────────
-node_modules/
-voicebridge-frontend/node_modules/
-voicebridge-frontend/dist/
-voicebridge-frontend/.env
-voicebridge-frontend/.env.local
+# Logs
+*.log
+npm-debug.log*
 
-# ──────────────────────────────────────────────────────────
-# EXCEPT: Keep .gitkeep files (empty directory markers)
-# ──────────────────────────────────────────────────────────
-!.gitkeep
+# Testing
+.coverage
+htmlcov/
+.pytest_cache/
+coverage/
+
+# Temp
+*.tmp
+*.bak
+*.orig
