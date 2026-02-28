@@ -697,11 +697,52 @@ function App() {
       // Hindi: use Polly audio (best quality)
       await playSequentially(sahayaAudioUrl, voiceMemoryUrl, onComplete)
     } else {
-      // Regional language: use browser TTS (speaks the language correctly)
-      // Browser TTS supports Tamil, Kannada, Telugu, Malayalam natively
+      // Regional language: try Sarvam AI first, fallback to browser TTS
       window.speechSynthesis.cancel()
       
+      let sarvamSucceeded = false
+      
       if (responseText) {
+        try {
+          // Try calling Sarvam AI for regional language TTS
+          const sarvamResponse = await axios.post(API.sarvamTts, {
+            text: responseText,
+            language: selectedLanguage.split('-')[0] // 'ta', 'kn', 'te', 'ml'
+          }, { timeout: 10000 })
+          
+          if (sarvamResponse.data.success && sarvamResponse.data.audio_url) {
+            sarvamSucceeded = true
+            const sarvamAudioUrl = sarvamResponse.data.audio_url
+            
+            // Play Sarvam audio then voice memory then complete
+            const playAudioSequence = async () => {
+              try {
+                await playAudioUrl(sarvamAudioUrl)
+                await new Promise(resolve => setTimeout(resolve, 800))
+                
+                if (voiceMemoryUrl && isConversationActiveRef.current) {
+                  await playAudioUrl(voiceMemoryUrl)
+                }
+                await new Promise(resolve => setTimeout(resolve, 500))
+                if (onComplete) onComplete()
+              } catch (err) {
+                console.warn('Audio playback error:', err)
+                if (onComplete) onComplete()
+              }
+            }
+            
+            playAudioSequence()
+            return
+          }
+        } catch (sarvamError) {
+          console.warn('Sarvam API failed, falling back to browser TTS:', sarvamError.message)
+          sarvamSucceeded = false
+          // Will use browser TTS below
+        }
+      }
+      
+      // Fallback to browser TTS if Sarvam failed or no responseText
+      if (responseText && !sarvamSucceeded) {
         const utterance = new SpeechSynthesisUtterance(responseText)
         utterance.lang = selectedLanguage
         utterance.rate = 0.85
@@ -714,8 +755,8 @@ function App() {
         if (bestVoice) utterance.voice = bestVoice
         
         utterance.onend = async () => {
-          // Still play voice memory clip (it's Hindi audio — always plays)
-          if (voiceMemoryUrl) {
+          // Still play voice memory clip
+          if (voiceMemoryUrl && isConversationActiveRef.current) {
             await new Promise(resolve => setTimeout(resolve, 800))
             await playAudioUrl(voiceMemoryUrl)
           }
@@ -725,14 +766,14 @@ function App() {
         
         utterance.onerror = async () => {
           // TTS failed, still play voice memory and continue
-          if (voiceMemoryUrl) await playAudioUrl(voiceMemoryUrl)
+          if (voiceMemoryUrl && isConversationActiveRef.current) await playAudioUrl(voiceMemoryUrl)
           if (onComplete) onComplete()
         }
         
         window.speechSynthesis.speak(utterance)
-      } else {
+      } else if (!responseText) {
         // No text, just play voice memory
-        if (voiceMemoryUrl) await playAudioUrl(voiceMemoryUrl)
+        if (voiceMemoryUrl && isConversationActiveRef.current) await playAudioUrl(voiceMemoryUrl)
         if (onComplete) onComplete()
       }
     }
@@ -814,6 +855,17 @@ function App() {
     isConversationActiveRef.current = false
     recognitionRef.current?.stop()
     window.speechSynthesis?.cancel()
+    
+    // Stop all Web Audio Context playback
+    if (audioContextRef.current) {
+      try {
+        audioContextRef.current.close()
+        audioContextRef.current = null
+      } catch (err) {
+        console.warn('Error closing audio context:', err)
+      }
+    }
+    
     setIsRecording(false)
     setCallState(CALL_STATES.IDLE)
     setInputEnabled(false)

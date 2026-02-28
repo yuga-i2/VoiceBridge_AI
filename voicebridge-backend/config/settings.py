@@ -61,6 +61,10 @@ CALL_PROVIDER_DEFAULT = os.getenv('CALL_PROVIDER', 'mock')
 # ── Webhook ───────────────────────────────────────────
 WEBHOOK_BASE_URL = os.getenv('WEBHOOK_BASE_URL', 'http://localhost:5000')
 
+# ── Sarvam AI API ─────────────────────────────────────
+SARVAM_API_KEY = os.getenv('SARVAM_API_KEY', 'sk_4kqzthaq_H8BDDnByZuCFrUW2j4AzpUsa')
+SARVAM_API_URL = 'https://api.sarvam.ai/text-to-speech'
+
 # ── Startup Summary ───────────────────────────────────
 if __name__ != '__main__':
     _mode = "🔴 LIVE AWS" if not USE_MOCK else "🟡 MOCK MODE"

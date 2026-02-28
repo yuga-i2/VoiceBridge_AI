@@ -3,6 +3,10 @@ VoiceBridge AI — Flask Application Entry Point
 Registers all blueprints. No business logic here.
 """
 import logging
+import os
+import base64
+import uuid
+import requests
 from pathlib import Path
 from dotenv import load_dotenv
 from flask import Flask, jsonify, request
@@ -247,6 +251,103 @@ def text_to_speech():
         return jsonify(result)
     except Exception as e:
         logger.error(f"TTS error: {e}")
+        return jsonify({'success': False, 'error': str(e), 'code': 'SERVICE_ERROR'}), 500
+
+
+@app.route('/api/sarvam-tts', methods=['POST'])
+def sarvam_tts():
+    """Regional language TTS via Sarvam AI Bulbul v3."""
+    try:
+        import boto3
+        from config.settings import SARVAM_API_KEY, SARVAM_API_URL, AWS_REGION, S3_AUDIO_BUCKET, USE_MOCK
+        
+        data = request.get_json() or {}
+        text = (data.get('text') or '').strip()
+        language = (data.get('language') or '').strip().lower()
+        
+        if not text:
+            return jsonify({'success': False, 'error': 'Text is required'}), 400
+        if not language:
+            return jsonify({'success': False, 'error': 'Language is required'}), 400
+        
+        # Mock mode for testing without Sarvam API
+        if USE_MOCK:
+            return jsonify({
+                'success': True,
+                'audio_url': 'https://mock-sarvam-audio.s3.amazonaws.com/mock-audio.wav',
+                'language': language
+            })
+        
+        # Speaker mapping: language → Sarvam speaker ID
+        speaker_map = {
+            'tamil': 'kavya',
+            'ta': 'kavya',
+            'kannada': 'shreya',
+            'kn': 'shreya',
+            'telugu': 'meera',
+            'te': 'meera',
+            'malayalam': 'pavithra',
+            'ml': 'pavithra'
+        }
+        
+        speaker_id = speaker_map.get(language, 'kavya')
+        
+        # Call Sarvam API
+        headers = {'api-subscription-key': SARVAM_API_KEY}
+        payload = {
+            'inputs': [{'text': text}],
+            'target_language_code': language,
+            'speaker': speaker_id,
+            'pitch': 1.0,
+            'pace': 1.0,
+            'loudness': 1.5
+        }
+        
+        response = requests.post(SARVAM_API_URL, json=payload, headers=headers, timeout=30)
+        if response.status_code != 200:
+            logger.error(f"Sarvam API error: {response.status_code} - {response.text}")
+            return jsonify({
+                'success': False,
+                'error': f'Sarvam API returned {response.status_code}'
+            }), 500
+        
+        result = response.json()
+        if not result.get('status') == 'success' or not result.get('audios'):
+            logger.error(f"Sarvam API unexpected response: {result}")
+            return jsonify({'success': False, 'error': 'Invalid Sarvam response'}), 500
+        
+        # Decode base64 audio and upload to S3
+        audio_base64 = result['audios'][0]
+        audio_bytes = base64.b64decode(audio_base64)
+        
+        # Generate S3 key
+        s3_key = f"sarvam-audio/{uuid.uuid4()}.wav"
+        
+        # Upload to S3
+        s3_client = boto3.client('s3', region_name=AWS_REGION)
+        s3_client.put_object(
+            Bucket=S3_AUDIO_BUCKET,
+            Key=s3_key,
+            Body=audio_bytes,
+            ContentType='audio/wav'
+        )
+        
+        # Generate presigned URL (1 hour expiry)
+        presigned_url = s3_client.generate_presigned_url(
+            'get_object',
+            Params={'Bucket': S3_AUDIO_BUCKET, 'Key': s3_key},
+            ExpiresIn=3600
+        )
+        
+        return jsonify({
+            'success': True,
+            'audio_url': presigned_url,
+            'language': language,
+            'speaker': speaker_id
+        })
+        
+    except Exception as e:
+        logger.error(f"Sarvam TTS error: {e}")
         return jsonify({'success': False, 'error': str(e), 'code': 'SERVICE_ERROR'}), 500
 
 

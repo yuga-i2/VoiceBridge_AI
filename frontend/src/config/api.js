@@ -14,6 +14,7 @@ export const API = {
   eligibilityCheck: `${API_BASE}/api/eligibility-check`,
   chat:             `${API_BASE}/api/chat`,
   tts:              `${API_BASE}/api/text-to-speech`,
+  sarvamTts:        `${API_BASE}/api/sarvam-tts`,
   stt:              `${API_BASE}/api/speech-to-text`,
   voiceMemory:      `${API_BASE}/api/voice-memory`,
   initiateCall:     `${API_BASE}/api/initiate-call`,

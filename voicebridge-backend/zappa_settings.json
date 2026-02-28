@@ -19,7 +19,8 @@
       "CALL_PROVIDER": "connect",
       "SMS_PROVIDER": "mock",
       "FLASK_ENV": "production",
-      "FLASK_PORT": "5000"
+      "FLASK_PORT": "5000",
+      "SARVAM_API_KEY": "sk_4kqzthaq_H8BDDnByZuCFrUW2j4AzpUsa"
     },
     "exclude": [
       "frontend",
