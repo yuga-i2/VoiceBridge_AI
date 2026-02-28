@@ -720,19 +720,29 @@ function App() {
       setCallState(CALL_STATES.THINKING)
       setInputEnabled(false)
 
-      // Normalize transcript before sending
-      const normalizedMessage = normalizeTranscript(userMessage)
-
       // Build history BEFORE sending to Lambda (include current user message)
+      // Add phonetic normalization for speech recognition variants
+      const normalizeMsg = (t) => {
+        const s = t.toLowerCase()
+        if (s.includes('सीसीसी') || s.includes('केसीसी') || 
+            s.includes('si si si')) return 'kcc ke baare mein batao'
+        if (s.includes('पीएम किसान') || s.includes('pihem kisan') ||
+            s.includes('piem kisan')) return 'pm kisan ke baare mein batao'
+        if (s.includes('फसल बीमा') || s.includes('piem ef')) 
+            return 'pmfby fasal bima ke baare mein batao'
+        return t
+      }
+      const finalMessage = normalizeMsg(userMessage)
+      
       const historyToSend = [
         ...conversationHistory,
-        { role: 'user', content: normalizedMessage }
+        { role: 'user', content: finalMessage }
       ]
       console.log('[VoiceBridge] Sending to Lambda with history length:', historyToSend.length)
 
       // Get AI response from /api/chat
       const chatRes = await axios.post(API.chat, {
-        message: normalizedMessage,
+        message: finalMessage,
         farmer_profile: farmerProfile,
         conversation_history: historyToSend
       })
