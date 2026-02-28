@@ -22,22 +22,31 @@ class DecimalEncoder(json.JSONEncoder):
         return super().default(obj)
 
 
-# Farmer success stories from Voice Memory Network
+# Farmer success stories from Voice Memory Network — multilingual
 FARMER_STORIES = {
-    'PM_KISAN': {
-        'farmer': 'Sunitha Devi',
-        'district': 'Tumkur, Karnataka',
-        'story': 'Sunitha Devi ne PM-KISAN se ₹6,000 haasil kiye aur apne bacchon ki school fees bhari.'
+    'hi-IN': {
+        'PM_KISAN': 'Sunitha Devi',
+        'KCC': 'Ramaiah',
+        'PMFBY': 'Laxman Singh',
+        'PM_KISAN_DETAIL': 'Sunitha Devi se Tumkur, Karnataka',
+        'KCC_DETAIL': 'Ramaiah se Mysuru, Karnataka',
+        'PMFBY_DETAIL': 'Laxman Singh se Dharwad, Karnataka'
     },
-    'KCC': {
-        'farmer': 'Ramaiah',
-        'district': 'Mysuru, Karnataka',
-        'story': 'Ramaiah ko KCC se sirf 4% byaaj par ₹3 lakh ka loan mila aur sahukaar ka chakkar band hua.'
+    'ml-IN': {
+        'PM_KISAN': 'Priya',
+        'KCC': 'Rajan',
+        'PMFBY': 'Suresh Kumar',
+        'PM_KISAN_DETAIL': 'Priya ji from Thrissur, Kerala',
+        'KCC_DETAIL': 'Rajan ji from Palakkad, Kerala',
+        'PMFBY_DETAIL': 'Suresh Kumar ji from Wayanad, Kerala'
     },
-    'PMFBY': {
-        'farmer': 'Laxman Singh',
-        'district': 'Dharwad, Karnataka',
-        'story': 'Laxman Singh ki fasal barbaad hui lekin PMFBY se ₹18,000 mile aur parivar bachaa.'
+    'ta-IN': {
+        'PM_KISAN': 'Kavitha',
+        'KCC': 'Vijay',
+        'PMFBY': 'Selva',
+        'PM_KISAN_DETAIL': 'Kavitha ji from Coimbatore, Tamil Nadu',
+        'KCC_DETAIL': 'Vijay ji from Madurai, Tamil Nadu',
+        'PMFBY_DETAIL': 'Selva ji from Thanjavur, Tamil Nadu'
     }
 }
 
@@ -47,6 +56,40 @@ SAHAYA_SYSTEM_PROMPT = """You are Sahaya, an expert Hindi-speaking AI welfare na
 You have access to this farmer's profile: {farmer_profile}
 Use their name, land size, and state to personalize EVERY response.
 Relevant scheme data: {scheme_data}
+
+═══════════════════════════════
+LANGUAGE & FARMER STORY RULE
+═══════════════════════════════
+
+CRITICAL: Match all farmer stories to the user's LANGUAGE and REGION.
+NEVER mention a Hindi farmer (Sunitha Devi, Ramaiah, Laxman Singh) to Malayalam or Tamil users.
+NEVER mention a Malayalam farmer to Hindi or Tamil users.
+NEVER mention a Tamil farmer to Hindi or Malayalam users.
+
+Use ONLY these farmers for the user's language:
+
+If responding in Malayalam (ml-IN), use ONLY:
+- PM-KISAN: "Priya ji from Thrissur, Kerala"  
+- KCC: "Rajan ji from Palakkad, Kerala"
+- PMFBY: "Suresh Kumar ji from Wayanad, Kerala"
+
+If responding in Tamil (ta-IN), use ONLY:
+- PM-KISAN: "Kavitha ji from Coimbatore, Tamil Nadu"
+- KCC: "Vijay ji from Madurai, Tamil Nadu"  
+- PMFBY: "Selva ji from Thanjavur, Tamil Nadu"
+
+If responding in Hindi (hi-IN), use ONLY:
+- PM-KISAN: "Sunitha Devi from Tumkur, Karnataka"
+- KCC: "Ramaiah from Mysuru, Karnataka"
+- PMFBY: "Laxman Singh from Dharwad, Karnataka"
+
+WHENEVER you mention a farmer success story (any name except the user),
+you MUST end that paragraph with exactly one of these transition lines
+(choose the one matching the language you are responding in):
+
+Hindi:    "आप अपने क्षेत्र के किसान की सफलता की कहानी सुन सकते हैं।"
+Malayalam: "നിങ്ങളുടെ പ്രദേശത്തെ കർഷകന്റെ വിജയകഥ കേൾക്കാം।"
+Tamil:    "உங்கள் பகுதியிலுள்ള விവసായியின் வெற்றிக் கதையை கேளுங்கள്।"
 
 ═══════════════════════════════
 CONVERSATION STAGES — follow in order

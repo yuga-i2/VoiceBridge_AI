@@ -119,11 +119,14 @@ def chat():
         # Inline scheme detection — does not depend on any service function
         def detect_scheme(msg):
             m = msg.lower()
-            if any(k in m for k in ['pm kisan','pmkisan','pm-kisan','kisan samman','6000','kisaan','पीएम किसान','पी एम किसान','pihem kisan','piem kisan']):
+            # PM_KISAN — Hindi + Malayalam + Tamil keywords
+            if any(k in m for k in ['pm kisan','pmkisan','pm-kisan','kisan samman','6000','kisaan','पीएम किसान','पी एम किसान','pihem kisan','piem kisan','പി എം കിസാൻ','പിഎം കിസാൻ','കിസാൻ സമ്മാൻ','pm kisan','கிசான்','பிஎம் கிசான்','கிசான் சம்மான்']):
                 return ['PM_KISAN'], 'PM_KISAN'
-            if any(k in m for k in ['kcc','kisan credit','credit card','kisan card','4%','4 percent','सीसीसी','केसीसी','si si si','see see see','kisan lon','kisan loan','4 pratishat']):
+            # KCC — Hindi + Malayalam + Tamil keywords
+            if any(k in m for k in ['kcc','kisan credit','credit card','kisan card','4%','4 percent','सीसीसी','केसीसी','si si si','see see see','kisan lon','kisan loan','4 pratishat','കിസാൻ ക്രെഡിറ്റ്','കെ സി സി','കെസിസി','கிசான் கிரெடிट்','கேசिசी']):
                 return ['KCC'], 'KCC'
-            if any(k in m for k in ['pmfby','fasal bima','crop insurance','bima yojana','fasal insurance','फसल बीमा','piem ef bi','fasal bima yojana']):
+            # PMFBY — Hindi + Malayalam + Tamil keywords
+            if any(k in m for k in ['pmfby','fasal bima','crop insurance','bima yojana','fasal insurance','फसल बीमा','piem ef bi','fasal bima yojana','ഫസൽ ബീമ','വിള ഇൻഷുറൻസ്','പിഎംഎഫ്ബിവൈ','பயிர் காப்பீடு','பிஎம்எஃப்பிஒய்']):
                 return ['PMFBY'], 'PMFBY'
             if any(k in m for k in ['mgnrega','mnrega','manrega','nrega','100 days','job card','rozgar']):
                 return ['MGNREGS'], None
@@ -180,6 +183,24 @@ def chat():
         # Also check AI response text as last fallback
         if not final_voice_clip and response_text:
             _, final_voice_clip = detect_scheme(response_text)
+        
+        # Fallback: if no voice clip detected but schemes were matched, use first match
+        if not final_voice_clip and matched_schemes:
+            clip_eligible = ['PM_KISAN', 'KCC', 'PMFBY']
+            for scheme in matched_schemes:
+                if scheme in clip_eligible:
+                    final_voice_clip = scheme
+                    break
+        
+        # Also check response text for scheme mentions as last resort
+        if not final_voice_clip and response_text:
+            text_lower = response_text.lower()
+            if 'pm-kisan' in text_lower or 'pm kisan' in text_lower or 'കിസാൻ' in response_text or 'கிசான்' in response_text:
+                final_voice_clip = 'PM_KISAN'
+            elif 'kcc' in text_lower or 'kisan credit' in text_lower or 'ക്രെഡിറ്റ്' in response_text or 'கிரெடिट්' in response_text:
+                final_voice_clip = 'KCC'
+            elif 'pmfby' in text_lower or 'fasal bima' in text_lower or 'വിള ഇൻഷുറൻസ്' in response_text or 'பயிர്' in response_text:
+                final_voice_clip = 'PMFBY'
         
         # Generate TTS audio for Sahaya's response
         tts_audio_url = None
