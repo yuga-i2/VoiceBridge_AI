@@ -52,7 +52,19 @@ const LANGUAGES = {
     flag: '🇮🇳',
     greeting: 'नमस्ते! मैं सहाया हूँ — आपकी सरकारी योजना सहायक। आप PM-KISAN, KCC, फसल बीमा के बारे में पूछ सकते हैं।',
     placeholder: 'या अपना संदेश टाइप करें...',
-    instruction: 'Please respond ONLY in Hindi (Devanagari script).'
+    instruction: 'Please respond ONLY in Hindi (Devanagari script).',
+    ui: {
+      startBtn: '☎️ सहाया से बात करें',
+      endBtn: '📵 कॉल बंद करें',
+      micBtn: '🎤 बोलने के लिए दबाएं',
+      stopBtn: '⏹ बोलना बंद करें',
+      listening: 'सुन रही हूँ...',
+      thinking: 'सोच रही हूँ...',
+      speaking: '🔊 Sahaya बोल रही है...',
+      placeholder: 'या अपना संदेश टाइप करें...',
+      youSaid: 'आपने कहा:',
+      sahayaSays: 'Sahaya कहती है:'
+    }
   },
   'ta-IN': { 
     name: 'தமிழ்', 
@@ -60,7 +72,19 @@ const LANGUAGES = {
     flag: '🌺',
     greeting: 'வணக்கம்! நான் சஹாயா — உங்கள் அரசு திட்ட உதவியாளர். PM-KISAN, KCC, பயிர் காப்பீடு பற்றி கேளுங்கள்।',
     placeholder: 'உங்கள் செய்தியை தட்டச்சு செய்யுங்கள்...',
-    instruction: 'Please respond ONLY in Tamil script.'
+    instruction: 'Please respond ONLY in Tamil script.',
+    ui: {
+      startBtn: '☎️ சஹாயாவிடம் பேசுங்கள்',
+      endBtn: '📵 அழைப்பை முடிக்கவும்',
+      micBtn: '🎤 பேச அழுத்தவும்',
+      stopBtn: '⏹ நிறுத்து',
+      listening: 'கேட்கிறேன்...',
+      thinking: 'யோசிக்கிறேன்...',
+      speaking: '🔊 Sahaya பேசுகிறாள்...',
+      placeholder: 'உங்கள் செய்தியை தட்டச்சு செய்யுங்கள்...',
+      youSaid: 'நீங்கள் சொன்னது:',
+      sahayaSays: 'Sahaya சொல்கிறாள்:'
+    }
   },
   'kn-IN': { 
     name: 'ಕನ್ನಡ', 
@@ -68,7 +92,19 @@ const LANGUAGES = {
     flag: '🌻',
     greeting: 'ನಮಸ್ಕಾರ! ನಾನು ಸಹಾಯ — ನಿಮ್ಮ ಸರ್ಕಾರಿ ಯೋಜನೆ ಸಹಾಯಕ. PM-KISAN, KCC, ಬೆಳೆ ವಿಮೆ ಬಗ್ಗೆ ಕೇಳಿ।',
     placeholder: 'ನಿಮ್ಮ ಸಂದೇಶ ಟೈಪ್ ಮಾಡಿ...',
-    instruction: 'Please respond ONLY in Kannada script.'
+    instruction: 'Please respond ONLY in Kannada script.',
+    ui: {
+      startBtn: '☎️ ಸಹಾಯದೊಂದಿಗೆ ಮಾತನಾಡಿ',
+      endBtn: '📵 ಕರೆ ಮುಗಿಸಿ',
+      micBtn: '🎤 ಮಾತನಾಡಲು ಒತ್ತಿರಿ',
+      stopBtn: '⏹ ನಿಲ್ಲಿಸಿ',
+      listening: 'ಕೇಳುತ್ತಿದ್ದೇನೆ...',
+      thinking: 'ಯೋಚಿಸುತ್ತಿದ್ದೇನೆ...',
+      speaking: '🔊 Sahaya ಮಾತನಾಡುತ್ತಿದ್ದಾಳೆ...',
+      placeholder: 'ನಿಮ್ಮ ಸಂದೇಶ ಟೈಪ್ ಮಾಡಿ...',
+      youSaid: 'ನೀವು ಹೇಳಿದ್ದು:',
+      sahayaSays: 'Sahaya ಹೇಳುತ್ತಾಳೆ:'
+    }
   },
   'te-IN': { 
     name: 'తెలుగు', 
@@ -76,7 +112,19 @@ const LANGUAGES = {
     flag: '🌸',
     greeting: 'నమస్కారం! నేను సహాయ — మీ ప్రభుత్వ పథకాల సహాయకురాలు. PM-KISAN, KCC, పంట బీమా గురించి అడగండి।',
     placeholder: 'మీ సందేశం టైప్ చేయండి...',
-    instruction: 'Please respond ONLY in Telugu script.'
+    instruction: 'Please respond ONLY in Telugu script.',
+    ui: {
+      startBtn: '☎️ సహాయతో మాట్లాడండి',
+      endBtn: '📵 కాల్ ముగించండి',
+      micBtn: '🎤 మాట్లాడటానికి నొక్కండి',
+      stopBtn: '⏹ ఆపు',
+      listening: 'వింటున్నాను...',
+      thinking: 'ఆలోచిస్తున్నాను...',
+      speaking: '🔊 Sahaya మాట్లాడుతోంది...',
+      placeholder: 'మీ సందేశం టైప్ చేయండి...',
+      youSaid: 'మీరు చెప్పింది:',
+      sahayaSays: 'Sahaya చెప్తోంది:'
+    }
   },
   'ml-IN': { 
     name: 'മലയാളം', 
@@ -84,7 +132,19 @@ const LANGUAGES = {
     flag: '🌴',
     greeting: 'നമസ്കാരം! ഞാൻ സഹായ — നിങ്ങളുടെ സർക്കാർ പദ്ധതി സഹായി. PM-KISAN, KCC, വിള ഇൻഷുറൻസ് എന്നിവയെ കുറിച്ച് ചോദിക്കൂ।',
     placeholder: 'നിങ്ങളുടെ സന്ദേശം ടൈപ്പ് ചെയ്യൂ...',
-    instruction: 'Please respond ONLY in Malayalam script.'
+    instruction: 'Please respond ONLY in Malayalam script.',
+    ui: {
+      startBtn: '☎️ സഹായയോട് സംസാരിക്കൂ',
+      endBtn: '📵 കോൾ അവസാനിപ്പിക്കൂ',
+      micBtn: '🎤 സംസാരിക്കാൻ അമർത്തൂ',
+      stopBtn: '⏹ നിർത്തൂ',
+      listening: 'കേൾക്കുന്നു...',
+      thinking: 'ചിന്തിക്കുന്നു...',
+      speaking: '🔊 Sahaya സംസാരിക്കുന്നു...',
+      placeholder: 'നിങ്ങളുടെ സന്ദേശം ടൈപ്പ് ചെയ്യൂ...',
+      youSaid: 'നിങ്ങൾ പറഞ്ഞത്:',
+      sahayaSays: 'Sahaya പറയുന്നു:'
+    }
   }
 }
 
@@ -479,6 +539,10 @@ function App() {
   const recognitionRef = useRef(null)
   const isConversationActiveRef = useRef(false)
   const audioContextRef = useRef(null)
+  const activeSourcesRef = useRef([])
+
+  // UI text in selected language
+  const langUI = LANGUAGES[selectedLanguage]?.ui || LANGUAGES['hi-IN'].ui
 
   // Load all schemes on mount
   useEffect(() => {
@@ -658,7 +722,11 @@ function App() {
         const source = ctx.createBufferSource()
         source.buffer = audioBuffer
         source.connect(ctx.destination)
-        source.onended = resolve
+        source.onended = () => {
+          activeSourcesRef.current = activeSourcesRef.current.filter(s => s !== source)
+          resolve()
+        }
+        activeSourcesRef.current.push(source)
         source.start(0)
         console.log('[Audio] Playing:', url.split('/').pop().split('?')[0])
       } catch(e) {
@@ -677,8 +745,8 @@ function App() {
     // Pause between Sahaya and farmer story
     await new Promise(resolve => setTimeout(resolve, 1000))
     
-    // Play voice memory clip automatically
-    if (voiceMemoryUrl) {
+    // Only play voice memory for Hindi (clips are in Hindi)
+    if (voiceMemoryUrl && selectedLanguage === 'hi-IN') {
       console.log('[VM] Autoplaying farmer story...')
       await playAudioUrl(voiceMemoryUrl)
       console.log('[VM] Farmer story finished')
@@ -707,7 +775,7 @@ function App() {
           // Try calling Sarvam AI for regional language TTS
           const sarvamResponse = await axios.post(API.sarvamTts, {
             text: responseText,
-            language: selectedLanguage.split('-')[0] // 'ta', 'kn', 'te', 'ml'
+            language: selectedLanguage   // Send full code e.g. 'ml-IN'
           }, { timeout: 10000 })
           
           if (sarvamResponse.data.success && sarvamResponse.data.audio_url) {
@@ -720,7 +788,9 @@ function App() {
                 await playAudioUrl(sarvamAudioUrl)
                 await new Promise(resolve => setTimeout(resolve, 800))
                 
-                if (voiceMemoryUrl && isConversationActiveRef.current) {
+                // Voice memory clips are Hindi recordings — skip for other languages
+                // until regional language clips are recorded
+                if (voiceMemoryUrl && isConversationActiveRef.current && selectedLanguage === 'hi-IN') {
                   await playAudioUrl(voiceMemoryUrl)
                 }
                 await new Promise(resolve => setTimeout(resolve, 500))
@@ -756,7 +826,7 @@ function App() {
         
         utterance.onend = async () => {
           // Still play voice memory clip
-          if (voiceMemoryUrl && isConversationActiveRef.current) {
+          if (voiceMemoryUrl && isConversationActiveRef.current && selectedLanguage === 'hi-IN') {
             await new Promise(resolve => setTimeout(resolve, 800))
             await playAudioUrl(voiceMemoryUrl)
           }
@@ -815,27 +885,36 @@ function App() {
           speakAndListen(openingText)
         }
       } else {
-        // Regional language: use browser TTS with correct language
-        window.speechSynthesis.cancel()
-        const utterance = new SpeechSynthesisUtterance(openingText)
-        utterance.lang = selectedLanguage
-        utterance.rate = 0.85
-        utterance.pitch = 1.05
-        const voices = window.speechSynthesis.getVoices()
-        const bestVoice = voices.find(v => v.lang === selectedLanguage) ||
-                          voices.find(v => v.lang.startsWith(selectedLanguage.split('-')[0]))
-        if (bestVoice) utterance.voice = bestVoice
-        utterance.onend = () => {
-          if (isConversationActiveRef.current) {
-            setTimeout(() => startListening(), 500)
+        // Regional language: use Sarvam for natural voice
+        try {
+          const sarvamRes = await axios.post(API.sarvamTts, {
+            text: openingText,
+            language: selectedLanguage
+          })
+          if (sarvamRes.data.success && sarvamRes.data.audio_url) {
+            await playAudioUrl(sarvamRes.data.audio_url)
+            if (isConversationActiveRef.current) {
+              setTimeout(() => startListening(), 500)
+            }
+          } else {
+            throw new Error('Sarvam failed')
           }
-        }
-        utterance.onerror = () => {
-          if (isConversationActiveRef.current) {
-            setTimeout(() => startListening(), 1000)
+        } catch(e) {
+          // Fallback to browser TTS
+          console.log('[TTS] Sarvam opening failed, using browser:', e.message)
+          window.speechSynthesis.cancel()
+          const utterance = new SpeechSynthesisUtterance(openingText)
+          utterance.lang = selectedLanguage
+          utterance.rate = 0.85
+          const voices = window.speechSynthesis.getVoices()
+          const bestVoice = voices.find(v => v.lang === selectedLanguage) ||
+                            voices.find(v => v.lang.startsWith(selectedLanguage.split('-')[0]))
+          if (bestVoice) utterance.voice = bestVoice
+          utterance.onend = () => {
+            if (isConversationActiveRef.current) setTimeout(() => startListening(), 500)
           }
+          window.speechSynthesis.speak(utterance)
         }
-        window.speechSynthesis.speak(utterance)
       }
     } catch(e) {
       console.log('TTS failed, using browser TTS:', e)
@@ -856,14 +935,18 @@ function App() {
     recognitionRef.current?.stop()
     window.speechSynthesis?.cancel()
     
-    // Stop all Web Audio Context playback
+    // Stop ALL currently playing audio sources immediately
+    activeSourcesRef.current.forEach(source => {
+      try { source.stop() } catch(e) {}
+    })
+    activeSourcesRef.current = []
+    
+    // Close and reset audio context
     if (audioContextRef.current) {
       try {
         audioContextRef.current.close()
         audioContextRef.current = null
-      } catch (err) {
-        console.warn('Error closing audio context:', err)
-      }
+      } catch (err) {}
     }
     
     setIsRecording(false)
@@ -1377,7 +1460,7 @@ function App() {
                       onClick={startConversation}
                       className="w-full py-4 rounded-lg font-bold text-lg transition-all bg-green-600 text-white hover:bg-green-700 animate-pulse"
                     >
-                      ☎️ सहाया से बात करें (Start Conversation)
+                      {langUI.startBtn}
                     </button>
                   </div>
                 )}
@@ -1388,7 +1471,7 @@ function App() {
                       onClick={endConversation}
                       className="w-full py-4 rounded-lg font-bold text-lg transition-all bg-red-600 text-white hover:bg-red-700"
                     >
-                      📵 Call को बंद करें (End Call)
+                      {langUI.endBtn}
                     </button>
                   </div>
                 )}
@@ -1410,8 +1493,8 @@ function App() {
                           }`}
                         >
                           {isRecording 
-                            ? '⏹ बोलना बंद करें (Release)' 
-                            : '🎤 बोलने के लिए दबाएं'}
+                            ? langUI.stopBtn 
+                            : langUI.micBtn}
                         </button>
                       </div>
                     )}
@@ -1427,7 +1510,7 @@ function App() {
                             <div className="h-5 w-1 bg-green-600 rounded-full animate-pulse" style={{animationDelay: '0.3s'}}></div>
                             <div className="h-3 w-1 bg-green-600 rounded-full animate-pulse" style={{animationDelay: '0.4s'}}></div>
                           </div>
-                          <span className="text-sm font-semibold text-green-700">🔊 Sahaya बोल रही है...</span>
+                          <span className="text-sm font-semibold text-green-700">{langUI.speaking}</span>
                         </div>
                       </div>
                     )}
@@ -1438,7 +1521,7 @@ function App() {
                         <input
                           id="message-input"
                           type="text"
-                          placeholder="या अपना संदेश टाइप करें..."
+                          placeholder={langUI.placeholder}
                           onKeyPress={(e) => {
                             if (e.key === 'Enter') {
                               handleTextInput(e)
@@ -1466,7 +1549,7 @@ function App() {
                           <div className="w-2 h-2 bg-blue-600 rounded-full animate-pulse"></div>
                           <div className="w-2 h-2 bg-blue-600 rounded-full animate-pulse"></div>
                         </div>
-                        <p className="text-sm text-blue-800">सुन रही हूँ... (Listening...)</p>
+                        <p className="text-sm text-blue-800">{langUI.listening}</p>
                       </div>
                     )}
 
@@ -1478,7 +1561,7 @@ function App() {
                           <div className="w-2 h-2 bg-purple-600 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
                         </div>
                         <p className="text-sm text-purple-800">
-                          {callState === CALL_STATES.TRANSCRIBING ? 'Converting speech to text...' : 'सोच रही हूँ... (Thinking...)'}
+                          {callState === CALL_STATES.TRANSCRIBING ? 'Converting speech to text...' : langUI.thinking}
                         </p>
                       </div>
                     )}
@@ -1506,7 +1589,7 @@ function App() {
                 {/* Transcript Display */}
                 {transcript && callState !== CALL_STATES.IDLE && (
                   <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded">
-                    <div className="text-xs text-blue-600 mb-1">You said:</div>
+                    <div className="text-xs text-blue-600 mb-1">{langUI.youSaid}</div>
                     <div className="text-sm text-blue-900">{transcript}</div>
                   </div>
                 )}
@@ -1515,7 +1598,7 @@ function App() {
                 {response && (
                   <div className="space-y-2">
                     <div className="p-3 bg-green-50 border border-green-200 rounded">
-                      <div className="text-xs text-green-600 mb-1">Sahaya says:</div>
+                      <div className="text-xs text-green-600 mb-1">{langUI.sahayaSays}</div>
                       <div className="text-sm text-green-900">{response.text}</div>
                     </div>
 
