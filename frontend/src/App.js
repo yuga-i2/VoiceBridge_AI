@@ -689,6 +689,8 @@ function App() {
       })
 
       console.log('CHAT RESULT:', JSON.stringify(chatRes.data))
+      console.log('[VM DEBUG] voice_memory_clip from backend:', chatRes.data.voice_memory_clip)
+      console.log('[VM DEBUG] full chat result:', JSON.stringify(chatRes.data))
 
       const aiResponse = {
         text: chatRes.data.response_text,
@@ -701,12 +703,15 @@ function App() {
       // Fetch voice memory audio if available
       if (aiResponse.voice_memory_clip) {
         try {
+          console.log('[VM DEBUG] fetching voice memory for schemeId:', aiResponse.voice_memory_clip)
           const vmRes = await fetch(`https://bkzd32abpg.execute-api.ap-southeast-1.amazonaws.com/dev/api/voice-memory/${aiResponse.voice_memory_clip}`)
           const vmData = await vmRes.json()
+          console.log('[VM DEBUG] voice memory response:', JSON.stringify(vmData))
           aiResponse.voiceMemoryUrl = vmData.audio_url
           aiResponse.voiceMemoryScheme = aiResponse.voice_memory_clip
+          console.log('[VM DEBUG] voiceMemoryUrl set to:', aiResponse.voiceMemoryUrl)
         } catch(e) {
-          console.log('[VoiceBridge] Failed to fetch voice memory:', e)
+          console.log('[VM DEBUG] fetch failed:', e.message)
         }
       }
 
@@ -842,6 +847,8 @@ function App() {
       })
 
       console.log('CHAT RESULT:', JSON.stringify(chatRes.data))
+      console.log('[VM DEBUG] voice_memory_clip from backend:', chatRes.data.voice_memory_clip)
+      console.log('[VM DEBUG] full chat result:', JSON.stringify(chatRes.data))
 
       const aiResponse = {
         text: chatRes.data.response_text,
@@ -854,12 +861,15 @@ function App() {
       // Fetch voice memory audio if available
       if (aiResponse.voice_memory_clip) {
         try {
+          console.log('[VM DEBUG] fetching voice memory for schemeId:', aiResponse.voice_memory_clip)
           const vmRes = await fetch(`https://bkzd32abpg.execute-api.ap-southeast-1.amazonaws.com/dev/api/voice-memory/${aiResponse.voice_memory_clip}`)
           const vmData = await vmRes.json()
+          console.log('[VM DEBUG] voice memory response:', JSON.stringify(vmData))
           aiResponse.voiceMemoryUrl = vmData.audio_url
           aiResponse.voiceMemoryScheme = aiResponse.voice_memory_clip
+          console.log('[VM DEBUG] voiceMemoryUrl set to:', aiResponse.voiceMemoryUrl)
         } catch(e) {
-          console.log('[VoiceBridge] Failed to fetch voice memory:', e)
+          console.log('[VM DEBUG] fetch failed:', e.message)
         }
       }
 
@@ -1200,8 +1210,11 @@ function App() {
                       </div>
                     )}
 
-                    {response.voice_memory_clip && (
-                      <VoiceMemoryClip clip={response.voice_memory_clip} schemeId={response.schemes?.[0]} />
+                    {response.voiceMemoryUrl && response.voiceMemoryScheme && (
+                      <>
+                        {console.log('[VM DEBUG] rendering clip - schemeId:', response.voiceMemoryScheme, 'url:', response.voiceMemoryUrl)}
+                        <VoiceMemoryClip clip={response.voiceMemoryUrl} schemeId={response.voiceMemoryScheme} />
+                      </>
                     )}
 
                     {response.schemes && response.schemes.length > 0 && (
