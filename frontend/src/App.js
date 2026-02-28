@@ -767,10 +767,23 @@ function App() {
     })
   }
 
-  const playSequentially = async (sahayaAudioUrl, voiceMemoryUrl, onComplete) => {
+  const playSequentially = async (sahayaAudioUrl, voiceMemoryUrl, onComplete, responseText) => {
     // Play Sahaya's Polly voice first
     if (sahayaAudioUrl) {
       await playAudioUrl(sahayaAudioUrl)
+    } else if (responseText) {
+      // No Polly URL available — generate fresh via API
+      try {
+        const ttsResult = await axios.post(API.tts, {
+          text: responseText,
+          voice: 'Kajal'
+        })
+        if (ttsResult.data.audio_url) {
+          await playAudioUrl(ttsResult.data.audio_url)
+        }
+      } catch(e) {
+        console.warn('[TTS] Polly fallback failed:', e.message)
+      }
     }
     
     // Pause between Sahaya and farmer story
@@ -795,7 +808,7 @@ function App() {
     
     if (isHindi) {
       // Hindi: use Polly audio (best quality)
-      await playSequentially(sahayaAudioUrl, voiceMemoryUrl, onComplete)
+      await playSequentially(sahayaAudioUrl, voiceMemoryUrl, onComplete, responseText)
     } else {
       // Regional language: try Sarvam AI first, fallback to browser TTS
       window.speechSynthesis.cancel()
@@ -1149,7 +1162,7 @@ function App() {
         schemes: chatRes.data.schemes_mentioned || [],
         stage: chatRes.data.stage,
         voice_memory_clip: chatRes.data.voice_memory_clip,
-        audio_url: chatRes.data.audio_url
+        audio_url: chatRes.data.audio_type === 'voice_memory' ? null : chatRes.data.audio_url
       }
 
       // Fetch voice memory audio if available
@@ -1295,7 +1308,7 @@ function App() {
         schemes: chatRes.data.schemes_mentioned || [],
         stage: chatRes.data.stage,
         voice_memory_clip: chatRes.data.voice_memory_clip,
-        audio_url: chatRes.data.audio_url
+        audio_url: chatRes.data.audio_type === 'voice_memory' ? null : chatRes.data.audio_url
       }
 
       // Fetch voice memory audio if available
