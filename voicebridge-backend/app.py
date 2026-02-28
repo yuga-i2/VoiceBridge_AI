@@ -139,6 +139,7 @@ def chat():
             return [], None
 
         matched_schemes, voice_memory_clip = detect_scheme(message)
+        logger.info(f"[DETECT_SCHEME] message='{message}' -> schemes={matched_schemes}, clip={voice_memory_clip}")
         
         # Fallback: if no scheme detected in current message,
         # check last assistant message in conversation history
@@ -186,10 +187,13 @@ def chat():
             rt = response_text.lower()
             if 'pm-kisan' in rt or 'pm kisan' in rt or 'pmkisan' in rt or '6,000' in rt or '6000' in rt:
                 final_voice_clip = 'PM_KISAN'
+                logger.info(f"[FALLBACK] Matched PM_KISAN from response text")
             elif 'kisan credit' in rt or 'kcc' in rt or 'credit card' in rt:
                 final_voice_clip = 'KCC'
+                logger.info(f"[FALLBACK] Matched KCC from response text")
             elif 'pmfby' in rt or 'fasal bima' in rt or 'crop insurance' in rt or 'pm fasal' in rt:
                 final_voice_clip = 'PMFBY'
+                logger.info(f"[FALLBACK] Matched PMFBY from response text")
 
         # Fallback: use first matched scheme if still no clip
         if not final_voice_clip and matched_schemes:
@@ -197,6 +201,7 @@ def chat():
             for scheme in matched_schemes:
                 if scheme in clip_eligible:
                     final_voice_clip = scheme
+                    logger.info(f"[FALLBACK] Using matched scheme: {scheme}")
                     break
 
         
