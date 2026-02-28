@@ -271,6 +271,10 @@ def _build_bedrock_messages(
     system_with_data = SAHAYA_SYSTEM_PROMPT.replace("{scheme_data}", scheme_data_str)
     system_with_data = system_with_data.replace("{farmer_profile}", farmer_profile_str)
     
+    # Replace {name} placeholder with farmer's actual name
+    farmer_name = farmer.name if hasattr(farmer, 'name') else 'Kisan bhai'
+    system_with_data = system_with_data.replace("{name}", farmer_name)
+    
     # Inject farmer story if matched scheme has one
     if matched_scheme and matched_scheme in FARMER_STORIES:
         story = FARMER_STORIES[matched_scheme]

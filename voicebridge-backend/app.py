@@ -155,12 +155,32 @@ def chat():
         
         farmer = FarmerProfile.from_dict(fp)
         result = generate_response(message, matched_schemes, farmer, history)
+        response_text = result.get('response_text', '')
+        
+        # Use voice_memory_clip from AI response first (most accurate)
+        # Fall back to detect_scheme result if AI didn't return one
+        final_voice_clip = result.get('voice_memory_clip') or voice_memory_clip
+        
+        # Also check AI response text as last fallback
+        if not final_voice_clip and response_text:
+            _, final_voice_clip = detect_scheme(response_text)
+        
+        # Generate TTS audio for Sahaya's response
+        tts_audio_url = None
+        try:
+            from services.tts_service import synthesize_speech
+            tts_result = synthesize_speech(response_text)
+            if tts_result.get('success'):
+                tts_audio_url = tts_result.get('audio_url')
+        except Exception as tts_err:
+            logger.warning(f"TTS failed (non-fatal): {tts_err}")
         
         return jsonify({
             'success': True,
-            'response_text': result.get('response_text', ''),
+            'response_text': response_text,
             'matched_schemes': matched_schemes,
-            'voice_memory_clip': voice_memory_clip,
+            'voice_memory_clip': final_voice_clip,
+            'audio_url': tts_audio_url,
             'conversation_id': uuid.uuid4().hex
         })
     except Exception as e:
