@@ -191,11 +191,14 @@ def chat():
         except Exception as tts_err:
             logger.warning(f"TTS failed (non-fatal): {tts_err}")
         
+        # Only send voice memory clip for Hindi — clips are in Hindi language
+        send_voice_clip = final_voice_clip if language == 'hi-IN' else None
+        
         return jsonify({
             'success': True,
             'response_text': response_text,
             'matched_schemes': matched_schemes,
-            'voice_memory_clip': final_voice_clip,
+            'voice_memory_clip': send_voice_clip,
             'audio_url': tts_audio_url,
             'conversation_id': uuid.uuid4().hex
         })
@@ -284,11 +287,11 @@ def sarvam_tts():
         
         # Speaker mapping: language → Sarvam speaker ID
         speaker_map = {
-            'ta-IN': 'manisha',
-            'kn-IN': 'manisha',
-            'te-IN': 'manisha',
+            'ta-IN': 'anushka',
+            'kn-IN': 'anushka',
+            'te-IN': 'anushka',
             'ml-IN': 'manisha',
-            'hi-IN': 'manisha'
+            'hi-IN': 'anushka'
         }
         
         speaker_id = speaker_map.get(language, 'meera')
@@ -297,12 +300,14 @@ def sarvam_tts():
         # Call Sarvam API
         headers = {'api-subscription-key': SARVAM_API_KEY}
         payload = {
-            'text': text,
+            'inputs': [text],
             'target_language_code': language,
-            'speaker': speaker_id,
-            'pitch': 1.0,
-            'pace': 1.0,
-            'loudness': 1.5
+            'speaker': 'manisha',
+            'model': 'bulbul:v2',
+            'pace': 0.75,
+            'pitch': 0,
+            'loudness': 1.5,
+            'enable_preprocessing': True
         }
         
         response = requests.post(SARVAM_API_URL, json=payload, headers=headers, timeout=30)
