@@ -514,42 +514,42 @@ function App() {
    * Updates UI state to show "Now Playing" indicator.
    * Optionally resumes listening after both audio clips finish.
    */
-  const playSequentially = async (sahayaAudioUrl, voiceMemoryUrl, voiceMemoryScheme, onComplete) => {
-    try {
-      // Step 1: Play Sahaya's response
-      if (sahayaAudioUrl) {
-        await new Promise((resolve) => {
-          const audio = new Audio(sahayaAudioUrl)
-          audio.crossOrigin = 'anonymous'
-          audio.onended = resolve
-          audio.onerror = resolve
-          audio.play().catch(resolve)
-        })
-      }
-      
-      // Small pause between Sahaya and farmer story
-      await new Promise(resolve => setTimeout(resolve, 800))
-      
-      // Step 2: Auto-play voice memory clip with visual indicator
-      if (voiceMemoryUrl) {
-        await new Promise((resolve) => {
-          const vmAudio = new Audio(voiceMemoryUrl)
-          vmAudio.crossOrigin = 'anonymous'
-          vmAudio.onended = resolve
-          vmAudio.onerror = resolve
-          vmAudio.play().catch(resolve)
-        })
-      }
-      
-      // Pause after voice memory finishes
-      await new Promise(resolve => setTimeout(resolve, 500))
-      
-      // Resume listening if conversation is active
-      if (onComplete) onComplete()
-    } catch(e) {
-      console.log('[VoiceBridge] Sequential playback error:', e)
-      if (onComplete) onComplete()
+  const playSequentially = async (sahayaAudioUrl, voiceMemoryUrl, onComplete) => {
+    // Step 1: Play Sahaya's Polly voice
+    if (sahayaAudioUrl) {
+      await new Promise((resolve) => {
+        const audio = new Audio(sahayaAudioUrl)
+        audio.crossOrigin = 'anonymous'
+        audio.onended = resolve
+        audio.onerror = resolve
+        audio.play().catch(() => resolve())
+      })
     }
+
+    // Step 2: Short pause between Sahaya and farmer story
+    await new Promise(resolve => setTimeout(resolve, 800))
+
+    // Step 3: Autoplay voice memory clip
+    if (voiceMemoryUrl) {
+      await new Promise((resolve) => {
+        const vmAudio = new Audio(voiceMemoryUrl)
+        vmAudio.crossOrigin = 'anonymous'
+        vmAudio.onended = resolve
+        vmAudio.onerror = resolve
+        // Try autoplay — browsers require prior user interaction
+        // which is satisfied by the mic button click
+        vmAudio.play()
+          .then(() => console.log('[VM] Voice memory autoplaying'))
+          .catch((e) => {
+            console.log('[VM] Autoplay blocked:', e.message)
+            resolve() // still continue even if blocked
+          })
+      })
+    }
+
+    // Step 4: Resume listening after everything finishes
+    await new Promise(resolve => setTimeout(resolve, 500))
+    if (onComplete) onComplete()
   }
 
   // ========== CONVERSATION MANAGEMENT ==========
@@ -740,7 +740,6 @@ function App() {
         playSequentially(
           aiResponse.audio_url,
           aiResponse.voiceMemoryUrl,
-          aiResponse.voiceMemoryScheme,
           () => {
             if (isConversationActiveRef.current) {
               setTimeout(() => startListening(), 500)
@@ -758,7 +757,6 @@ function App() {
         playSequentially(
           aiResponse.audio_url,
           aiResponse.voiceMemoryUrl,
-          aiResponse.voiceMemoryScheme,
           () => {
             setIsSpeaking(false)
             setCallState(CALL_STATES.WAITING)
@@ -895,7 +893,6 @@ function App() {
         playSequentially(
           aiResponse.audio_url,
           aiResponse.voiceMemoryUrl,
-          aiResponse.voiceMemoryScheme,
           () => {
             setIsSpeaking(false)
             setCallState(CALL_STATES.WAITING)
