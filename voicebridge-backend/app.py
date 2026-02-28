@@ -284,11 +284,11 @@ def sarvam_tts():
         
         # Speaker mapping: language → Sarvam speaker ID
         speaker_map = {
-            'ta-IN': 'kavya',
-            'kn-IN': 'arjun',
-            'te-IN': 'meera',
-            'ml-IN': 'pavithra',
-            'hi-IN': 'meera'
+            'ta-IN': 'manisha',
+            'kn-IN': 'manisha',
+            'te-IN': 'manisha',
+            'ml-IN': 'manisha',
+            'hi-IN': 'manisha'
         }
         
         speaker_id = speaker_map.get(language, 'meera')
@@ -297,7 +297,7 @@ def sarvam_tts():
         # Call Sarvam API
         headers = {'api-subscription-key': SARVAM_API_KEY}
         payload = {
-            'inputs': [{'text': text}],
+            'text': text,
             'target_language_code': language,
             'speaker': speaker_id,
             'pitch': 1.0,
