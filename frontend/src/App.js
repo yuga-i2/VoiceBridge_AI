@@ -1122,7 +1122,7 @@ function App() {
       if (aiResponse.voice_memory_clip) {
         try {
           console.log('[VM DEBUG] fetching voice memory for schemeId:', aiResponse.voice_memory_clip)
-          const vmRes = await fetch(`https://bkzd32abpg.execute-api.ap-southeast-1.amazonaws.com/dev/api/voice-memory/${aiResponse.voice_memory_clip}`)
+          const vmRes = await fetch(`https://bkzd32abpg.execute-api.ap-southeast-1.amazonaws.com/dev/api/voice-memory/${aiResponse.voice_memory_clip}?language=${selectedLanguage}`)
           const vmData = await vmRes.json()
           console.log('[VM DEBUG] voice memory response:', JSON.stringify(vmData))
           aiResponse.voiceMemoryUrl = vmData.audio_url
@@ -1268,7 +1268,7 @@ function App() {
       if (aiResponse.voice_memory_clip) {
         try {
           console.log('[VM DEBUG] fetching voice memory for schemeId:', aiResponse.voice_memory_clip)
-          const vmRes = await fetch(`https://bkzd32abpg.execute-api.ap-southeast-1.amazonaws.com/dev/api/voice-memory/${aiResponse.voice_memory_clip}`)
+          const vmRes = await fetch(`https://bkzd32abpg.execute-api.ap-southeast-1.amazonaws.com/dev/api/voice-memory/${aiResponse.voice_memory_clip}?language=${selectedLanguage}`)
           const vmData = await vmRes.json()
           console.log('[VM DEBUG] voice memory response:', JSON.stringify(vmData))
           aiResponse.voiceMemoryUrl = vmData.audio_url

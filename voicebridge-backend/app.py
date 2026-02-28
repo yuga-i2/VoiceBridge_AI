@@ -191,14 +191,11 @@ def chat():
         except Exception as tts_err:
             logger.warning(f"TTS failed (non-fatal): {tts_err}")
         
-        # Only send voice memory clip for Hindi — clips are in Hindi language
-        send_voice_clip = final_voice_clip if language == 'hi-IN' else None
-        
         return jsonify({
             'success': True,
             'response_text': response_text,
             'matched_schemes': matched_schemes,
-            'voice_memory_clip': send_voice_clip,
+            'voice_memory_clip': final_voice_clip,
             'audio_url': tts_audio_url,
             'conversation_id': uuid.uuid4().hex
         })
@@ -304,7 +301,7 @@ def sarvam_tts():
             'target_language_code': language,
             'speaker': 'manisha',
             'model': 'bulbul:v2',
-            'pace': 0.75,
+            'pace': 0.78,
             'pitch': 0,
             'loudness': 1.5,
             'enable_preprocessing': True
@@ -362,12 +359,105 @@ def sarvam_tts():
 @app.route('/api/voice-memory/<scheme_id>', methods=['GET'])
 def voice_memory(scheme_id):
     try:
-        from services.voice_memory_service import get_clip
-        result = get_clip(scheme_id.upper())
-        return jsonify(result)
+        import boto3
+        from config.settings import AWS_REGION, S3_AUDIO_BUCKET
+        
+        # Language from query param, default Hindi
+        language = request.args.get('language', 'hi-IN')
+        
+        # S3 key mapping per language per scheme
+        VOICE_MEMORY_MAP = {
+            'hi-IN': {
+                'PM_KISAN': {
+                    'key': 'voice_memory/voice_memory_PM_KISAN.mp3',
+                    'farmer_name': 'Sunitha Devi',
+                    'district': 'Tumkur, Karnataka',
+                    'scheme': 'PM-KISAN'
+                },
+                'KCC': {
+                    'key': 'voice_memory/voice_memory_KCC.mp3',
+                    'farmer_name': 'Ramaiah',
+                    'district': 'Mysuru, Karnataka',
+                    'scheme': 'KCC'
+                },
+                'PMFBY': {
+                    'key': 'voice_memory/voice_memory_PMFBY.mp3',
+                    'farmer_name': 'Laxman Singh',
+                    'district': 'Dharwad, Karnataka',
+                    'scheme': 'PMFBY'
+                }
+            },
+            'ml-IN': {
+                'PM_KISAN': {
+                    'key': 'voice_memory/voice_memory_Mal_PM_KISAN.mp3.mpeg',
+                    'farmer_name': 'Priya',
+                    'district': 'Thrissur, Kerala',
+                    'scheme': 'PM-KISAN'
+                },
+                'KCC': {
+                    'key': 'voice_memory/voice_memory_Mal_KCC.mp3.mpeg',
+                    'farmer_name': 'Rajan',
+                    'district': 'Palakkad, Kerala',
+                    'scheme': 'KCC'
+                },
+                'PMFBY': {
+                    'key': 'voice_memory/voice_memory_Mal_PMFBY.mp3.mpeg',
+                    'farmer_name': 'Suresh Kumar',
+                    'district': 'Wayanad, Kerala',
+                    'scheme': 'PMFBY'
+                }
+            },
+            'ta-IN': {
+                'PM_KISAN': {
+                    'key': 'voice_memory/voice_memory_Tamil_PM_KISAN.mp3.mpeg',
+                    'farmer_name': 'Kavitha',
+                    'district': 'Coimbatore, Tamil Nadu',
+                    'scheme': 'PM-KISAN'
+                },
+                'KCC': {
+                    'key': 'voice_memory/voice_memory_Tamil_KCC.mp3.mpeg',
+                    'farmer_name': 'Vijay',
+                    'district': 'Madurai, Tamil Nadu',
+                    'scheme': 'KCC'
+                },
+                'PMFBY': {
+                    'key': 'voice_memory/voice_memory_Tamil_PMFBY.mp3.mpeg',
+                    'farmer_name': 'Selva',
+                    'district': 'Thanjavur, Tamil Nadu',
+                    'scheme': 'PMFBY'
+                }
+            }
+        }
+        
+        # Fallback: if language not supported, use Hindi
+        lang_map = VOICE_MEMORY_MAP.get(language, VOICE_MEMORY_MAP['hi-IN'])
+        
+        # Fallback: if scheme not in map, return no clip
+        clip_info = lang_map.get(scheme_id)
+        if not clip_info:
+            return jsonify({'success': False, 'error': 'No clip for this scheme'})
+        
+        # Generate presigned URL
+        s3_client = boto3.client('s3', region_name=AWS_REGION)
+        presigned_url = s3_client.generate_presigned_url(
+            'get_object',
+            Params={'Bucket': S3_AUDIO_BUCKET, 'Key': clip_info['key']},
+            ExpiresIn=3600
+        )
+        
+        return jsonify({
+            'success': True,
+            'audio_url': presigned_url,
+            'farmer_name': clip_info['farmer_name'],
+            'district': clip_info['district'],
+            'scheme': clip_info['scheme'],
+            'language': language,
+            'mock': False
+        })
+        
     except Exception as e:
-        logger.error(f"Voice memory error: {e}")
-        return jsonify({'success': False, 'error': str(e), 'code': 'SERVICE_ERROR'}), 500
+        logger.error(f'Voice memory error: {e}')
+        return jsonify({'success': False, 'error': str(e)})
 
 
 @app.route('/api/send-sms', methods=['POST'])
