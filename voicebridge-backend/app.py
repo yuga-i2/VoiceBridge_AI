@@ -111,20 +111,34 @@ def chat():
         if not message:
             return jsonify({'success': False, 'error': 'Message is required',
                            'code': 'INVALID_INPUT'}), 400
+        
+        # STEP 1: DEBUG LOGGING
+        app.logger.info(f"[CHAT DEBUG] message received: {message}")
+        
         fp = data.get('farmer_profile', {})
         history = data.get('conversation_history', [])
         from models.farmer import FarmerProfile
         from services.scheme_service import match_schemes_to_message
-        from services.ai_service import generate_response
+        from services.ai_service import generate_response, get_voice_memory_clip
         import uuid
+        
         farmer = FarmerProfile.from_dict(fp)
-        scheme_ids = match_schemes_to_message(message)
-        result = generate_response(message, scheme_ids, farmer, history)
+        matched_schemes = match_schemes_to_message(message)
+        
+        # STEP 2: DEBUG LOGGING
+        app.logger.info(f"[CHAT DEBUG] matched schemes: {matched_schemes}")
+        
+        result = generate_response(message, matched_schemes, farmer, history)
+        voice_clip = get_voice_memory_clip(matched_schemes, message)
+        
+        # STEP 3: DEBUG LOGGING
+        app.logger.info(f"[CHAT DEBUG] voice clip: {voice_clip}")
+        
         return jsonify({
             'success': True,
             'response_text': result.get('response_text', ''),
-            'voice_memory_clip': result.get('voice_memory_clip'),
-            'matched_schemes': result.get('matched_schemes', scheme_ids),
+            'voice_memory_clip': voice_clip,
+            'matched_schemes': matched_schemes,
             'conversation_id': uuid.uuid4().hex
         })
     except Exception as e:

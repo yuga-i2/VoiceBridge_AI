@@ -58,74 +58,50 @@ def get_scheme_by_id(scheme_id: str) -> dict | None:
 def match_schemes_to_message(message: str) -> list[str]:
     """
     Match user message to relevant scheme IDs.
-    Comprehensive keyword matching for all 8 schemes in English and Hindi.
-    Returns list of matching scheme_ids, always includes at least one match.
+    Comprehensive keyword matching with punctuation removal for better matching.
     """
     if not message:
         return []
     
-    msg = message.lower().strip()
+    msg = message.lower()
+    # Remove punctuation for better matching
+    import re
+    msg = re.sub(r'[।!?.,]', ' ', msg)
     matched = []
     
-    # Comprehensive scheme keywords in English and Hindi
-    scheme_keywords = {
-        'PM_KISAN': [
-            'pm kisan', 'pmkisan', 'pm-kisan', 'kisan samman',
-            'pradhan mantri kisan', 'kisaan samman', 'pm kisaan',
-            '6000', '₹6000', 'kisan yojana', 'छः हजार',
-            'पीएम किसान', 'किसान सम्मान', 'पीएम-किसान', 
-            'pradhan mantri kisan samman', 'dbt kisan', 'सम्मान निधि'
-        ],
-        'KCC': [
-            'kcc', 'kisan credit', 'credit card', 'kisan card',
-            'crop loan', '4 percent', '4%', 'kharif loan',
-            'kisan credit card', 'किसान क्रेडिट', 'केसीसी',
-            'क्रेडिट कार्ड', 'loan card', 'kisan loan', 'तीन लाख',
-            'fasal loan', 'agricultural loan'
-        ],
-        'PMFBY': [
-            'pmfby', 'fasal bima', 'crop insurance', 'fasal bima yojana',
-            'pradhan mantri fasal', 'crop loss', 'bima yojana',
-            'fasal insurance', 'फसल बीमा', 'पीएमएफबीवाई',
-            'फसल बीमा योजना', 'fasal barbaad', 'crop damage', 
-            'kharif bima', 'rabi bima', 'खरीफ बीमा'
-        ],
-        'MGNREGS': [
-            'mgnrega', 'mnrega', 'manrega', 'nrega', '100 days',
-            'job card', 'rozgar', 'employment guarantee', 'din kaam',
-            'मनरेगा', 'रोजगार', 'जॉब कार्ड', 'sou din', '100 din',
-            'काम देना', 'employment scheme', 'rural employment'
-        ],
-        'AYUSHMAN_BHARAT': [
-            'ayushman', 'pmjay', 'health insurance', '5 lakh health',
-            'ayushman bharat', 'hospital free', 'free treatment',
-            'आयुष्मान', 'स्वास्थ्य बीमा', 'free hospital',
-            'आयुष्मान भारत', 'health scheme', 'medical insurance'
-        ],
-        'PM_AWAS_GRAMIN': [
-            'pm awas', 'pmay', 'gramin awas', 'pucca house',
-            'house scheme', 'awas yojana', 'housing scheme',
-            'ghar yojana', 'आवास योजना', 'पक्का घर',
-            'housing', 'home scheme', 'pradhan mantri awas'
-        ],
-        'SOIL_HEALTH_CARD': [
-            'soil health', 'soil card', 'mitti jaanch',
-            'fertilizer test', 'soil test', 'मृदा स्वास्थ्य',
-            'mitti card', 'krishi card', 'soil fertility'
-        ],
-        'NFSA_RATION': [
-            'ration', 'nfsa', 'public distribution', 'pds',
-            'aadhaar ration', 'food grain', 'राशन',
-            'खाद्य सुरक्षा', 'distribution scheme'
-        ]
-    }
+    checks = [
+        ('PM_KISAN', ['pm kisan', 'pmkisan', 'pm-kisan', 'kisan samman',
+                      'kisaan samman', '6000', 'kisan yojana',
+                      'पीएम किसान',
+                      'किसान सम्मान']),
+        ('KCC',      ['kcc', 'kisan credit', 'credit card', 'kisan card',
+                      'crop loan', 'kisan loan', '4 percent', '4%',
+                      'किसान क्रेडिट',
+                      'केसीसी',
+                      'क्रेडिट कार्ड']),
+        ('PMFBY',    ['pmfby', 'fasal bima', 'crop insurance',
+                      'fasal bima yojana', 'bima yojana', 'crop loss',
+                      'फसल बीमा',
+                      'पीएमएफबीवाई']),
+        ('MGNREGS',  ['mgnrega', 'mnrega', 'manrega', 'nrega',
+                      '100 days', 'job card', 'rozgar', '100 din',
+                      'मनरेगा',
+                      'रोजगार']),
+        ('AYUSHMAN_BHARAT', ['ayushman', 'pmjay', 'health insurance',
+                             '5 lakh', 'free hospital', 'free treatment',
+                             'आयुष्मान']),
+        ('PM_AWAS_GRAMIN', ['pm awas', 'pmay', 'awas yojana', 
+                            'house scheme', 'pucca house', 'ghar yojana',
+                            'आवास योजना']),
+        ('SOIL_HEALTH_CARD', ['soil health', 'soil card', 'mitti',
+                              'soil test', 'fertilizer',
+                              'मृदा स्वास्थ्य']),
+    ]
     
-    # Match keywords in message
-    for scheme_id, keywords in scheme_keywords.items():
-        for keyword in keywords:
-            if keyword in msg:
-                if scheme_id not in matched:
-                    matched.append(scheme_id)
+    for scheme_id, keywords in checks:
+        for kw in keywords:
+            if kw in msg:
+                matched.append(scheme_id)
                 break
     
     return matched
