@@ -393,16 +393,11 @@ const EligibilityScore = ({ schemes }) => {
 }
 
 // ==================== VOICE MEMORY CLIP ====================
-const VoiceMemoryClip = ({ clip, schemeId, isAutoPlaying = false }) => {
+const VoiceMemoryClip = ({ clip, schemeId, isAutoPlaying = false, selectedLanguage = 'hi-IN' }) => {
   if (!clip) return null
   
-  const clips = {
-    'PM_KISAN': { farmer: 'Suresh Kumar', district: 'Tumkur', state: 'Karnataka' },
-    'KCC': { farmer: 'Ramaiah', district: 'Mysuru', state: 'Karnataka' },
-    'PMFBY': { farmer: 'Laxman Singh', district: 'Dharwad', state: 'Karnataka' }
-  }
-  
-  const info = clips[schemeId] || { farmer: 'Kisan', district: 'Local', state: 'India' }
+  const langClips = CLIP_INFO[selectedLanguage] || CLIP_INFO['hi-IN']
+  const info = langClips[schemeId] || { farmer: 'Kisan', district: 'Local', quote: '' }
   
   return (
     <div className="bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-amber-300 rounded-lg p-4 mt-3 shadow-md">
@@ -423,10 +418,10 @@ const VoiceMemoryClip = ({ clip, schemeId, isAutoPlaying = false }) => {
         )}
       </div>
       <p className="text-sm font-semibold text-amber-900 mb-1">
-        {info.farmer}, {info.district} district, {info.state}
+        {info.farmer} • {info.district}
       </p>
-      <p className="text-xs text-amber-700 mb-3">
-        "Real success story from a farmer in your region — how they benefited from this scheme"
+      <p className="text-xs text-amber-700 mb-3 italic">
+        {info.quote}
       </p>
       <audio 
         controls 
@@ -475,8 +470,8 @@ const ArchitectureBadges = () => {
     { name: 'SNS', icon: '📱', detail: 'SMS Alerts' },
   ]
   return (
-    <div className="bg-white rounded-lg border p-4 mb-4">
-      <h3 className="font-semibold text-gray-800 mb-3">AWS Services (8/8)</h3>
+    <div className="pt-1">
+      <h3 className="font-semibold text-gray-700 mb-3 text-sm">AWS Services used (8/8)</h3>
       <div className="flex flex-wrap gap-2 justify-center">
         {services.map(s => (
           <div key={s.name} 
@@ -528,7 +523,7 @@ const CallInitiator = ({ farmerProfile, eligibleSchemeIds }) => {
                    transition-colors"
       >
         {isLoading ? '⏳ Initiating Call...' : 
-         '📲 Sahaya Ko Call Karne Do (Initiate AI Call)'}
+         '📲 Initiate Proactive AI Call to Farmer'}
       </button>
       {callStatus && (
         <div className={`mt-3 p-2 rounded text-sm ${
@@ -1371,23 +1366,62 @@ function App() {
         <ImpactCounter />
 
         {/* Architecture */}
-        <ArchitectureBadges />
+        <details className="bg-white rounded-lg border mb-4">
+          <summary className="p-3 cursor-pointer text-sm font-semibold text-gray-500 hover:text-gray-700 select-none">
+            🏗️ AWS Architecture — 8 Services Integrated (click to expand)
+          </summary>
+          <div className="px-4 pb-4">
+            <ArchitectureBadges />
+          </div>
+        </details>
 
         {/* Demo Button and Profile */}
         {!farmerProfile ? (
-          <div className="bg-white rounded-lg border p-6 mb-4 text-center">
-            <h2 className="text-xl font-bold text-gray-800 mb-3">
-              Welcome to VoiceBridge AI
-            </h2>
-            <p className="text-gray-600 mb-4">
-              Experience how Sahaya brings welfare schemes to farmers via voice.
-            </p>
+          <div className="bg-white rounded-lg border p-6 mb-4">
+            <h2 className="text-xl font-bold text-gray-800 mb-1">🌾 VoiceBridge AI — Sahaya Demo</h2>
+            <p className="text-gray-500 text-sm mb-5">Meet the farmer you'll be helping today</p>
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-5">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-12 h-12 bg-green-700 rounded-full flex items-center justify-center text-white text-xl font-bold flex-shrink-0">R</div>
+                <div>
+                  <div className="font-bold text-gray-800 text-lg">Ramesh Kumar</div>
+                  <div className="text-green-700 text-sm">Small & Marginal Farmer • Karnataka</div>
+                </div>
+              </div>
+              <div className="grid grid-cols-3 gap-2 text-sm">
+                <div className="bg-white rounded p-2 border border-green-100 text-center">
+                  <div className="text-gray-400 text-xs mb-1">Land</div>
+                  <div className="font-bold text-gray-800">2 Acres</div>
+                </div>
+                <div className="bg-white rounded p-2 border border-green-100 text-center">
+                  <div className="text-gray-400 text-xs mb-1">Bank Account</div>
+                  <div className="font-bold text-green-600">✓ Linked</div>
+                </div>
+                <div className="bg-white rounded p-2 border border-green-100 text-center">
+                  <div className="text-gray-400 text-xs mb-1">KCC Loan</div>
+                  <div className="font-bold text-red-500">✗ None</div>
+                </div>
+                <div className="bg-white rounded p-2 border border-green-100 text-center">
+                  <div className="text-gray-400 text-xs mb-1">Age</div>
+                  <div className="font-bold text-gray-800">45 yrs</div>
+                </div>
+                <div className="bg-white rounded p-2 border border-green-100 text-center">
+                  <div className="text-gray-400 text-xs mb-1">Income</div>
+                  <div className="font-bold text-gray-800">₹50,000/yr</div>
+                </div>
+                <div className="bg-white rounded p-2 border border-green-100 text-center">
+                  <div className="text-gray-400 text-xs mb-1">Schemes</div>
+                  <div className="font-bold text-green-600">10 eligible</div>
+                </div>
+              </div>
+            </div>
             <button
               onClick={loadDemoFarmer}
-              className="bg-green-700 text-white px-6 py-3 rounded-lg font-semibold hover:bg-green-800"
+              className="w-full bg-green-700 text-white px-6 py-4 rounded-lg font-bold text-lg hover:bg-green-800 transition-colors"
             >
-              🎤 Load Demo Farmer (Ramesh Kumar)
+              🎤 Start Demo — Talk to Sahaya
             </button>
+            <p className="text-xs text-gray-400 mt-2 text-center">Select language after loading • Hindi, Tamil, Kannada, Telugu, Malayalam</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -1412,7 +1446,7 @@ function App() {
                         >
                           <div className="flex items-center justify-between">
                             <div>
-                              <div className="font-semibold">{scheme?.name_hi || scheme?.name_en || scheme?.scheme_id}</div>
+                              <div className="font-semibold">{scheme?.name_en || scheme?.scheme_id}</div>
                               <div className="text-gray-700 text-xs">{scheme?.benefit}</div>
                             </div>
                             {isMatched && (
@@ -1454,7 +1488,7 @@ function App() {
                       }`}>
                         <div className="flex items-start justify-between gap-2 mb-2">
                           <div className="flex-1">
-                            {msg.role === 'user' ? '👨 आप: ' : '🎙️ सहाया: '}
+                            {msg.role === 'user' ? `👨 ${langUI.youSaid} ` : `🎙️ ${langUI.sahayaSays} `}
                             {msg.content.substring(0, 120)}
                             {msg.content.length > 120 ? '...' : ''}
                           </div>
@@ -1468,20 +1502,8 @@ function App() {
                             </button>
                           )}
                         </div>
-                        {msg.voiceMemoryUrl && CLIP_INFO[msg.voiceMemoryScheme] && (
-                          <div style={{background:'#fffbeb',border:'1px solid #d97706',borderRadius:'8px',padding:'10px',marginTop:'8px'}}>
-                            <div style={{fontWeight:'bold',fontSize:'12px',color:'#92400e'}}>🎙️ Voice Memory Network — Real Farmer Story</div>
-                            <div style={{fontSize:'12px',color:'#78350f'}}>{CLIP_INFO[msg.voiceMemoryScheme].farmer} • {CLIP_INFO[msg.voiceMemoryScheme].district}</div>
-                            <div style={{fontSize:'13px',fontStyle:'italic',color:'#92400e',margin:'4px 0'}}>{CLIP_INFO[msg.voiceMemoryScheme].quote}</div>
-                            <audio 
-                              controls 
-                              crossOrigin="anonymous"
-                              preload="metadata"
-                              src={msg.voiceMemoryUrl}
-                              style={{width:'100%',height:'32px'}}
-                            />
-                            <div style={{fontSize:'11px',color:'#9ca3af',marginTop:'4px'}}>🔒 Auto-deleted after 90 days • DPDP Compliant</div>
-                          </div>
+                        {msg.voiceMemoryUrl && msg.voiceMemoryScheme && (
+                          <VoiceMemoryClip clip={msg.voiceMemoryUrl} schemeId={msg.voiceMemoryScheme} selectedLanguage={selectedLanguage} />
                         )}
                       </div>
                     ))}
@@ -1634,43 +1656,9 @@ function App() {
                   </div>
                 )}
 
-                {/* Response Display */}
-                {response && (
-                  <div className="space-y-2">
-                    <div className="p-3 bg-green-50 border border-green-200 rounded">
-                      <div className="text-xs text-green-600 mb-1">{langUI.sahayaSays}</div>
-                      <div className="text-sm text-green-900">{response.text}</div>
-                    </div>
-
-                    {response.audio_url && (
-                      <div className="p-2 bg-purple-50 border border-purple-200 rounded">
-                        <audio controls src={response.audio_url} className="w-full h-8" />
-                        <p className="text-xs text-purple-600 mt-1">Polly audio (from India region)</p>
-                      </div>
-                    )}
-
-                    {response.voiceMemoryUrl && response.voiceMemoryScheme && (
-                      <>
-                        {console.log('[VM DEBUG] rendering clip - schemeId:', response.voiceMemoryScheme, 'url:', response.voiceMemoryUrl)}
-                        <VoiceMemoryClip clip={response.voiceMemoryUrl} schemeId={response.voiceMemoryScheme} />
-                      </>
-                    )}
-
-                    {response.schemes && response.schemes.length > 0 && (
-                      <div className="flex flex-wrap gap-1 mt-2">
-                        {response.schemes.map(s => (
-                          <span key={s} className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-xs font-semibold border border-yellow-300">
-                            ✓ {s}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-
-                    {response.error && (
-                      <div className="p-3 bg-red-50 border border-red-200 rounded text-red-800 text-sm">
-                        {response.error}
-                      </div>
-                    )}
+                {response?.error && (
+                  <div className="p-3 bg-red-50 border border-red-200 rounded text-red-800 text-sm mb-3">
+                    {response.error}
                   </div>
                 )}
               </div>
