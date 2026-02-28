@@ -44,6 +44,111 @@ const SAHAYA_OPENING_HINDI = `नमस्ते! मैं सहाया ह�
 
 बताइए — आपके पास कितनी ज़मीन है? क्या आपके पास Kisan Credit Card है?`
 
+// ==================== MULTILINGUAL SUPPORT ====================
+const LANGUAGES = {
+  'hi-IN': { 
+    name: 'हिंदी', 
+    englishName: 'Hindi',
+    flag: '🇮🇳',
+    greeting: 'नमस्ते! मैं सहाया हूँ — आपकी सरकारी योजना सहायक। आप PM-KISAN, KCC, फसल बीमा के बारे में पूछ सकते हैं।',
+    placeholder: 'या अपना संदेश टाइप करें...',
+    instruction: 'Please respond ONLY in Hindi (Devanagari script).'
+  },
+  'ta-IN': { 
+    name: 'தமிழ்', 
+    englishName: 'Tamil',
+    flag: '🌺',
+    greeting: 'வணக்கம்! நான் சஹாயா — உங்கள் அரசு திட்ட உதவியாளர். PM-KISAN, KCC, பயிர் காப்பீடு பற்றி கேளுங்கள்।',
+    placeholder: 'உங்கள் செய்தியை தட்டச்சு செய்யுங்கள்...',
+    instruction: 'Please respond ONLY in Tamil script.'
+  },
+  'kn-IN': { 
+    name: 'ಕನ್ನಡ', 
+    englishName: 'Kannada',
+    flag: '🌻',
+    greeting: 'ನಮಸ್ಕಾರ! ನಾನು ಸಹಾಯ — ನಿಮ್ಮ ಸರ್ಕಾರಿ ಯೋಜನೆ ಸಹಾಯಕ. PM-KISAN, KCC, ಬೆಳೆ ವಿಮೆ ಬಗ್ಗೆ ಕೇಳಿ।',
+    placeholder: 'ನಿಮ್ಮ ಸಂದೇಶ ಟೈಪ್ ಮಾಡಿ...',
+    instruction: 'Please respond ONLY in Kannada script.'
+  },
+  'te-IN': { 
+    name: 'తెలుగు', 
+    englishName: 'Telugu',
+    flag: '🌸',
+    greeting: 'నమస్కారం! నేను సహాయ — మీ ప్రభుత్వ పథకాల సహాయకురాలు. PM-KISAN, KCC, పంట బీమా గురించి అడగండి।',
+    placeholder: 'మీ సందేశం టైప్ చేయండి...',
+    instruction: 'Please respond ONLY in Telugu script.'
+  },
+  'ml-IN': { 
+    name: 'മലയാളം', 
+    englishName: 'Malayalam',
+    flag: '🌴',
+    greeting: 'നമസ്കാരം! ഞാൻ സഹായ — നിങ്ങളുടെ സർക്കാർ പദ്ധതി സഹായി. PM-KISAN, KCC, വിള ഇൻഷുറൻസ് എന്നിവയെ കുറിച്ച് ചോദിക്കൂ।',
+    placeholder: 'നിങ്ങളുടെ സന്ദേശം ടൈപ്പ് ചെയ്യൂ...',
+    instruction: 'Please respond ONLY in Malayalam script.'
+  }
+}
+
+const POLLY_VOICES = {
+  'hi-IN': { voiceId: 'Kajal', engine: 'neural', languageCode: 'hi-IN' },
+  'ta-IN': { voiceId: 'Kajal', engine: 'neural', languageCode: 'hi-IN' },
+  'kn-IN': { voiceId: 'Kajal', engine: 'neural', languageCode: 'hi-IN' },
+  'te-IN': { voiceId: 'Kajal', engine: 'neural', languageCode: 'hi-IN' },
+  'ml-IN': { voiceId: 'Kajal', engine: 'neural', languageCode: 'hi-IN' }
+}
+
+// ==================== LANGUAGE SELECTOR COMPONENT ====================
+const LanguageSelector = ({ selected, onSelect, detected }) => (
+  <div style={{
+    background: '#f0fdf4',
+    border: '1px solid #86efac',
+    borderRadius: '8px',
+    padding: '10px 12px',
+    marginBottom: '12px'
+  }}>
+    <div style={{
+      fontSize: '12px', 
+      color: '#166534', 
+      fontWeight: 'bold', 
+      marginBottom: '8px'
+    }}>
+      🌐 भाषा चुनें / Choose Language
+      {detected && detected !== selected && (
+        <span style={{
+          marginLeft: '8px',
+          background: '#dcfce7',
+          color: '#166534',
+          fontSize: '11px',
+          padding: '2px 6px',
+          borderRadius: '10px'
+        }}>
+          Auto-detected: {LANGUAGES[detected]?.name}
+        </span>
+      )}
+    </div>
+    <div style={{display: 'flex', gap: '6px', flexWrap: 'wrap'}}>
+      {Object.entries(LANGUAGES).map(([code, lang]) => (
+        <button
+          key={code}
+          onClick={() => onSelect(code)}
+          style={{
+            padding: '6px 12px',
+            borderRadius: '20px',
+            border: selected === code ? '2px solid #16a34a' : '1px solid #d1d5db',
+            background: selected === code ? '#16a34a' : 'white',
+            color: selected === code ? 'white' : '#374151',
+            fontSize: '13px',
+            fontWeight: selected === code ? 'bold' : 'normal',
+            cursor: 'pointer',
+            transition: 'all 0.2s'
+          }}
+        >
+          {lang.flag} {lang.name}
+        </button>
+      ))}
+    </div>
+  </div>
+)
+
 // Call states for UI management
 const CALL_STATES = {
   IDLE: 'idle',                      // Waiting for user to click "Talk to Sahaya"
@@ -367,6 +472,10 @@ function App() {
   const [inputEnabled, setInputEnabled] = useState(false)
   const [isConversationActive, setIsConversationActive] = useState(false)
   
+  // Multilingual support
+  const [selectedLanguage, setSelectedLanguage] = useState('hi-IN')
+  const [detectedLanguage, setDetectedLanguage] = useState('hi-IN')
+  
   const recognitionRef = useRef(null)
   const isConversationActiveRef = useRef(false)
   const audioContextRef = useRef(null)
@@ -590,7 +699,7 @@ function App() {
     setTranscript('')
     setResponse(null)
     
-    const openingText = 'नमस्ते! मैं सहाया हूँ, एक सरकारी कल्याण सहायक। आप PM-KISAN, KCC, फसल बीमा, या किसी भी योजना के बारे में पूछ सकते हैं।'
+    const openingText = LANGUAGES[selectedLanguage]?.greeting || LANGUAGES['hi-IN'].greeting
     
     setConversationHistory([{
       role: 'assistant',
@@ -631,6 +740,38 @@ function App() {
   }
 
   // ========== WEB SPEECH API RECOGNITION ==========
+  const UNICODE_RANGES = {
+    'hi-IN': { min: 0x0900, max: 0x097F, name: 'Devanagari' },
+    'ta-IN': { min: 0x0B80, max: 0x0BFF, name: 'Tamil' },
+    'kn-IN': { min: 0x0C80, max: 0x0CFF, name: 'Kannada' },
+    'te-IN': { min: 0x0C00, max: 0x0C7F, name: 'Telugu' },
+    'ml-IN': { min: 0x0D00, max: 0x0D7F, name: 'Malayalam' }
+  }
+
+  const detectLanguageFromText = (text) => {
+    if (!text) return 'hi-IN'
+    
+    let languageScores = {}
+    Object.entries(UNICODE_RANGES).forEach(([lang, range]) => {
+      languageScores[lang] = 0
+    })
+    
+    for (let char of text) {
+      const code = char.charCodeAt(0)
+      for (let [lang, range] of Object.entries(UNICODE_RANGES)) {
+        if (code >= range.min && code <= range.max) {
+          languageScores[lang]++
+        }
+      }
+    }
+    
+    const detectedLang = Object.keys(languageScores).reduce((prev, current) =>
+      languageScores[current] > languageScores[prev] ? current : prev
+    )
+    
+    return languageScores[detectedLang] > 0 ? detectedLang : 'hi-IN'
+  }
+
   const startListening = () => {
     unlockAudio()
     if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
@@ -641,7 +782,7 @@ function App() {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
     const recognition = new SpeechRecognition()
     
-    recognition.lang = 'hi-IN'  // Accepts both Hindi AND English (code-switching)
+    recognition.lang = selectedLanguage  // Use selected language
     recognition.interimResults = false
     recognition.maxAlternatives = 1
     recognition.continuous = false
@@ -656,6 +797,15 @@ function App() {
     recognition.onresult = (event) => {
       const transcript = event.results[0][0].transcript
       console.log('[VoiceBridge] Web Speech transcript:', transcript)
+      
+      // Auto-detect language from transcript
+      const detectedLang = detectLanguageFromText(transcript)
+      if (detectedLang !== selectedLanguage && detectedLang !== 'hi-IN') {
+        console.log('[VoiceBridge] Auto-detected language:', detectedLang)
+        setDetectedLanguage(detectedLang)
+        // Optionally auto-switch language here: setSelectedLanguage(detectedLang)
+      }
+      
       setIsRecording(false)
       setIsProcessing(true)
       setTranscript(transcript)
@@ -736,7 +886,8 @@ function App() {
       const chatRes = await axios.post(API.chat, {
         message: finalMessage,
         farmer_profile: farmerProfile,
-        conversation_history: historyToSend
+        conversation_history: historyToSend,
+        language: selectedLanguage
       })
 
       console.log('CHAT RESULT:', JSON.stringify(chatRes.data))
@@ -880,7 +1031,8 @@ function App() {
       const chatRes = await axios.post(API.chat, {
         message: userMessage,
         farmer_profile: farmerProfile,
-        conversation_history: historyToSend
+        conversation_history: historyToSend,
+        language: selectedLanguage
       })
 
       console.log('CHAT RESULT:', JSON.stringify(chatRes.data))
@@ -1082,21 +1234,17 @@ function App() {
                 {/* Call Controls */}
                 {callState === CALL_STATES.IDLE && !isConversationActive && (
                   <div className="space-y-2">
+                    <LanguageSelector 
+                      selected={selectedLanguage}
+                      onSelect={setSelectedLanguage}
+                      detected={detectedLanguage}
+                    />
                     <button
                       onClick={startConversation}
                       className="w-full py-4 rounded-lg font-bold text-lg transition-all bg-green-600 text-white hover:bg-green-700 animate-pulse"
                     >
                       ☎️ सहाया से बात करें (Start Conversation)
                     </button>
-                    <button
-                      onClick={startSahayaCall}
-                      className="w-full py-4 rounded-lg font-bold text-lg transition-all bg-blue-600 text-white hover:bg-blue-700"
-                    >
-                      📞 Start Call with Sahaya (Manual Mode)
-                    </button>
-                    <p className="text-xs text-gray-500 mt-2 text-center">
-                      Choose: Continuous conversation (auto-listen) or manual feedback control
-                    </p>
                   </div>
                 )}
 

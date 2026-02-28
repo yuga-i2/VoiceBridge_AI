@@ -149,12 +149,24 @@ def chat():
         
         fp = data.get('farmer_profile', {})
         history = data.get('conversation_history', [])
+        
+        # Language support with instructions
+        LANG_INSTRUCTIONS = {
+            'hi-IN': 'Please respond ONLY in Hindi (Devanagari script).',
+            'ta-IN': 'Please respond ONLY in Tamil script.',
+            'kn-IN': 'Please respond ONLY in Kannada script.',
+            'te-IN': 'Please respond ONLY in Telugu script.',
+            'ml-IN': 'Please respond ONLY in Malayalam script.'
+        }
+        language = data.get('language', 'hi-IN')
+        lang_instruction = LANG_INSTRUCTIONS.get(language, LANG_INSTRUCTIONS['hi-IN'])
+        
         from models.farmer import FarmerProfile
         from services.ai_service import generate_response
         import uuid
         
         farmer = FarmerProfile.from_dict(fp)
-        result = generate_response(message, matched_schemes, farmer, history)
+        result = generate_response(message, matched_schemes, farmer, history, lang_instruction)
         response_text = result.get('response_text', '')
         
         # Use voice_memory_clip from AI response first (most accurate)

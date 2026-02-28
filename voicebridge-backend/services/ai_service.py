@@ -257,7 +257,8 @@ def _build_bedrock_messages(
     history: list[dict],
     scheme_data: list[dict],
     farmer: FarmerProfile,
-    matched_scheme: str = None
+    matched_scheme: str = None,
+    lang_instruction: str = None
 ) -> list[dict]:
     """
     Builds messages array for Bedrock Claude API.
@@ -274,6 +275,10 @@ def _build_bedrock_messages(
     # Replace {name} placeholder with farmer's actual name
     farmer_name = farmer.name if hasattr(farmer, 'name') else 'Kisan bhai'
     system_with_data = system_with_data.replace("{name}", farmer_name)
+    
+    # Prepend language instruction if provided
+    if lang_instruction:
+        system_with_data = f"LANGUAGE INSTRUCTION (HIGHEST PRIORITY):\n{lang_instruction}\n\n{system_with_data}"
     
     # Inject farmer story if matched scheme has one
     if matched_scheme and matched_scheme in FARMER_STORIES:
@@ -310,7 +315,8 @@ def generate_response(
     message: str,
     scheme_ids: list[str],
     farmer: FarmerProfile,
-    conversation_history: list[dict] = None
+    conversation_history: list[dict] = None,
+    lang_instruction: str = None
 ) -> dict:
     """
     Main function. Generates Sahaya's response.
@@ -353,7 +359,8 @@ def generate_response(
                 conversation_history or [],
                 scheme_data,
                 farmer,
-                primary_scheme
+                primary_scheme,
+                lang_instruction
             )
             
             # Call Bedrock with correct Claude Messages API format
