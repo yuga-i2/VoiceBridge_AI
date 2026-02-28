@@ -4,22 +4,58 @@ import API from './config/api'
 import './App.css'
 
 // ==================== VOICE MEMORY CLIPS INFO ====================
-// Real farmer success stories from AWS DynamoDB
+// Real farmer success stories from AWS S3 with language-specific variants
 const CLIP_INFO = {
-  'PM_KISAN': { 
-    farmer: 'Sunitha Devi', 
-    district: 'Tumkur, Karnataka', 
-    quote: '"PM-KISAN se ₹6,000 mile. Bacchon ki fees bhari. Sahaya ne bataya tha!"' 
+  'hi-IN': {
+    'PM_KISAN': { 
+      farmer: 'Sunitha Devi', 
+      district: 'Tumkur, Karnataka', 
+      quote: '"तुमकुर की सुनीता देवी जी की PM-KISAN सफलता की कहानी सुनिए"' 
+    },
+    'KCC': { 
+      farmer: 'Ramaiah', 
+      district: 'Mysuru, Karnataka', 
+      quote: '"मैसूर के रमैया जी का KCC अनुभव सुनिए"' 
+    },
+    'PMFBY': { 
+      farmer: 'Laxman Singh', 
+      district: 'Dharwad, Karnataka', 
+      quote: '"धारवाड़ के लक्ष्मण सिंह जी की PMFBY कहानी सुनिए"' 
+    }
   },
-  'KCC': { 
-    farmer: 'Ramaiah', 
-    district: 'Mysuru, Karnataka', 
-    quote: '"KCC se 4% pe loan mila. Sahukaar se hamesha ke liye chhutkaara!"' 
+  'ml-IN': {
+    'PM_KISAN': { 
+      farmer: 'Priya', 
+      district: 'Thrissur, Kerala', 
+      quote: '"നിങ്ങളുടെ അടുത്ത് തൃശ്ശൂരിൽ നിന്നുള്ള പ്രിയ ജിയുടെ വിജയകഥ കേൾക്കൂ"' 
+    },
+    'KCC': { 
+      farmer: 'Rajan', 
+      district: 'Palakkad, Kerala', 
+      quote: '"പാലക്കാട്ടിൽ നിന്നുള്ള രാജൻ ജിയുടെ KCC അനുഭവം കേൾക്കൂ"' 
+    },
+    'PMFBY': { 
+      farmer: 'Suresh Kumar', 
+      district: 'Wayanad, Kerala', 
+      quote: '"വയനാട്ടിൽ നിന്നുള്ള സുരേഷ് കുമാർ ജിയുടെ കഥ കേൾക്കൂ"' 
+    }
   },
-  'PMFBY': { 
-    farmer: 'Laxman Singh', 
-    district: 'Dharwad, Karnataka', 
-    quote: '"Fasal barbaad hui par PMFBY se ₹18,000 mile. Parivar bachaa!"' 
+  'ta-IN': {
+    'PM_KISAN': { 
+      farmer: 'Kavitha', 
+      district: 'Coimbatore, Tamil Nadu', 
+      quote: '"உங்கள் அருகில் கோயம்புத்தூரிலிருந்து கவிதா ஜியின் வெற்றிக்கதை கேளுங்கள்"' 
+    },
+    'KCC': { 
+      farmer: 'Vijay', 
+      district: 'Madurai, Tamil Nadu', 
+      quote: '"மதுரையிலிருந்து விஜய் ஜியின் KCC அனுபவம் கேளுங்கள்"' 
+    },
+    'PMFBY': { 
+      farmer: 'Selva', 
+      district: 'Thanjavur, Tamil Nadu', 
+      quote: '"தஞ்சாவூரிலிருந்து செல்வா ஜியின் கதை கேளுங்கள்"' 
+    }
   }
 }
 
@@ -789,10 +825,13 @@ function App() {
                 await playAudioUrl(sarvamAudioUrl)
                 await new Promise(resolve => setTimeout(resolve, 800))
                 
-                // Voice memory clips are Hindi recordings — skip for other languages
-                // until regional language clips are recorded
-                if (voiceMemoryUrl && isConversationActiveRef.current && selectedLanguage === 'hi-IN') {
-                  await playAudioUrl(voiceMemoryUrl)
+                // Auto-play voice memory clip after Sarvam TTS finishes
+                if (voiceMemoryUrl && isConversationActiveRef.current) {
+                  try {
+                    await playAudioUrl(voiceMemoryUrl)
+                  } catch (vmErr) {
+                    console.warn('[VM] Voice memory autoplay failed:', vmErr.message)
+                  }
                 }
                 await new Promise(resolve => setTimeout(resolve, 500))
                 if (onComplete) onComplete()
