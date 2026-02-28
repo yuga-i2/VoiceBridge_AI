@@ -187,7 +187,7 @@ def stage1_intro():
     </Say>
     <Pause length="1"/>
     <Say voice="Polly.Kajal" language="hi-IN">
-        Pehle Tumkur ke ek kisan, Suresh Kumar ji ka sandesh suniye.
+        Pehle Tumkur ke ek kisan, Sunitha Devi ji ka sandesh suniye.
     </Say>
     <Play>{_get_voice_memory_url('PM_KISAN')}</Play>
     <Pause length="1"/>

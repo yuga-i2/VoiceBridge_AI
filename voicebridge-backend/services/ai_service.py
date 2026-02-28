@@ -25,9 +25,9 @@ class DecimalEncoder(json.JSONEncoder):
 # Farmer success stories from Voice Memory Network
 FARMER_STORIES = {
     'PM_KISAN': {
-        'farmer': 'Suresh Kumar',
+        'farmer': 'Sunitha Devi',
         'district': 'Tumkur, Karnataka',
-        'story': 'Suresh Kumar ne PM-KISAN se ₹6,000 haasil kiye aur apne bacchon ki school fees bhari.'
+        'story': 'Sunitha Devi ne PM-KISAN se ₹6,000 haasil kiye aur apne bacchon ki school fees bhari.'
     },
     'KCC': {
         'farmer': 'Ramaiah',
@@ -69,7 +69,7 @@ Use farmer profile to make it personal. 3 sentences maximum:
   "Ramesh ji, aapke 2 acre zameen ke saath aap PM-KISAN ke liye 
    bilkul eligible hain — ₹6,000 seedha aapke bank mein aayenge."
 - Sentence 2: Farmer story from nearby region (builds trust):
-  PM_KISAN → "Aapke hi Karnataka mein Suresh Kumar ji, Tumkur se, 
+  PM_KISAN → "Aapke hi Karnataka mein Sunitha Devi ji, Tumkur se, 
                unhone yeh paisa paaya aur bacchon ki fees bhari."
   KCC → "Aapke paas Mysuru ke Ramaiah ji ne KCC se 4% par loan 
           lekar sahukaar ka chakkar hamesha ke liye band kiya."

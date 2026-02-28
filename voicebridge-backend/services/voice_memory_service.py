@@ -13,7 +13,7 @@ if not USE_MOCK:
 VOICE_MEMORY_CLIPS = {
     "PM_KISAN": {
         "filename": "voice_memory_PM_KISAN.mp3",
-        "farmer_name": "Suresh Kumar",
+        "farmer_name": "Sunitha Devi",
         "district": "Tumkur, Karnataka",
         "scheme": "PM-KISAN"
     },
