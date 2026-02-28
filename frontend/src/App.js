@@ -770,20 +770,28 @@ function App() {
   const playSequentially = async (sahayaAudioUrl, voiceMemoryUrl, onComplete, responseText) => {
     // Play Sahaya's Polly voice first
     if (sahayaAudioUrl) {
+      console.log('[TTS] Playing Polly URL from API')
       await playAudioUrl(sahayaAudioUrl)
     } else if (responseText) {
       // No Polly URL available — generate fresh via API
+      console.log('[TTS] Generating fresh Polly TTS for response text...')
       try {
         const ttsResult = await axios.post(API.tts, {
           text: responseText,
-          voice: 'Kajal'
+          language: 'hi-IN'
         })
-        if (ttsResult.data.audio_url) {
+        console.log('[TTS] API response:', JSON.stringify(ttsResult.data))
+        if (ttsResult.data?.audio_url) {
+          console.log('[TTS] Playing generated audio:', ttsResult.data.audio_url.substring(0, 50) + '...')
           await playAudioUrl(ttsResult.data.audio_url)
+        } else {
+          console.warn('[TTS] No audio_url in response:', ttsResult.data)
         }
       } catch(e) {
-        console.warn('[TTS] Polly fallback failed:', e.message)
+        console.error('[TTS] Polly fallback error:', e.message, e.response?.data)
       }
+    } else {
+      console.warn('[TTS] No sahayaAudioUrl and no responseText - skipping TTS')
     }
     
     // Pause between Sahaya and farmer story
@@ -791,7 +799,7 @@ function App() {
     
     // Only play voice memory for Hindi (clips are in Hindi)
     if (voiceMemoryUrl && selectedLanguage === 'hi-IN') {
-      console.log('[VM] Autoplaying farmer story...')
+      console.log('[VM] Autoplaying farmer story from:', voiceMemoryUrl.substring(0, 50) + '...')
       await playAudioUrl(voiceMemoryUrl)
       console.log('[VM] Farmer story finished')
     }
