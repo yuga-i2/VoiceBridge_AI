@@ -115,11 +115,11 @@ def chat():
         # Inline scheme detection — does not depend on any service function
         def detect_scheme(msg):
             m = msg.lower()
-            if any(k in m for k in ['pm kisan','pmkisan','pm-kisan','kisan samman','6000','kisaan']):
+            if any(k in m for k in ['pm kisan','pmkisan','pm-kisan','kisan samman','6000','kisaan','पीएम किसान','पी एम किसान','pihem kisan','piem kisan']):
                 return ['PM_KISAN'], 'PM_KISAN'
-            if any(k in m for k in ['kcc','kisan credit','credit card','kisan card','4%','4 percent']):
+            if any(k in m for k in ['kcc','kisan credit','credit card','kisan card','4%','4 percent','सीसीसी','केसीसी','si si si','see see see','kisan lon','kisan loan','4 pratishat']):
                 return ['KCC'], 'KCC'
-            if any(k in m for k in ['pmfby','fasal bima','crop insurance','bima yojana','fasal insurance']):
+            if any(k in m for k in ['pmfby','fasal bima','crop insurance','bima yojana','fasal insurance','फसल बीमा','piem ef bi','fasal bima yojana']):
                 return ['PMFBY'], 'PMFBY'
             if any(k in m for k in ['mgnrega','mnrega','manrega','nrega','100 days','job card','rozgar']):
                 return ['MGNREGS'], None
