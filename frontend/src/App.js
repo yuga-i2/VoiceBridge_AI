@@ -231,13 +231,9 @@ const VoiceMemoryClip = ({ clip, schemeId, isAutoPlaying = false }) => {
         controls 
         crossOrigin="anonymous"
         preload="metadata"
-        className="w-full h-8 rounded" 
-      >
-        <source src={clip} type="audio/mpeg" />
-        <source src={clip} type="audio/wav" />
-        <source src={clip} type="audio/ogg" />
-        Your browser does not support audio.
-      </audio>
+        src={clip}
+        className="w-full h-8 rounded"
+      />
     </div>
   )
 }
@@ -700,12 +696,19 @@ function App() {
   // ========== CHAT MESSAGE HANDLING ==========
   const normalizeTranscript = (text) => {
     let t = text.toLowerCase()
-    // Fix speech recognition phonetic errors
-    if (t.includes('सीसीसी') || t.includes('केसीसी') || t.includes('si si si')) 
+    // KCC variants — speech recognition says सीसीसी, केसीसी
+    if (t.includes('सीसीसी') || t.includes('केसीसी') || 
+        t.includes('si si si') || t.includes('kcc') ||
+        t.includes('kisan credit') || t.includes('credit card'))
       return 'kcc ke baare mein batao'
-    if (t.includes('पीएम किसान') || t.includes('पी एम किसान') || t.includes('pihem kisan'))
+    // PM_KISAN variants
+    if (t.includes('पीएम किसान') || t.includes('पी एम किसान') || 
+        t.includes('pihem kisan') || t.includes('pm kisan') ||
+        t.includes('kisan samman'))
       return 'pm kisan ke baare mein batao'
-    if (t.includes('पीएमएफबीवाई') || t.includes('फसल बीमा'))
+    // PMFBY variants
+    if (t.includes('पीएमएफबीवाई') || t.includes('फसल बीमा') ||
+        t.includes('pmfby') || t.includes('fasal bima'))
       return 'pmfby fasal bima ke baare mein batao'
     return text
   }
@@ -720,19 +723,8 @@ function App() {
       setCallState(CALL_STATES.THINKING)
       setInputEnabled(false)
 
-      // Build history BEFORE sending to Lambda (include current user message)
-      // Add phonetic normalization for speech recognition variants
-      const normalizeMsg = (t) => {
-        const s = t.toLowerCase()
-        if (s.includes('सीसीसी') || s.includes('केसीसी') || 
-            s.includes('si si si')) return 'kcc ke baare mein batao'
-        if (s.includes('पीएम किसान') || s.includes('pihem kisan') ||
-            s.includes('piem kisan')) return 'pm kisan ke baare mein batao'
-        if (s.includes('फसल बीमा') || s.includes('piem ef')) 
-            return 'pmfby fasal bima ke baare mein batao'
-        return t
-      }
-      const finalMessage = normalizeMsg(userMessage)
+      // Normalize transcript using outer function
+      const finalMessage = normalizeTranscript(userMessage)
       
       const historyToSend = [
         ...conversationHistory,
@@ -1086,13 +1078,9 @@ function App() {
                               controls 
                               crossOrigin="anonymous"
                               preload="metadata"
-                              style={{width:'100%',height:'32px'}} 
-                            >
-                              <source src={msg.voiceMemoryUrl} type="audio/mpeg" />
-                              <source src={msg.voiceMemoryUrl} type="audio/wav" />
-                              <source src={msg.voiceMemoryUrl} type="audio/ogg" />
-                              Your browser does not support audio.
-                            </audio>
+                              src={msg.voiceMemoryUrl}
+                              style={{width:'100%',height:'32px'}}
+                            />
                             <div style={{fontSize:'11px',color:'#9ca3af',marginTop:'4px'}}>🔒 Auto-deleted after 90 days • DPDP Compliant</div>
                           </div>
                         )}

@@ -133,6 +133,20 @@ def chat():
 
         matched_schemes, voice_memory_clip = detect_scheme(message)
         
+        # Fallback: if no scheme detected in current message,
+        # check last assistant message in conversation history
+        if not matched_schemes:
+            history = data.get('conversation_history', [])
+            # Look at last 4 messages for scheme mentions
+            recent = history[-4:] if len(history) >= 4 else history
+            for msg in reversed(recent):
+                content = (msg.get('content') or '').lower()
+                fallback_schemes, fallback_clip = detect_scheme(content)
+                if fallback_schemes:
+                    matched_schemes = fallback_schemes
+                    voice_memory_clip = fallback_clip
+                    break
+        
         fp = data.get('farmer_profile', {})
         history = data.get('conversation_history', [])
         from models.farmer import FarmerProfile
