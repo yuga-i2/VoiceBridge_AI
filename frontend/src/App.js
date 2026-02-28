@@ -785,43 +785,31 @@ function App() {
 
       setIsProcessing(false)
 
-      // Handle audio playback with auto-listen for continuous conversation
-      if (aiResponse.audio_url && isConversationActiveRef.current) {
-        // Continuous conversation: play Sahaya → voice memory → auto-listen
+      // Always play whatever audio we have
+      const hasAudio = aiResponse.audio_url || aiResponse.voiceMemoryUrl
+      
+      if (hasAudio) {
+        setIsSpeaking(true)
+        setCallState(CALL_STATES.SAHAYA_SPEAKING)
         playSequentially(
-          aiResponse.audio_url,
-          aiResponse.voiceMemoryUrl,
+          aiResponse.audio_url || null,
+          aiResponse.voiceMemoryUrl || null,
           () => {
+            setIsSpeaking(false)
             if (isConversationActiveRef.current) {
               setTimeout(() => startListening(), 500)
             } else {
-              setIsSpeaking(false)
               setCallState(CALL_STATES.WAITING)
               setInputEnabled(true)
             }
           }
         )
-        setIsSpeaking(true)
-        setCallState(CALL_STATES.SAHAYA_SPEAKING)
-      } else if (aiResponse.audio_url) {
-        // Manual button mode: play Sahaya audio, then voice memory without auto-listening
-        playSequentially(
-          aiResponse.audio_url,
-          aiResponse.voiceMemoryUrl,
-          () => {
-            setIsSpeaking(false)
-            setCallState(CALL_STATES.WAITING)
-            setInputEnabled(true)
-          }
-        )
-        setIsSpeaking(true)
-        setCallState(CALL_STATES.SAHAYA_SPEAKING)
-      } else if (isConversationActiveRef.current) {
-        // Fallback to browser TTS with auto-listen for continuous conversation
-        speakAndListen(aiResponse.text)
       } else {
-        // Manual button mode: fallback to TTS without auto-listening
-        speakAndWait(aiResponse.text)
+        if (isConversationActiveRef.current) {
+          speakAndListen(aiResponse.text)
+        } else {
+          speakAndWait(aiResponse.text)
+        }
       }
     } catch(e) {
       console.error('Chat failed:', e)
@@ -940,18 +928,20 @@ function App() {
       ])
 
       // Handle audio playback with fallback
-      if (aiResponse.audio_url) {
+      const hasAudio = aiResponse.audio_url || aiResponse.voiceMemoryUrl
+      
+      if (hasAudio) {
+        setIsSpeaking(true)
+        setCallState(CALL_STATES.SAHAYA_SPEAKING)
         playSequentially(
-          aiResponse.audio_url,
-          aiResponse.voiceMemoryUrl,
+          aiResponse.audio_url || null,
+          aiResponse.voiceMemoryUrl || null,
           () => {
             setIsSpeaking(false)
             setCallState(CALL_STATES.WAITING)
             setInputEnabled(true)
           }
         )
-        setIsSpeaking(true)
-        setCallState(CALL_STATES.SAHAYA_SPEAKING)
       } else {
         speakAndWait(aiResponse.text)
       }
