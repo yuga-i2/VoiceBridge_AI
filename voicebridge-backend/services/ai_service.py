@@ -210,6 +210,32 @@ def _select_mock_response(message: str, scheme_ids: list[str]) -> str:
     return MOCK_RESPONSES["confused"]
 
 
+def get_voice_memory_clip(matched_schemes: list[str], message_text: str) -> str | None:
+    """
+    Returns voice memory clip ID if relevant scheme discussed.
+    Checks matched schemes first, then falls back to message text keywords.
+    Voice memory clips exist only for: PM_KISAN, KCC, PMFBY
+    """
+    clip_schemes = ['PM_KISAN', 'KCC', 'PMFBY']
+    
+    # Check matched schemes first (most reliable)
+    if matched_schemes:
+        for scheme in matched_schemes:
+            if scheme in clip_schemes:
+                return scheme
+    
+    # Fallback: check message text for keywords
+    message_lower = message_text.lower()
+    if any(k in message_lower for k in ['pm kisan', 'pm-kisan', 'kisan samman', 'pmkisan']):
+        return 'PM_KISAN'
+    if any(k in message_lower for k in ['kcc', 'kisan credit', 'credit card']):
+        return 'KCC'
+    if any(k in message_lower for k in ['pmfby', 'fasal bima', 'crop insurance', 'bima']):
+        return 'PMFBY'
+    
+    return None
+
+
 def _extract_voice_memory_tag(response_text: str) -> tuple[str, str | None]:
     """
     Extracts [PLAY_VOICE_MEMORY:X] tag from response.
@@ -291,7 +317,8 @@ def generate_response(
         if USE_MOCK:
             # Mock path
             raw_response = _select_mock_response(message, scheme_ids)
-            clean_text, voice_clip = _extract_voice_memory_tag(raw_response)
+            clean_text, _ = _extract_voice_memory_tag(raw_response)
+            voice_clip = get_voice_memory_clip(scheme_ids, message)
             
             return {
                 "success": True,
@@ -345,8 +372,10 @@ def generate_response(
             response_body = json.loads(response["body"].read())
             raw_response = response_body["content"][0]["text"]
             
-            # Extract voice memory tag
-            clean_text, voice_clip = _extract_voice_memory_tag(raw_response)
+            # Extract clean text (remove tags if any)
+            clean_text, _ = _extract_voice_memory_tag(raw_response)
+            # Determine voice memory clip from matched schemes, not from AI tag
+            voice_clip = get_voice_memory_clip(scheme_ids, message)
             
             return {
                 "success": True,
