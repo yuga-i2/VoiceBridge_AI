@@ -7,7 +7,7 @@ import './App.css'
 // Real farmer success stories from AWS DynamoDB
 const CLIP_INFO = {
   'PM_KISAN': { 
-    farmer: 'Suresh Kumar', 
+    farmer: 'Sunitha Devi', 
     district: 'Tumkur, Karnataka', 
     quote: '"PM-KISAN se ₹6,000 mile. Bacchon ki fees bhari. Sahaya ne bataya tha!"' 
   },
@@ -373,6 +373,7 @@ function App() {
   
   const recognitionRef = useRef(null)
   const isConversationActiveRef = useRef(false)
+  const audioContextRef = useRef(null)
 
   // Load all schemes on mount
   useEffect(() => {
@@ -437,6 +438,7 @@ function App() {
 
   // ========== SAHAYA OPENING SPEECH ==========
   const startSahayaCall = async () => {
+    unlockAudio()
     setCallState(CALL_STATES.CONNECTING)
     setInputEnabled(false)
     
@@ -514,46 +516,77 @@ function App() {
    * Updates UI state to show "Now Playing" indicator.
    * Optionally resumes listening after both audio clips finish.
    */
+  const unlockAudio = () => {
+    if (!audioContextRef.current) {
+      try {
+        audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)()
+        // Play a silent buffer to unlock autoplay
+        const buffer = audioContextRef.current.createBuffer(1, 1, 22050)
+        const source = audioContextRef.current.createBufferSource()
+        source.buffer = buffer
+        source.connect(audioContextRef.current.destination)
+        source.start(0)
+        console.log('[Audio] Context unlocked')
+      } catch(e) {
+        console.log('[Audio] Failed to unlock context:', e.message)
+      }
+    }
+  }
+
+  const playAudioUrl = (url) => {
+    return new Promise(async (resolve) => {
+      try {
+        // Unlock audio context first
+        if (!audioContextRef.current) {
+          audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)()
+        }
+        const ctx = audioContextRef.current
+        if (ctx.state === 'suspended') {
+          await ctx.resume()
+        }
+        
+        // Fetch and decode audio
+        const response = await fetch(url, { mode: 'cors' })
+        const arrayBuffer = await response.arrayBuffer()
+        const audioBuffer = await ctx.decodeAudioData(arrayBuffer)
+        
+        const source = ctx.createBufferSource()
+        source.buffer = audioBuffer
+        source.connect(ctx.destination)
+        source.onended = resolve
+        source.start(0)
+        console.log('[Audio] Playing:', url.split('/').pop().split('?')[0])
+      } catch(e) {
+        console.log('[Audio] playAudioUrl failed:', e.message)
+        resolve()
+      }
+    })
+  }
+
   const playSequentially = async (sahayaAudioUrl, voiceMemoryUrl, onComplete) => {
-    // Step 1: Play Sahaya's Polly voice
+    // Play Sahaya's Polly voice first
     if (sahayaAudioUrl) {
-      await new Promise((resolve) => {
-        const audio = new Audio(sahayaAudioUrl)
-        audio.crossOrigin = 'anonymous'
-        audio.onended = resolve
-        audio.onerror = resolve
-        audio.play().catch(() => resolve())
-      })
+      await playAudioUrl(sahayaAudioUrl)
     }
-
-    // Step 2: Short pause between Sahaya and farmer story
-    await new Promise(resolve => setTimeout(resolve, 800))
-
-    // Step 3: Autoplay voice memory clip
+    
+    // Pause between Sahaya and farmer story
+    await new Promise(resolve => setTimeout(resolve, 1000))
+    
+    // Play voice memory clip automatically
     if (voiceMemoryUrl) {
-      await new Promise((resolve) => {
-        const vmAudio = new Audio(voiceMemoryUrl)
-        vmAudio.crossOrigin = 'anonymous'
-        vmAudio.onended = resolve
-        vmAudio.onerror = resolve
-        // Try autoplay — browsers require prior user interaction
-        // which is satisfied by the mic button click
-        vmAudio.play()
-          .then(() => console.log('[VM] Voice memory autoplaying'))
-          .catch((e) => {
-            console.log('[VM] Autoplay blocked:', e.message)
-            resolve() // still continue even if blocked
-          })
-      })
+      console.log('[VM] Autoplaying farmer story...')
+      await playAudioUrl(voiceMemoryUrl)
+      console.log('[VM] Farmer story finished')
     }
-
-    // Step 4: Resume listening after everything finishes
-    await new Promise(resolve => setTimeout(resolve, 500))
+    
+    // Short pause then resume listening
+    await new Promise(resolve => setTimeout(resolve, 600))
     if (onComplete) onComplete()
   }
 
   // ========== CONVERSATION MANAGEMENT ==========
   const startConversation = async () => {
+    unlockAudio()
     setIsConversationActive(true)
     isConversationActiveRef.current = true
     setCallState(CALL_STATES.CONNECTING)
@@ -603,6 +636,7 @@ function App() {
 
   // ========== WEB SPEECH API RECOGNITION ==========
   const startListening = () => {
+    unlockAudio()
     if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
       alert('Please use Chrome, Edge, or Safari browser for voice input')
       return
