@@ -698,6 +698,18 @@ function App() {
   }
 
   // ========== CHAT MESSAGE HANDLING ==========
+  const normalizeTranscript = (text) => {
+    let t = text.toLowerCase()
+    // Fix speech recognition phonetic errors
+    if (t.includes('सीसीसी') || t.includes('केसीसी') || t.includes('si si si')) 
+      return 'kcc ke baare mein batao'
+    if (t.includes('पीएम किसान') || t.includes('पी एम किसान') || t.includes('pihem kisan'))
+      return 'pm kisan ke baare mein batao'
+    if (t.includes('पीएमएफबीवाई') || t.includes('फसल बीमा'))
+      return 'pmfby fasal bima ke baare mein batao'
+    return text
+  }
+
   const sendMessage = async (userMessage) => {
     if (!userMessage.trim()) {
       setIsProcessing(false)
@@ -708,16 +720,19 @@ function App() {
       setCallState(CALL_STATES.THINKING)
       setInputEnabled(false)
 
+      // Normalize transcript before sending
+      const normalizedMessage = normalizeTranscript(userMessage)
+
       // Build history BEFORE sending to Lambda (include current user message)
       const historyToSend = [
         ...conversationHistory,
-        { role: 'user', content: userMessage }
+        { role: 'user', content: normalizedMessage }
       ]
       console.log('[VoiceBridge] Sending to Lambda with history length:', historyToSend.length)
 
       // Get AI response from /api/chat
       const chatRes = await axios.post(API.chat, {
-        message: userMessage,
+        message: normalizedMessage,
         farmer_profile: farmerProfile,
         conversation_history: historyToSend
       })
