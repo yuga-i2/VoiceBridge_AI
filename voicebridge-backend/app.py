@@ -180,27 +180,25 @@ def chat():
         # Fall back to detect_scheme result if AI didn't return one
         final_voice_clip = result.get('voice_memory_clip') or voice_memory_clip
         
-        # Also check AI response text as last fallback
+        # Fallback: detect voice clip from AI response text
         if not final_voice_clip and response_text:
-            _, final_voice_clip = detect_scheme(response_text)
-        
-        # Fallback: if no voice clip detected but schemes were matched, use first match
+            # Check English scheme names (always present in AI response regardless of language)
+            rt = response_text.lower()
+            if 'pm-kisan' in rt or 'pm kisan' in rt or 'pmkisan' in rt or '6,000' in rt or '6000' in rt:
+                final_voice_clip = 'PM_KISAN'
+            elif 'kisan credit' in rt or 'kcc' in rt or 'credit card' in rt:
+                final_voice_clip = 'KCC'
+            elif 'pmfby' in rt or 'fasal bima' in rt or 'crop insurance' in rt or 'pm fasal' in rt:
+                final_voice_clip = 'PMFBY'
+
+        # Fallback: use first matched scheme if still no clip
         if not final_voice_clip and matched_schemes:
             clip_eligible = ['PM_KISAN', 'KCC', 'PMFBY']
             for scheme in matched_schemes:
                 if scheme in clip_eligible:
                     final_voice_clip = scheme
                     break
-        
-        # Also check response text for scheme mentions as last resort
-        if not final_voice_clip and response_text:
-            text_lower = response_text.lower()
-            if 'pm-kisan' in text_lower or 'pm kisan' in text_lower or 'കിസാൻ' in response_text or 'கிசான்' in response_text:
-                final_voice_clip = 'PM_KISAN'
-            elif 'kcc' in text_lower or 'kisan credit' in text_lower or 'ക്രെഡിറ്റ്' in response_text or 'கிரெடिट්' in response_text:
-                final_voice_clip = 'KCC'
-            elif 'pmfby' in text_lower or 'fasal bima' in text_lower or 'വിള ഇൻഷുറൻസ്' in response_text or 'பயிர്' in response_text:
-                final_voice_clip = 'PMFBY'
+
         
         # Generate TTS audio for Sahaya's response
         tts_audio_url = None
