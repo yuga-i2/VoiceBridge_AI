@@ -770,28 +770,8 @@ function App() {
   const playSequentially = async (sahayaAudioUrl, voiceMemoryUrl, onComplete, responseText) => {
     // Play Sahaya's Polly voice first
     if (sahayaAudioUrl) {
-      console.log('[TTS] Playing Polly URL from API')
+      console.log('[TTS] Playing Polly TTS from API')
       await playAudioUrl(sahayaAudioUrl)
-    } else if (responseText) {
-      // No Polly URL available — generate fresh via API
-      console.log('[TTS] Generating fresh Polly TTS for response text...')
-      try {
-        const ttsResult = await axios.post(API.tts, {
-          text: responseText,
-          language: 'hi-IN'
-        })
-        console.log('[TTS] API response:', JSON.stringify(ttsResult.data))
-        if (ttsResult.data?.audio_url) {
-          console.log('[TTS] Playing generated audio:', ttsResult.data.audio_url.substring(0, 50) + '...')
-          await playAudioUrl(ttsResult.data.audio_url)
-        } else {
-          console.warn('[TTS] No audio_url in response:', ttsResult.data)
-        }
-      } catch(e) {
-        console.error('[TTS] Polly fallback error:', e.message, e.response?.data)
-      }
-    } else {
-      console.warn('[TTS] No sahayaAudioUrl and no responseText - skipping TTS')
     }
     
     // Pause between Sahaya and farmer story
@@ -803,6 +783,11 @@ function App() {
       await playAudioUrl(voiceMemoryUrl)
       console.log('[VM] Farmer story finished')
     }
+    
+    // Short pause then resume listening
+    await new Promise(resolve => setTimeout(resolve, 600))
+    if (onComplete) onComplete()
+  }
     
     // Short pause then resume listening
     await new Promise(resolve => setTimeout(resolve, 600))

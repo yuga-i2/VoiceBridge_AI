@@ -211,18 +211,20 @@ def chat():
             if clip_result.get('success'):
                 voice_memory_url = clip_result.get('audio_url')
         
-        # Fall back to TTS if no voice memory available
-        if not voice_memory_url:
-            try:
-                from services.tts_service import synthesize_speech
-                tts_result = synthesize_speech(response_text)
-                if tts_result.get('success'):
-                    tts_audio_url = tts_result.get('audio_url')
-            except Exception as tts_err:
-                logger.warning(f"TTS failed (non-fatal): {tts_err}")
+        # ALWAYS generate TTS for the response (for intro/context)
+        # Voice memory is separate and plays after TTS
+        try:
+            from services.tts_service import synthesize_speech
+            tts_result = synthesize_speech(response_text)
+            if tts_result.get('success'):
+                tts_audio_url = tts_result.get('audio_url')
+        except Exception as tts_err:
+            logger.warning(f"TTS failed (non-fatal): {tts_err}")
         
-        # Use voice memory URL if available, otherwise TTS
-        final_audio_url = voice_memory_url or tts_audio_url
+        # For responses with voice memory, return BOTH:
+        # - audio_url: Polly TTS for the intro/context
+        # - voice_memory_clip: Pre-recorded farmer story to play after
+        final_audio_url = tts_audio_url  # Always return TTS if available
         
         return jsonify({
             'success': True,
@@ -230,7 +232,7 @@ def chat():
             'matched_schemes': matched_schemes,
             'voice_memory_clip': final_voice_clip,
             'audio_url': final_audio_url,
-            'audio_type': 'voice_memory' if voice_memory_url else 'tts',
+            'audio_type': 'tts' if final_audio_url else 'none',  # TTS is always primary
             'conversation_id': uuid.uuid4().hex
         })
     except Exception as e:
