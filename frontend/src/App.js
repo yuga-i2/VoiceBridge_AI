@@ -689,6 +689,55 @@ function App() {
     if (onComplete) onComplete()
   }
 
+  // ========== LANGUAGE-AWARE AUDIO PLAYBACK ==========
+  const playWithLanguage = async (sahayaAudioUrl, voiceMemoryUrl, responseText, onComplete) => {
+    const isHindi = selectedLanguage === 'hi-IN'
+    
+    if (isHindi) {
+      // Hindi: use Polly audio (best quality)
+      await playSequentially(sahayaAudioUrl, voiceMemoryUrl, onComplete)
+    } else {
+      // Regional language: use browser TTS (speaks the language correctly)
+      // Browser TTS supports Tamil, Kannada, Telugu, Malayalam natively
+      window.speechSynthesis.cancel()
+      
+      if (responseText) {
+        const utterance = new SpeechSynthesisUtterance(responseText)
+        utterance.lang = selectedLanguage
+        utterance.rate = 0.85
+        utterance.pitch = 1.05
+        
+        // Pick best available voice for the language
+        const voices = window.speechSynthesis.getVoices()
+        const bestVoice = voices.find(v => v.lang === selectedLanguage) ||
+                          voices.find(v => v.lang.startsWith(selectedLanguage.split('-')[0]))
+        if (bestVoice) utterance.voice = bestVoice
+        
+        utterance.onend = async () => {
+          // Still play voice memory clip (it's Hindi audio — always plays)
+          if (voiceMemoryUrl) {
+            await new Promise(resolve => setTimeout(resolve, 800))
+            await playAudioUrl(voiceMemoryUrl)
+          }
+          await new Promise(resolve => setTimeout(resolve, 500))
+          if (onComplete) onComplete()
+        }
+        
+        utterance.onerror = async () => {
+          // TTS failed, still play voice memory and continue
+          if (voiceMemoryUrl) await playAudioUrl(voiceMemoryUrl)
+          if (onComplete) onComplete()
+        }
+        
+        window.speechSynthesis.speak(utterance)
+      } else {
+        // No text, just play voice memory
+        if (voiceMemoryUrl) await playAudioUrl(voiceMemoryUrl)
+        if (onComplete) onComplete()
+      }
+    }
+  }
+
   // ========== CONVERSATION MANAGEMENT ==========
   const startConversation = async () => {
     unlockAudio()
@@ -942,9 +991,10 @@ function App() {
       if (hasAudio) {
         setIsSpeaking(true)
         setCallState(CALL_STATES.SAHAYA_SPEAKING)
-        playSequentially(
+        playWithLanguage(
           aiResponse.audio_url || null,
           aiResponse.voiceMemoryUrl || null,
+          aiResponse.text,
           () => {
             setIsSpeaking(false)
             if (isConversationActiveRef.current) {
@@ -1085,9 +1135,10 @@ function App() {
       if (hasAudio) {
         setIsSpeaking(true)
         setCallState(CALL_STATES.SAHAYA_SPEAKING)
-        playSequentially(
+        playWithLanguage(
           aiResponse.audio_url || null,
           aiResponse.voiceMemoryUrl || null,
+          aiResponse.text,
           () => {
             setIsSpeaking(false)
             setCallState(CALL_STATES.WAITING)
