@@ -123,7 +123,7 @@ def chat():
             if any(k in m for k in ['pm kisan','pmkisan','pm-kisan','kisan samman','6000','kisaan','पीएम किसान','पी एम किसान','pihem kisan','piem kisan','പി എം കിസാൻ','പിഎം കിസാൻ','കിസാൻ സമ്മാൻ','pm kisan','கிசான்','பிஎம் கிசான்','கிசான் சம்மான்']):
                 return ['PM_KISAN'], 'PM_KISAN'
             # KCC — Hindi + Malayalam + Tamil keywords
-            if any(k in m for k in ['kcc','kisan credit','credit card','kisan card','4%','4 percent','सीसीसी','केसीसी','si si si','see see see','kisan lon','kisan loan','4 pratishat','കിസാൻ ക്രെഡിറ്റ്','കെ സി സി','കെസിസി','கிசான் கிரெடிट்','கேசिசी']):
+            if any(k in m for k in ['kcc','kisan credit','credit card','kisan card','4%','4 percent','सीसीसी','केसीसी','si si si','see see see','kisan lon','kisan loan','4 pratishat','കിസാൻ ക്രെഡിറ്റ്','കെ സി സി','കെസിസി','கிசான் கிரெடிட்','கேசिसी','கிசான் கிரெடิட்','கிரெடிट்']):
                 return ['KCC'], 'KCC'
             # PMFBY — Hindi + Malayalam + Tamil keywords
             if any(k in m for k in ['pmfby','fasal bima','crop insurance','bima yojana','fasal insurance','फसल बीमा','piem ef bi','fasal bima yojana','ഫസൽ ബീമ','വിള ഇൻഷുറൻസ്','പിഎംഎഫ്ബിവൈ','பயிர் காப்பீடு','பிஎம்எஃப்பிஒய்']):
