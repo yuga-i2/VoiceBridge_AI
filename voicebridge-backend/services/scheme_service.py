@@ -57,38 +57,78 @@ def get_scheme_by_id(scheme_id: str) -> dict | None:
 
 def match_schemes_to_message(message: str) -> list[str]:
     """
-    Extracts keywords from message and matches to scheme keywords.
-    Returns list of matching scheme_ids.
-    Handles case-insensitive and Hindi transliteration matching.
+    Match user message to relevant scheme IDs.
+    Comprehensive keyword matching for all 8 schemes in English and Hindi.
+    Returns list of matching scheme_ids, always includes at least one match.
     """
-    schemes = get_all_schemes()
-    matched_ids = []
+    if not message:
+        return []
     
-    # Normalize message: lowercase, handle transliteration
-    normalized_message = message.lower()
-    # Handle common Hindi-English transliterations
-    transliteration_map = {
-        "fasal": "फसल",
-        "kisan": "किसान",
-        "beej": "बीज",
-        "ghati": "घाटी",
+    msg = message.lower().strip()
+    matched = []
+    
+    # Comprehensive scheme keywords in English and Hindi
+    scheme_keywords = {
+        'PM_KISAN': [
+            'pm kisan', 'pmkisan', 'pm-kisan', 'kisan samman',
+            'pradhan mantri kisan', 'kisaan samman', 'pm kisaan',
+            '6000', '₹6000', 'kisan yojana', 'छः हजार',
+            'पीएम किसान', 'किसान सम्मान', 'पीएम-किसान', 
+            'pradhan mantri kisan samman', 'dbt kisan', 'सम्मान निधि'
+        ],
+        'KCC': [
+            'kcc', 'kisan credit', 'credit card', 'kisan card',
+            'crop loan', '4 percent', '4%', 'kharif loan',
+            'kisan credit card', 'किसान क्रेडिट', 'केसीसी',
+            'क्रेडिट कार्ड', 'loan card', 'kisan loan', 'तीन लाख',
+            'fasal loan', 'agricultural loan'
+        ],
+        'PMFBY': [
+            'pmfby', 'fasal bima', 'crop insurance', 'fasal bima yojana',
+            'pradhan mantri fasal', 'crop loss', 'bima yojana',
+            'fasal insurance', 'फसल बीमा', 'पीएमएफबीवाई',
+            'फसल बीमा योजना', 'fasal barbaad', 'crop damage', 
+            'kharif bima', 'rabi bima', 'खरीफ बीमा'
+        ],
+        'MGNREGS': [
+            'mgnrega', 'mnrega', 'manrega', 'nrega', '100 days',
+            'job card', 'rozgar', 'employment guarantee', 'din kaam',
+            'मनरेगा', 'रोजगार', 'जॉब कार्ड', 'sou din', '100 din',
+            'काम देना', 'employment scheme', 'rural employment'
+        ],
+        'AYUSHMAN_BHARAT': [
+            'ayushman', 'pmjay', 'health insurance', '5 lakh health',
+            'ayushman bharat', 'hospital free', 'free treatment',
+            'आयुष्मान', 'स्वास्थ्य बीमा', 'free hospital',
+            'आयुष्मान भारत', 'health scheme', 'medical insurance'
+        ],
+        'PM_AWAS_GRAMIN': [
+            'pm awas', 'pmay', 'gramin awas', 'pucca house',
+            'house scheme', 'awas yojana', 'housing scheme',
+            'ghar yojana', 'आवास योजना', 'पक्का घर',
+            'housing', 'home scheme', 'pradhan mantri awas'
+        ],
+        'SOIL_HEALTH_CARD': [
+            'soil health', 'soil card', 'mitti jaanch',
+            'fertilizer test', 'soil test', 'मृदा स्वास्थ्य',
+            'mitti card', 'krishi card', 'soil fertility'
+        ],
+        'NFSA_RATION': [
+            'ration', 'nfsa', 'public distribution', 'pds',
+            'aadhaar ration', 'food grain', 'राशन',
+            'खाद्य सुरक्षा', 'distribution scheme'
+        ]
     }
-    for eng, hi in transliteration_map.items():
-        if eng in normalized_message or hi in normalized_message:
-            # Add both to search
-            normalized_message = f"{normalized_message} {eng} {hi}"
     
-    # Check each scheme's keywords
-    for scheme in schemes:
-        scheme_keywords = [kw.lower() for kw in scheme.get("keywords", [])]
-        # Check if any keyword appears in the message
-        for keyword in scheme_keywords:
-            if keyword in normalized_message:
-                if scheme["scheme_id"] not in matched_ids:
-                    matched_ids.append(scheme["scheme_id"])
+    # Match keywords in message
+    for scheme_id, keywords in scheme_keywords.items():
+        for keyword in keywords:
+            if keyword in msg:
+                if scheme_id not in matched:
+                    matched.append(scheme_id)
                 break
     
-    return matched_ids
+    return matched
 
 
 def check_eligibility(farmer: FarmerProfile) -> list[dict]:
