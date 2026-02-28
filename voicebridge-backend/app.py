@@ -263,7 +263,11 @@ def sarvam_tts():
         
         data = request.get_json() or {}
         text = (data.get('text') or '').strip()
-        language = (data.get('language') or '').strip().lower()
+        language = (data.get('language') or '').strip()
+        # Normalize to BCP-47 format e.g. ml-IN (not ml-in)
+        if '-' in language:
+            parts = language.split('-')
+            language = parts[0].lower() + '-' + parts[1].upper()
         
         if not text:
             return jsonify({'success': False, 'error': 'Text is required'}), 400
@@ -280,17 +284,15 @@ def sarvam_tts():
         
         # Speaker mapping: language → Sarvam speaker ID
         speaker_map = {
-            'tamil': 'kavya',
-            'ta': 'kavya',
-            'kannada': 'shreya',
-            'kn': 'shreya',
-            'telugu': 'meera',
-            'te': 'meera',
-            'malayalam': 'pavithra',
-            'ml': 'pavithra'
+            'ta-IN': 'kavya',
+            'kn-IN': 'arjun',
+            'te-IN': 'meera',
+            'ml-IN': 'pavithra',
+            'hi-IN': 'meera'
         }
         
-        speaker_id = speaker_map.get(language, 'kavya')
+        speaker_id = speaker_map.get(language, 'meera')
+        logger.info(f"Sarvam TTS: lang={language} speaker={speaker_id} text_len={len(text)}")
         
         # Call Sarvam API
         headers = {'api-subscription-key': SARVAM_API_KEY}
@@ -312,9 +314,10 @@ def sarvam_tts():
             }), 500
         
         result = response.json()
-        if not result.get('status') == 'success' or not result.get('audios'):
-            logger.error(f"Sarvam API unexpected response: {result}")
-            return jsonify({'success': False, 'error': 'Invalid Sarvam response'}), 500
+        audios = result.get('audios') or []
+        if not audios:
+            logger.error(f"Sarvam API no audio in response: {result}")
+            return jsonify({'success': False, 'error': 'No audio from Sarvam'}), 500
         
         # Decode base64 audio and upload to S3
         audio_base64 = result['audios'][0]

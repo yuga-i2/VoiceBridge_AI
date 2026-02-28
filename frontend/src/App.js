@@ -760,6 +760,7 @@ function App() {
   // ========== LANGUAGE-AWARE AUDIO PLAYBACK ==========
   const playWithLanguage = async (sahayaAudioUrl, voiceMemoryUrl, responseText, onComplete) => {
     const isHindi = selectedLanguage === 'hi-IN'
+    console.log('[Lang] playWithLanguage: lang=' + selectedLanguage + ' isHindi=' + isHindi)
     
     if (isHindi) {
       // Hindi: use Polly audio (best quality)
