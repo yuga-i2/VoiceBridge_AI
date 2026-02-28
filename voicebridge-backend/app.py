@@ -112,33 +112,41 @@ def chat():
             return jsonify({'success': False, 'error': 'Message is required',
                            'code': 'INVALID_INPUT'}), 400
         
-        # STEP 1: DEBUG LOGGING
-        app.logger.info(f"[CHAT DEBUG] message received: {message}")
+        # Inline scheme detection — does not depend on any service function
+        def detect_scheme(msg):
+            m = msg.lower()
+            if any(k in m for k in ['pm kisan','pmkisan','pm-kisan','kisan samman','6000','kisaan']):
+                return ['PM_KISAN'], 'PM_KISAN'
+            if any(k in m for k in ['kcc','kisan credit','credit card','kisan card','4%','4 percent']):
+                return ['KCC'], 'KCC'
+            if any(k in m for k in ['pmfby','fasal bima','crop insurance','bima yojana','fasal insurance']):
+                return ['PMFBY'], 'PMFBY'
+            if any(k in m for k in ['mgnrega','mnrega','manrega','nrega','100 days','job card','rozgar']):
+                return ['MGNREGS'], None
+            if any(k in m for k in ['ayushman','pmjay','health insurance','5 lakh health']):
+                return ['AYUSHMAN_BHARAT'], None
+            if any(k in m for k in ['pm awas','awas yojana','pucca house','ghar yojana']):
+                return ['PM_AWAS_GRAMIN'], None
+            if any(k in m for k in ['soil health','soil card','mitti','soil test']):
+                return ['SOIL_HEALTH_CARD'], None
+            return [], None
+
+        matched_schemes, voice_memory_clip = detect_scheme(message)
         
         fp = data.get('farmer_profile', {})
         history = data.get('conversation_history', [])
         from models.farmer import FarmerProfile
-        from services.scheme_service import match_schemes_to_message
-        from services.ai_service import generate_response, get_voice_memory_clip
+        from services.ai_service import generate_response
         import uuid
         
         farmer = FarmerProfile.from_dict(fp)
-        matched_schemes = match_schemes_to_message(message)
-        
-        # STEP 2: DEBUG LOGGING
-        app.logger.info(f"[CHAT DEBUG] matched schemes: {matched_schemes}")
-        
         result = generate_response(message, matched_schemes, farmer, history)
-        voice_clip = get_voice_memory_clip(matched_schemes, message)
-        
-        # STEP 3: DEBUG LOGGING
-        app.logger.info(f"[CHAT DEBUG] voice clip: {voice_clip}")
         
         return jsonify({
             'success': True,
             'response_text': result.get('response_text', ''),
-            'voice_memory_clip': voice_clip,
             'matched_schemes': matched_schemes,
+            'voice_memory_clip': voice_memory_clip,
             'conversation_id': uuid.uuid4().hex
         })
     except Exception as e:
