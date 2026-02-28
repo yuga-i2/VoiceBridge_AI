@@ -202,20 +202,35 @@ def chat():
         
         # Generate TTS audio for Sahaya's response
         tts_audio_url = None
-        try:
-            from services.tts_service import synthesize_speech
-            tts_result = synthesize_speech(response_text)
-            if tts_result.get('success'):
-                tts_audio_url = tts_result.get('audio_url')
-        except Exception as tts_err:
-            logger.warning(f"TTS failed (non-fatal): {tts_err}")
+        voice_memory_url = None
+        
+        # First, try to get pre-recorded voice memory clip
+        if final_voice_clip:
+            from services.voice_memory_service import get_clip
+            clip_result = get_clip(final_voice_clip, language)
+            if clip_result.get('success'):
+                voice_memory_url = clip_result.get('audio_url')
+        
+        # Fall back to TTS if no voice memory available
+        if not voice_memory_url:
+            try:
+                from services.tts_service import synthesize_speech
+                tts_result = synthesize_speech(response_text)
+                if tts_result.get('success'):
+                    tts_audio_url = tts_result.get('audio_url')
+            except Exception as tts_err:
+                logger.warning(f"TTS failed (non-fatal): {tts_err}")
+        
+        # Use voice memory URL if available, otherwise TTS
+        final_audio_url = voice_memory_url or tts_audio_url
         
         return jsonify({
             'success': True,
             'response_text': response_text,
             'matched_schemes': matched_schemes,
             'voice_memory_clip': final_voice_clip,
-            'audio_url': tts_audio_url,
+            'audio_url': final_audio_url,
+            'audio_type': 'voice_memory' if voice_memory_url else 'tts',
             'conversation_id': uuid.uuid4().hex
         })
     except Exception as e:
