@@ -600,7 +600,7 @@ function App() {
   const speakAndListen = (text) => {
     if ('speechSynthesis' in window) {
       const utterance = new SpeechSynthesisUtterance(text)
-      utterance.lang = 'hi-IN'
+      utterance.lang = selectedLanguage
       utterance.rate = 0.9
       utterance.onend = () => {
         if (isConversationActiveRef.current) {
@@ -758,23 +758,54 @@ function App() {
     
     // Try to get Polly audio first
     try {
-      const ttsResult = await axios.post(
-        `${API.tts}`,
-        { text: openingText, voice: 'Kajal' }
-      )
-      
-      if (ttsResult.data.audio_url) {
-        playSahayaAudio(ttsResult.data.audio_url, () => {
+      if (selectedLanguage === 'hi-IN') {
+        // Hindi: try Polly first, fallback to browser TTS
+        const ttsResult = await axios.post(
+          `${API.tts}`,
+          { text: openingText, voice: 'Kajal' }
+        )
+        if (ttsResult.data.audio_url) {
+          playSahayaAudio(ttsResult.data.audio_url, () => {
+            if (isConversationActiveRef.current) {
+              setTimeout(() => startListening(), 500)
+            }
+          })
+        } else {
+          speakAndListen(openingText)
+        }
+      } else {
+        // Regional language: use browser TTS with correct language
+        window.speechSynthesis.cancel()
+        const utterance = new SpeechSynthesisUtterance(openingText)
+        utterance.lang = selectedLanguage
+        utterance.rate = 0.85
+        utterance.pitch = 1.05
+        const voices = window.speechSynthesis.getVoices()
+        const bestVoice = voices.find(v => v.lang === selectedLanguage) ||
+                          voices.find(v => v.lang.startsWith(selectedLanguage.split('-')[0]))
+        if (bestVoice) utterance.voice = bestVoice
+        utterance.onend = () => {
           if (isConversationActiveRef.current) {
             setTimeout(() => startListening(), 500)
           }
-        })
-      } else {
-        speakAndListen(openingText)
+        }
+        utterance.onerror = () => {
+          if (isConversationActiveRef.current) {
+            setTimeout(() => startListening(), 1000)
+          }
+        }
+        window.speechSynthesis.speak(utterance)
       }
     } catch(e) {
-      console.log('TTS request failed, using browser TTS:', e)
-      speakAndListen(openingText)
+      console.log('TTS failed, using browser TTS:', e)
+      window.speechSynthesis.cancel()
+      const utterance = new SpeechSynthesisUtterance(openingText)
+      utterance.lang = selectedLanguage
+      utterance.rate = 0.85
+      window.speechSynthesis.speak(utterance)
+      setTimeout(() => {
+        if (isConversationActiveRef.current) startListening()
+      }, 3000)
     }
   }
 
