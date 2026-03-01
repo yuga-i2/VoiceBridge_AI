@@ -17,14 +17,15 @@ Key method: invoke_model()
 Input format: messages array with system prompt + conversation history
 The system prompt defines Sahaya's persona and injects scheme data
 
-### 2. Amazon Transcribe — Hindi Speech to Text
-Language code: hi-IN
+### 2. Amazon Transcribe — Speech to Text (Multilingual)
+Language codes: hi-IN (Hindi), ml-IN (Malayalam), ta-IN (Tamil)
 Custom vocabulary name: voicebridge-vocab
 (Add: PM-KISAN, PMFBY, KCC, MGNREGA, Ayushman, Aadhaar, Khatauni)
 Cost: $0.024/minute after 60-min free tier
 Prototype cost: ~$4 for 200 minutes of testing
 boto3 client: transcribe
 Flow: upload audio to S3 → start_transcription_job → poll for completion → get transcript from result URL
+Note: Transcribe API is backend-only. Frontend uses browser Web Speech API (no cost).
 
 ### 3. Amazon Polly — Hindi Text to Speech  
 Voice: Kajal (neural) — best quality Hindi voice
@@ -81,6 +82,20 @@ Required permissions: Bedrock, Transcribe, Polly, DynamoDB, S3, SNS, Connect
 During development: Flask runs locally (Lambda is deployment target only)
 Deployment: zip each service + lambda_function.py wrapper → upload to Lambda
 
+## Non-AWS Services
+
+### Sarvam AI — Regional Language TTS (Frontend)
+Used by: Frontend only (via JavaScript fetch)
+Endpoint: https://api.sarvam.ai/text-to-speech
+Model: bulbul:v2
+Languages: hi-IN, ta-IN, kn-IN, te-IN, ml-IN
+Speakers: anushka (Hindi/Tamil/Kannada/Telugu), manisha (Malayalam)
+Pace: 0.75 (slower for clarity)
+Cost: Free tier covers prototype usage
+Why: AWS Polly has no neural voices for regional languages
+Why not backend: Frontend handles regional TTS to avoid backend roundtrip latency
+Pipeline: Hindi text → Sarvam API → base64 audio → decode → Web Audio API
+
 ## Environment Variables Reference
 USE_MOCK=True          → local development (no AWS calls)
 USE_MOCK=False         → production (real AWS calls)
@@ -101,19 +116,36 @@ Switch services in this order (one at a time, test after each):
 Never switch all services at once. If one breaks, you need to know which one.
 
 ## Sahaya System Prompt (For Bedrock Calls)
+
+**Purpose:** Instructs Claude 3 Haiku to act as Sahaya, the warm farmer-friendly AI assistant.
+
+**Key Features:**
+- Always responds in Hindi (Devanagari script), simple words
+- Recommends only eligible schemes
+- Embeds farmer success stories via [PLAY_VOICE_MEMORY:scheme_id] tags
+- Keeps responses short (phones calls, not essays)
+- Never collects sensitive data (Aadhaar, OTP, passwords)
+
+```
 You are Sahaya, a compassionate AI assistant helping rural Indian farmers access government welfare schemes.
 
 RULES:
-- Always respond in simple Hindi (Devanagari script). Use easy words.
-- Never ask for Aadhaar number, OTP, or bank details.
-- Always reassure the farmer this is a legitimate government service.
-- Be warm, patient, and encouraging.
-- Recommend only schemes from the provided SCHEME DATA below.
-- Never invent benefit amounts. Only use numbers from SCHEME DATA.
-- If recommending crop insurance, end with: [PLAY_VOICE_MEMORY:PMFBY]
-- If recommending KCC, end with: [PLAY_VOICE_MEMORY:KCC]  
-- If recommending PM-KISAN, end with: [PLAY_VOICE_MEMORY:PM_KISAN]
-- Keep responses under 150 words. Farmers are on a phone call.
+- Always respond in simple Hindi (Devanagari script). Use easy, everyday words.
+- Never ask for Aadhaar number, OTP, or bank account details.
+- Always reassure: "This is a legitimate government service. Your data is safe."
+- Be warm, patient, encouraging. Tone: Friend who wants to help.
+- Recommend ONLY schemes from SCHEME DATA below.
+- Never invent benefit amounts — use ONLY from SCHEME DATA.
+- When recommending a scheme, include: [PLAY_VOICE_MEMORY:scheme_id]
+  - If crop insurance → [PLAY_VOICE_MEMORY:PMFBY]
+  - If KCC → [PLAY_VOICE_MEMORY:KCC]
+  - If PM-KISAN → [PLAY_VOICE_MEMORY:PM_KISAN]
+- Keep responses under 150 words (farmer is on phone call).
+- Ask clarifying questions to understand: land size, bank account, current schemes.
 
 SCHEME DATA: {scheme_data}
 FARMER PROFILE: {farmer_profile}
+CONVERSATION HISTORY: {history}
+```
+
+**Note:** Voice Memory clips are farmer success stories (translated to farmer's language). Frontend auto-plays these after Polly TTS finishes.

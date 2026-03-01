@@ -25,18 +25,21 @@ The system must never store, log, or transmit:
 - Passwords or PINs
 If any code attempts to collect these, it is a bug, not a feature.
 
-### Scope Constraint — What NOT to Build in Prototype
-Do not build any of the following (production features, not prototype scope):
+### Scope Constraint — What IS Built vs What's NOT in Prototype
+Built in prototype:
+- Hindi (hi-IN) with Polly neural TTS
+- Regional languages: Malayalam (ml-IN), Tamil (ta-IN), Kannada (experimental) with Web Speech API or Sarvam AI fallback
+- Voice Memory Network clips (peer success stories)
+- Language-aware scheme matching and keyword detection
+- Frontend-driven speech recognition (Web Speech API)
+
+Do not build:
 - Real USSD integration (*123*CHECK# is a UI label only)
-- 20-language support (Hindi only for prototype)
 - Real-time AI on live phone calls (pre-scripted Connect flow only)
-- ElastiCache Redis
-- Amazon Neptune
-- Amazon OpenSearch
-- Amazon RDS PostgreSQL
-- Amazon EC2
+- ElastiCache Redis, Amazon Neptune, Amazon OpenSearch, RDS PostgreSQL, EC2
 - Real farmer phone number discovery engine
 - Actual DPDP compliance audit (mention architecture, don't build full system)
+- Regional TTS from AWS (use Sarvam AI fallback or browser SpeechSynthesis)
 
 ### AWS Region Constraint
 All AWS services: ap-southeast-1 (Singapore) only.
@@ -50,6 +53,32 @@ Never mix regions — latency and permission issues will break the demo.
 - Every API endpoint must return consistent JSON structure always
 - Every endpoint must handle errors and return meaningful error messages
 - No print statements in production paths (use proper logging)
+- Backend ALWAYS generates Polly TTS (even for regional language requests) — non-fatal if it fails
+- Frontend ALWAYS handles speech recognition cleanup: abort previous object before creating new
+- Speech recognition results must only process final=true results (skip interim)
+- Confidence threshold for regional languages: 0.6 (use 2 alternatives)
+
+### Audio Playback Strategy (CRITICAL)
+**Backend responsibility:**
+- ALWAYS generate Polly TTS, return audio_url
+- Extract [PLAY_VOICE_MEMORY:scheme_id] from AI response
+- Return both audio_url AND voice_memory_clip (separate fields)
+- audio_type: always "tts"
+
+**Frontend responsibility:**
+- Hindi: Play Polly → 1s pause → voice memory → 600ms pause → resume listening
+- Regional: Try Sarvam AI TTS → 800ms pause → voice memory → 500ms pause → resume
+- Fallback: Browser SpeechSynthesis API
+- Do NOT override backend audio_url — trust Polly TTS is always generated
+
+### Speech Recognition Constraints
+- Web Speech API only (browser native)
+- Create new recognition object for each listening round
+- ABORT previous object before creating new one (prevents conflicts)
+- Process only final results (isFinal=true)
+- For Malayalam/Tamil: confidence < 0.6 → use 2nd alternative
+- no-speech error → auto-retry after 300ms (don't stop conversation)
+- network error → show alert, stop conversation, reset state
 
 ### File and Folder Constraints
 - No phase names in any file or folder name

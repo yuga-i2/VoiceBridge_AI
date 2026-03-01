@@ -89,19 +89,22 @@ check_eligibility(), format_scheme_for_sms()
 
 ### services/stt_service.py
 **Status:** ✅ Complete  
-**Purpose:** Converts Hindi audio to text.  
-**Mock mode:** Returns hardcoded Hindi test string  
-**AWS mode:** Amazon Transcribe with hi-IN, custom vocab voicebridge-vocab  
+**Purpose:** Converts speech to text in multiple languages.  
+**Mock mode:** Returns hardcoded test string  
+**AWS mode:** Amazon Transcribe with language-specific settings (hi-IN, ml-IN, ta-IN), custom vocab voicebridge-vocab  
 **Key functions:** transcribe_audio()  
+**Languages supported:** Hindi (hi-IN), Malayalam (ml-IN), Tamil (ta-IN)  
 
 ---
 
 ### services/tts_service.py
 **Status:** ✅ Complete  
-**Purpose:** Converts Hindi text to MP3 audio.  
-**Mock mode:** Returns path to local mock audio file or placeholder  
-**AWS mode:** Amazon Polly Kajal neural voice, saves to S3, returns presigned URL  
+**Purpose:** Converts text to audio URLs. Generates Polly TTS for Hindi (backend only).  
+**Mock mode:** Returns presigned URL to mock audio file or placeholder  
+**AWS mode:** Amazon Polly Kajal neural voice (Hindi), saves to S3, returns presigned URL  
+**Regional languages:** Frontend handles via Sarvam AI TTS API (not backend responsibility)  
 **Key functions:** synthesize_speech()  
+**Strategy:** Backend ALWAYS generates Polly (even for regional inputs), Frontend calls Sarvam AI separately for regional TTS  
 
 ---
 
@@ -116,11 +119,13 @@ check_eligibility(), format_scheme_for_sms()
 
 ### services/voice_memory_service.py
 **Status:** ✅ Complete  
-**Purpose:** Serves correct peer success audio clip by scheme ID.  
+**Purpose:** Serves correct peer success audio clip by scheme ID and language.  
 **Mock mode:** Returns local file path in data/voice_memory/  
-**AWS mode:** Returns presigned S3 URL  
+**AWS mode:** Returns presigned S3 URL (1-hour expiry)  
 **Key functions:** get_clip()  
 **Supported scheme IDs:** PM_KISAN, KCC, PMFBY  
+**Language variants:** Currently in Hindi; regional variants to be added (ml, ta, etc.)  
+**Endpoint:** GET /api/voice-memory/<scheme_id>?language=ml-IN  
 
 ---
 
@@ -142,7 +147,7 @@ check_eligibility(), format_scheme_for_sms()
 **Request:**
 ```json
 {
-  "message": "string (Hindi text from farmer)",
+  "message": "string (user input in selected language)",
   "farmer_profile": {
     "name": "string",
     "land_acres": "number",
@@ -156,19 +161,25 @@ check_eligibility(), format_scheme_for_sms()
       "role": "user | assistant",
       "content": "string"
     }
-  ]
+  ],
+  "language": "string (hi-IN | ml-IN | ta-IN)"
 }
 ```
 **Response:**
 ```json
 {
   "success": "boolean",
-  "response_text": "string (Hindi)",
-  "voice_memory_clip": "string | null (scheme_id or null)",
-  "matched_schemes": ["array of scheme_id strings"],
+  "response_text": "string (Hindi response, regardless of input language)",
+  "audio_type": "tts",
+  "audio_url": "string (URL to Polly TTS MP3, always generated)",
+  "voice_memory_clip": "string | null (scheme_id e.g. 'KCC' or null)",
+  "schemes_mentioned": ["array of scheme_id strings"],
+  "stage": "string (conversation stage)",
   "conversation_id": "string"
 }
 ```
+
+**Note:** Frontend fetches voice_memory_clip audio separately via GET /api/voice-memory/{scheme_id}?language={language}
 
 ### POST /api/speech-to-text
 **Request:** multipart/form-data with field "audio" (MP3 or WAV file)  
@@ -199,12 +210,15 @@ check_eligibility(), format_scheme_for_sms()
 ```
 
 ### GET /api/voice-memory/<scheme_id>
-**URL parameter:** scheme_id — one of: PM_KISAN, KCC, PMFBY  
+**URL parameters:** 
+- scheme_id — one of: PM_KISAN, KCC, PMFBY  
+- language (query param) — hi-IN | ml-IN | ta-IN (optional, defaults to hi-IN)  
+
 **Response:**
 ```json
 {
   "success": "boolean",
-  "audio_url": "string (URL to MP3 clip)",
+  "audio_url": "string (presigned S3 URL to MP3 clip, 1-hour expiry)",
   "farmer_name": "string",
   "district": "string",
   "scheme": "string"

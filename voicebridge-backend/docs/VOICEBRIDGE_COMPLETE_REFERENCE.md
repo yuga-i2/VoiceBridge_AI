@@ -2123,6 +2123,90 @@ Complete regional language support for 5 Indian languages using Sarvam AI Bulbul
 
 ---
 
+## Frontend Audio & Speech Recognition Fixes (March 1, 2026) — v1.3.3
+
+### Issue 1: Malayalam STT Mishearing "KCC"
+
+**Problem:** Web Speech API recognition confidence too low for Malayalam regional script
+- Symptom: User says "കെസിസി" (KCC) but system recognizes something else
+- Root Cause: Low confidence threshold (50%) for regional languages
+
+**Solutions:**
+1. Added Malayalam/Tamil KCC variants to normalizeTranscript():
+   - Malayalam: കെസിസി, കെസെ, കെ സി സി
+   - Tamil: கேசிசி, கெसெसി
+   - Hindi: सीसीसी, केसीसी
+   - ASCII: si si si, kcc, ks si, kesee
+
+2. Improved confidence threshold mechanics:
+   - Increased from 0.5 → 0.6 for regional languages
+   - Changed maxAlternatives from 1 → 2
+   - Compare confidence: if first < 0.6, use 2nd alternative
+   - Log confidence scores for debugging
+
+### Issue 2: System Getting Stuck After Exchanges
+
+**Problem:** After few conversation exchanges, system becomes unresponsive
+- Root Cause: Speech recognition objects accumulate, state sync fails
+- Symptom: Multi-exchange conversations hang after 2-3 rounds
+
+**Solutions:**
+1. Fixed recognition lifecycle (line 1040):
+   - ABORT previous recognition object before creating new
+   - Prevents resources from being locked by old objects
+
+2. Improved result processing:
+   - Only process final results (isFinal=true)
+   - Skip interim results
+   - Prevents duplicate processing
+
+3. Better error handling:
+   - no-speech → auto-retry after 300ms (don't stop)
+   - network → show alert, reset state
+   - Other errors → log + auto-retry
+   - All checks respect isConversationActiveRef
+
+4. Proper async/await chaining:
+   - onComplete callbacks properly reset state
+   - setTimeout chains ensure proper flow
+   - State variables stay in sync
+
+**Code Changes:**
+- File: `frontend/src/App.js` (1,731 lines)
+- Lines 1026-1120: startListening() function
+- Lines 1040-1045: Recognition abort before new object creation
+- Lines 1049-1062: Confidence threshold logic with alternatives
+
+**Testing & Validation:**
+- ✅ npm run build: 86.77 kB gzipped (no errors)
+- ✅ Multi-exchange conversation (5+ rounds) works smoothly
+- ✅ Malayalam STT correctly recognizes "KCC" and variants
+- ✅ System completes without hanging or state sync failures
+- ✅ Browser console clean (no warnings)
+
+**Deployment:**
+- Commit: `9ba225d` — "Fix: Improve Malayalam STT handling and fix system getting stuck"
+- Push: `git push origin master`
+- Deploy: Amplify auto-deploy activated
+- Status: ✅ Live at https://master.dk0lrulrclio3.amplifyapp.com
+
+---
+
+**Last Updated:** March 1, 2026 (18:30 IST)  
+**Version:** 1.3.3 (Speech Recognition & System Stability Fixes)  
+**Status:** ✅ Production Ready — Regional STT & multi-exchange stability verified
+
+---
+
 **Last Updated:** February 28, 2026 (22:45 IST)  
 **Version:** 1.3.2b (Sarvam AI Regional Language TTS)  
 **Status:** ✅ Production Ready — All 5 languages verified & live
+
+---
+
+**Last Updated:** February 28, 2026 (22:45 IST)  
+**Version:** 1.3.2b (Sarvam AI Regional Language TTS)  
+**Status:** ✅ Production Ready — All 5 languages verified & live
+
+- Status: Live at https://bkzd32abpg.execute-api.ap-southeast-1.amazonaws.com/dev
+- Verified: All 5 languages producing audio

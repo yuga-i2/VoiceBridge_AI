@@ -27,7 +27,10 @@ Stage 6 — BENEFIT DELIVERY: Final call confirms benefit received. Success stor
 
 ## The AI Persona
 Name: Sahaya
-Language: Hindi (primary), expandable to 20+ regional languages
+Language: 
+  - Primary response: Hindi (Devanagari script) — AI always responds in Hindi regardless of input
+  - Input languages supported: Hindi (hi-IN), Malayalam (ml-IN), Tamil (ta-IN), Kannada (experimental)
+  - Voice memory clips: Available in Hindi (farmer stories translated/localized for regional context)
 Personality: Warm, patient, encouraging, trustworthy
 Hard rules Sahaya NEVER breaks:
 - Never asks for Aadhaar number
@@ -35,33 +38,49 @@ Hard rules Sahaya NEVER breaks:
 - Never asks for bank account details or passwords
 - Always offers verification code (*123*CHECK#) when farmer is suspicious
 - Always explains data collection in simple Hindi before collecting anything
+- Must include farmer success story reference [PLAY_VOICE_MEMORY:scheme_id] when recommending schemes
 
 ## Backend Architecture
-The backend is a Flask REST API with a mock/live toggle system.
+The backend is a Flask REST API with a mock/live toggle system deployed on AWS Lambda.
 USE_MOCK=True → all services return realistic local data (no AWS needed)
 USE_MOCK=False → all services call real AWS services via boto3
 
 Services:
-- scheme_service: matches farmer profile + message to welfare schemes
-- ai_service: sends scheme context + conversation to Bedrock, returns Hindi response
-- stt_service: converts Hindi audio to text via Amazon Transcribe
-- tts_service: converts Hindi text to audio via Amazon Polly (Kajal neural voice)
-- voice_memory_service: serves correct peer success audio clip by scheme ID
+- scheme_service: matches farmer profile + message to welfare schemes (language-aware keyword detection)
+- ai_service: sends scheme context + conversation to Bedrock Claude 3 Haiku, returns Hindi response with [PLAY_VOICE_MEMORY:scheme_id] tags
+- stt_service: converts speech to text via Amazon Transcribe (supports hi-IN, ml-IN, ta-IN)
+- tts_service: converts text to audio via Amazon Polly (Kajal neural voice for Hindi, fallback Sarvam AI for regional)
+- voice_memory_service: serves correct peer success story audio clip by scheme ID and language (S3 + DynamoDB)
 - sms_service: sends document checklist SMS via Amazon SNS
 
 All services follow the same pattern:
   if USE_MOCK: return realistic mock data
   else: call real AWS service via boto3
 
+## Audio Strategy (Current Implementation)
+1. Backend ALWAYS generates Polly TTS for response text (Hindi)
+   - Returns: audio_url (S3 presigned URL), audio_type: 'tts'
+2. Backend ALSO extracts voice_memory_clip parameter (e.g., "KCC")
+   - Frontend fetches actual audio separately via /api/voice-memory/<scheme_id>?language=ml-IN
+3. Frontend plays audio sequentially:
+   - Hindi: Polly TTS → 1s pause → voice memory clip → 600ms pause → resume listening
+   - Regional (Malayalam/Tamil): Sarvam AI TTS → 800ms pause → voice memory clip → 500ms pause → resume listening
+   - Fallback: Browser SpeechSynthesis API if Sarvam unavailable
+
+This separation ensures:
+- TTS always plays (backend responsibility)
+- Voice memory clip is optional and language-aware (frontend responsibility)
+- No hardcoded delays or assumption about clip availability
+
 ## API Endpoints Summary
-POST /api/chat — main conversation endpoint
-POST /api/speech-to-text — audio to Hindi text
-POST /api/text-to-speech — Hindi text to audio URL
-GET  /api/voice-memory/<scheme_id> — get peer success story clip
+POST /api/chat — main conversation endpoint (accepts language parameter, returns audio_url + voice_memory_clip)
+POST /api/speech-to-text — audio to text (language-aware)
+POST /api/text-to-speech — text to audio URL (Hindi output, supports language in request)
+GET  /api/voice-memory/<scheme_id> — get peer success story clip by scheme and language
 POST /api/eligibility-check — check which schemes farmer qualifies for
 POST /api/send-sms — send document checklist SMS
-GET  /api/schemes — get all 10 scheme data
-GET  /api/health — health check
+GET  /api/schemes — get all 10 schemes with multilingual names
+GET  /api/health — health check with mode status
 
 ## The 10 Welfare Schemes (Accurate Data Only)
 1. PM-KISAN: ₹6,000/year in three installments of ₹2,000
