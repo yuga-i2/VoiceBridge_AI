@@ -1,3 +1,0 @@
-Keyword Detection Test Results
-======================================================================
-All tests completed. Check console output above.

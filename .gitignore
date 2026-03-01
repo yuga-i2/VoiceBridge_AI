@@ -1,48 +1,92 @@
-# Dependencies
-node_modules/
-.venv/
-venv/
-env/
+# Python
 __pycache__/
 *.py[cod]
-
-# Build outputs
+*$py.class
+*.so
+.Python
 build/
+develop-eggs/
 dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
 *.egg-info/
-*.zip
-*.tar.gz
+.installed.cfg
+*.egg
+MANIFEST
+pip-log.txt
+pip-delete-this-directory.txt
 
-# Secrets
-.env
-.env.local
-.env.*.local
-voicebridge-backend/.env
+# Virtual Environments
+venv/
+.venv/
+ENV/
+env/
+.venv
+env.bak/
+venv.bak/
 
-# AWS / Deployment
-.zappa/
-
-# IDE
+# IDEs
 .vscode/
 .idea/
 *.swp
+*.swo
+*~
+.DS_Store
+*.sublime-project
+*.sublime-workspace
 
-# OS
+# Node.js
+node_modules/
+npm-debug.log
+yarn-error.log
+package-lock.json
+yarn.lock
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+.env.production.local
+voicebridge-backend/.env
+
+# Build outputs
+/frontend/build/
+*.min.js
+*.min.css
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+coverage/
+
+# AWS/Lambda
+.serverless/
+.serverless_plugins/
+zappa_settings_prod.json
+.zappa/
+
+# Temporary files
+*.log
+*.tmp
+test_results.txt
+*.mpeg
+.debug_*
+*.bak
+*.orig
+
+# OS files
 .DS_Store
 Thumbs.db
 desktop.ini
 
-# Logs
-*.log
-npm-debug.log*
-
-# Testing
-.coverage
-htmlcov/
-.pytest_cache/
-coverage/
-
-# Temp
-*.tmp
-*.bak
-*.orig
+# Project specific
+voicebridge-backend/data/voice_memory/*.mpeg
+voicebridge-backend/data/schemes_local.json
