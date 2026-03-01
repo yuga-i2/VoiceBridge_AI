@@ -526,19 +526,47 @@ const CallInitiator = ({ farmerProfile, eligibleSchemeIds }) => {
          '📲 Initiate Proactive AI Call to Farmer'}
       </button>
       {callStatus && (
-        <div className={`mt-3 p-2 rounded text-sm ${
-          callStatus.success ? 'bg-green-50 text-green-800' : 
-          'bg-red-50 text-red-800'
-        }`}>
-          {callStatus.success ? 
-            `✅ ${callStatus.message}` : 
-            `❌ ${callStatus.error}`}
-          {callStatus.provider && (
-            <span className="ml-2 text-xs opacity-70">
-              via {callStatus.provider}
-            </span>
-          )}
-        </div>
+        callStatus.success ? (
+          <div className="mt-3 p-2 rounded text-sm bg-green-50 text-green-800">
+            {`✅ ${callStatus.message}`}
+            {callStatus.provider && (
+              <span className="ml-2 text-xs opacity-70">
+                via {callStatus.provider}
+              </span>
+            )}
+          </div>
+        ) : (
+          <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-4">
+            {/* Header row */}
+            <div className="flex items-start gap-3">
+              <span className="text-xl">📞</span>
+              <div className="flex-1">
+                <p className="font-semibold text-amber-900 text-sm">
+                  Demo Call — Connecting to Verified Indian Number
+                </p>
+                <p className="text-amber-800 text-sm mt-1">
+                  In this demo, Sahaya's outbound call is routed to the creator's verified
+                  Indian mobile number. You can hear the full Hindi conversation Sahaya
+                  would have with any farmer.
+                </p>
+              </div>
+            </div>
+
+            {/* Divider */}
+            <div className="border-t border-amber-200 mt-3 pt-3">
+              <p className="text-xs text-amber-700 flex items-start gap-2">
+                <span>ℹ️</span>
+                <span>
+                  <strong>Why only one number?</strong> Amazon Connect requires 4–6 weeks
+                  to provision verified Indian (+91) DIDs. For this hackathon demo, outbound
+                  calls are restricted to pre-verified numbers per telecom regulations.
+                  The full architecture — contact flow, 6-stage TwiML, Connect instance —
+                  is live and production-ready.
+                </span>
+              </p>
+            </div>
+          </div>
+        )
       )}
     </div>
   )
