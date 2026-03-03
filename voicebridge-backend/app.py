@@ -209,8 +209,9 @@ def chat():
         if final_voice_clip and history:
             schemes_with_vm_played = set()
             for msg in history:
-                if msg.get('role') == 'assistant' and msg.get('voice_memory_clip'):
-                    schemes_with_vm_played.add(msg.get('voice_memory_clip'))
+                # Frontend stores it as 'voiceMemoryScheme' in the conversation history
+                if msg.get('role') == 'assistant' and msg.get('voiceMemoryScheme'):
+                    schemes_with_vm_played.add(msg.get('voiceMemoryScheme'))
             
             # If this scheme's VM already played in conversation, don't repeat it
             if final_voice_clip in schemes_with_vm_played:
