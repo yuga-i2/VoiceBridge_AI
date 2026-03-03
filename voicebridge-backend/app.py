@@ -247,16 +247,25 @@ def chat():
         # - voice_memory_clip: Pre-recorded farmer story to play after
         final_audio_url = tts_audio_url  # Always return TTS if available
         
-        return jsonify({
+        # CRITICAL: is_goodbye must ALWAYS be present so frontend can end call
+        is_goodbye_detected = result.get('is_goodbye', False)
+        
+        # Debug logging for goodbye detection
+        logger.info(f"[GOODBYE RESPONSE] Detected: {is_goodbye_detected} | Message: {message[:50]}...")
+        
+        response_body = {
             'success': True,
             'response_text': response_text,
             'matched_schemes': matched_schemes,
             'voice_memory_clip': final_voice_clip,
             'audio_url': final_audio_url,
-            'audio_type': 'tts' if final_audio_url else 'none',  # TTS is always primary
-            'is_goodbye': result.get('is_goodbye', False),  # AI-detected farewell intent
+            'audio_type': 'tts' if final_audio_url else 'none',
+            'is_goodbye': bool(is_goodbye_detected),  # CRITICAL: Force boolean for frontend
             'conversation_id': uuid.uuid4().hex
-        })
+        }
+        
+        logger.info(f"[RESPONSE JSON] is_goodbye={response_body.get('is_goodbye')}")
+        return jsonify(response_body)
     except Exception as e:
         logger.error(f"Chat error: {e}")
         return jsonify({'success': False, 'error': str(e), 'code': 'SERVICE_ERROR'}), 500

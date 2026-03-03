@@ -1331,7 +1331,10 @@ function App() {
 
       console.log('CHAT RESULT:', JSON.stringify(chatRes.data))
       console.log('[VM DEBUG] voice_memory_clip from backend:', chatRes.data.voice_memory_clip)
+      // Debug: log full response
+      console.log('[FULL RESPONSE]', JSON.stringify(chatRes.data).substring(0, 500))
       console.log('[GOODBYE DEBUG] is_goodbye from backend:', chatRes.data.is_goodbye)
+      console.log('[GOODBYE DEBUG] is_goodbye type:', typeof chatRes.data.is_goodbye)
 
       const aiResponse = {
         text: chatRes.data.response_text,
