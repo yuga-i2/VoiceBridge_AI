@@ -423,10 +423,20 @@ def _detect_goodbye_intent(message: str, response_text: str) -> bool:
         'बाई', 'जाऊ दे', 'धन्यवाद'
     ]
     
-    # Check if any goodbye keyword is in the message
+    # Check if any goodbye keyword is in the message (BETTER: handle non-ASCII properly)
     for kw in goodbye_keywords:
-        if kw.lower() in msg_lower:
-            return True
+        try:
+            # For Hindi/regional scripts: exact match WITHOUT lowercasing
+            if ord(kw[0]) > 127:  # Non-ASCII
+                if kw in message:
+                    logger.info(f"[GOODBYE] Matched Hindi/regional '{kw}' in: {message}")
+                    return True
+            # For English: case-insensitive
+            elif kw.lower() in msg_lower:
+                logger.info(f"[GOODBYE] Matched English '{kw}' in: {message}")
+                return True
+        except Exception:
+            pass
     
     # Check if AI response indicates goodbye (phrases like "take care", "all the best", etc.)
     goodbye_phrases = ['धन्यवाद', 'take care', 'all the best', 'வாழ்க', 'നന്ദി', 'good luck']
