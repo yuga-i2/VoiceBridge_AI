@@ -203,6 +203,18 @@ def chat():
                     final_voice_clip = scheme
                     break
 
+        # FIX 4: Voice Memory Deduplication
+        # Prevent the same scheme's voice memory clip from playing multiple times
+        # Scan conversation history for schemes that already had voice memories returned
+        if final_voice_clip and history:
+            schemes_with_vm_played = set()
+            for msg in history:
+                if msg.get('role') == 'assistant' and msg.get('voice_memory_clip'):
+                    schemes_with_vm_played.add(msg.get('voice_memory_clip'))
+            
+            # If this scheme's VM already played in conversation, don't repeat it
+            if final_voice_clip in schemes_with_vm_played:
+                final_voice_clip = None
         
         # Generate TTS audio for Sahaya's response
         tts_audio_url = None

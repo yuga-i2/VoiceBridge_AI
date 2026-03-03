@@ -1235,6 +1235,53 @@ function App() {
     return text
   }
 
+  // FIX 1: Goodbye Detection - Check if user wants to end conversation
+  const checkGoodbyePhrase = (message) => {
+    const t = message.toLowerCase()
+    
+    // Hindi goodbye phrases
+    const hindiGoodbye = [
+      'बाय', 'अलविदा', 'जाना है', 'जा रहे हैं', 'जा रहा हूँ',
+      'धन्यवाद', 'बहुत धन्यवाद', 'सुक्रिया', 'शुक्रिया',
+      'बस इतना ही', 'और कुछ नहीं', 'खत्म', 'खुदा हाफिज',
+      'अब तो चल देते हैं', 'अब जा लूँ', 'अब मुझे जाना है'
+    ]
+    
+    // English goodbye phrases
+    const englishGoodbye = [
+      'bye', 'goodbye', 'thank you', 'thanks a lot', 'thanks',
+      'that\'s enough', 'that\'s all', 'that\'s it', 'i\'m good',
+      'i need to go', 'i have to go', 'i should go', 'bye now',
+      'see you', 'take care', 'farewell', 'ok bye'
+    ]
+    
+    // Tamil goodbye phrases
+    const tamilGoodbye = [
+      'நன்றி', 'சரி', 'போகிறேன்', 'செல்லலாம்', 'வாழ்க'
+    ]
+    
+    // Marathi goodbye phrases
+    const marathiGoodbye = [
+      'धन्यवाद', 'बाई', 'जाऊ दे', 'आता जाऊ', 'एवढेच'
+    ]
+    
+    // Malayalam goodbye phrases
+    const malayalamGoodbye = [
+      'നന്ദി', 'വാഴ്ക', 'പോകുന്നു', 'തന്നെയാണ്'
+    ]
+    
+    const allGoodbyePhrases = [
+      ...hindiGoodbye,
+      ...englishGoodbye,
+      ...tamilGoodbye,
+      ...marathiGoodbye,
+      ...malayalamGoodbye
+    ]
+    
+    // Check if any goodbye phrase is in the message
+    return allGoodbyePhrases.some(phrase => t.includes(phrase.toLowerCase()))
+  }
+
   const sendMessage = async (userMessage) => {
     if (!userMessage.trim()) {
       setIsProcessing(false)
@@ -1247,6 +1294,53 @@ function App() {
 
       // Normalize transcript using outer function
       const finalMessage = normalizeTranscript(userMessage)
+      
+      // FIX 1: Check for goodbye phrases BEFORE calling Lambda
+      if (checkGoodbyePhrase(finalMessage)) {
+        console.log('[VoiceBridge] Goodbye phrase detected:', finalMessage)
+        
+        // Stop any currently playing audio
+        if (activeAudioRef.current) {
+          activeAudioRef.current.pause()
+          activeAudioRef.current.currentTime = 0
+        }
+        
+        // Play farewell message in selected language
+        const farewellMessages = {
+          'hindi': 'धन्यवाद! आपसे बात करके खुशी हुई। अलविदा!',
+          'english': 'Thank you! It was great talking to you. Goodbye!',
+          'tamil': 'நன்றி! உங்களுடன் பேச வந்தது மகிழ்ச்சி. வாழ்க!',
+          'marathi': 'धन्यवाद! तुमच्याशी बोलून आनंद झाला. अलविदा!',
+          'malayalam': 'നന്ദി! നിങ്ങളുമായി സംസാരിച്ച് സന്തോഷ്ടം. വാഴ്ക!'
+        }
+        
+        const farewell = farewellMessages[selectedLanguage] || farewellMessages['english']
+        
+        try {
+          const ttsRes = await axios.post(API.tts, {
+            text: farewell,
+            language: selectedLanguage
+          })
+          
+          if (ttsRes.data.success && ttsRes.data.audio_url) {
+            const fareAudio = new Audio(ttsRes.data.audio_url)
+            activeAudioRef.current = fareAudio
+            fareAudio.onended = () => {
+              activeAudioRef.current = null
+              endConversation()
+            }
+            await fareAudio.play()
+          } else {
+            endConversation()
+          }
+        } catch (ttsErr) {
+          console.error('Farewell TTS failed:', ttsErr)
+          endConversation()
+        }
+        
+        setInputEnabled(true)
+        return
+      }
       
       // FIX 2: Append user message to ref FIRST (this is the actual history that will be sent to Lambda)
       conversationHistoryRef.current = [
