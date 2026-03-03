@@ -1279,7 +1279,8 @@ function App() {
     
     // Malayalam goodbye phrases
     const malayalamGoodbye = [
-      'പോകുന്നു', 'വാഴ്ക്കുക', 'പോകണം', 'വിടാണ്'
+      'പോകുന്നു', 'വാഴ്ക്കുക', 'പോകണം', 'വിടാണ്',
+      'കോൾ അവസാനിപ്പിക്കാം', 'കോൾ അവസാനം', 'നിൽക്കാം', 'പോകട്ടെ'
     ]
     
     const languageSpecificGoodbye = [
