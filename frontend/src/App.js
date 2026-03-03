@@ -591,6 +591,8 @@ function App() {
   const activeAudioRef = useRef(null)
   // Store all active Web Audio API sources so we can stop them
   const activeSourcesRef = useRef([])
+  // FIX 4: Track which voice memory schemes have been played (never refetch/replay)
+  const voiceMemoryPlayedRef = useRef(new Set())
   
   const [callState, setCallState] = useState(CALL_STATES.IDLE)
   const [isSpeaking, setIsSpeaking] = useState(false)
@@ -1053,6 +1055,9 @@ function App() {
     conversationHistoryRef.current = []
     setConversationHistory([])
     
+    // FIX 4: Clear voice memory tracking for next conversation
+    voiceMemoryPlayedRef.current.clear()
+    
     setIsRecording(false)
     setCallState(CALL_STATES.IDLE)
     setInputEnabled(false)
@@ -1338,17 +1343,26 @@ function App() {
       }
 
       // Fetch voice memory audio if available
+      // BUT ONLY IF NOT ALREADY PLAYED IN THIS CONVERSATION
       if (aiResponse.voice_memory_clip) {
-        try {
-          console.log('[VM DEBUG] fetching voice memory for schemeId:', aiResponse.voice_memory_clip)
-          const vmRes = await fetch(`https://bkzd32abpg.execute-api.ap-southeast-1.amazonaws.com/dev/api/voice-memory/${aiResponse.voice_memory_clip}?language=${selectedLanguage}`)
-          const vmData = await vmRes.json()
-          console.log('[VM DEBUG] voice memory response:', JSON.stringify(vmData))
-          aiResponse.voiceMemoryUrl = vmData.audio_url
-          aiResponse.voiceMemoryScheme = aiResponse.voice_memory_clip
-          console.log('[VM DEBUG] voiceMemoryUrl set to:', aiResponse.voiceMemoryUrl)
-        } catch(e) {
-          console.log('[VM DEBUG] fetch failed:', e.message)
+        // FIX 4: Skip if voice memory for this scheme was already played
+        if (voiceMemoryPlayedRef.current.has(aiResponse.voice_memory_clip)) {
+          console.log('[VM DEBUG] Voice memory for', aiResponse.voice_memory_clip, 'already played - SKIPPING FETCH')
+          aiResponse.voice_memory_clip = null  // Don't play it again
+        } else {
+          try {
+            console.log('[VM DEBUG] fetching voice memory for schemeId:', aiResponse.voice_memory_clip)
+            const vmRes = await fetch(`https://bkzd32abpg.execute-api.ap-southeast-1.amazonaws.com/dev/api/voice-memory/${aiResponse.voice_memory_clip}?language=${selectedLanguage}`)
+            const vmData = await vmRes.json()
+            console.log('[VM DEBUG] voice memory response:', JSON.stringify(vmData))
+            aiResponse.voiceMemoryUrl = vmData.audio_url
+            aiResponse.voiceMemoryScheme = aiResponse.voice_memory_clip
+            // Mark this scheme as played so we never fetch it again this conversation
+            voiceMemoryPlayedRef.current.add(aiResponse.voice_memory_clip)
+            console.log('[VM DEBUG] voiceMemoryUrl set to:', aiResponse.voiceMemoryUrl)
+          } catch(e) {
+            console.log('[VM DEBUG] fetch failed:', e.message)
+          }
         }
       }
 
@@ -1513,17 +1527,26 @@ function App() {
       }
 
       // Fetch voice memory audio if available
+      // BUT ONLY IF NOT ALREADY PLAYED IN THIS CONVERSATION
       if (aiResponse.voice_memory_clip) {
-        try {
-          console.log('[VM DEBUG] fetching voice memory for schemeId:', aiResponse.voice_memory_clip)
-          const vmRes = await fetch(`https://bkzd32abpg.execute-api.ap-southeast-1.amazonaws.com/dev/api/voice-memory/${aiResponse.voice_memory_clip}?language=${selectedLanguage}`)
-          const vmData = await vmRes.json()
-          console.log('[VM DEBUG] voice memory response:', JSON.stringify(vmData))
-          aiResponse.voiceMemoryUrl = vmData.audio_url
-          aiResponse.voiceMemoryScheme = aiResponse.voice_memory_clip
-          console.log('[VM DEBUG] voiceMemoryUrl set to:', aiResponse.voiceMemoryUrl)
-        } catch(e) {
-          console.log('[VM DEBUG] fetch failed:', e.message)
+        // FIX 4: Skip if voice memory for this scheme was already played
+        if (voiceMemoryPlayedRef.current.has(aiResponse.voice_memory_clip)) {
+          console.log('[VM DEBUG] Voice memory for', aiResponse.voice_memory_clip, 'already played - SKIPPING FETCH')
+          aiResponse.voice_memory_clip = null  // Don't play it again
+        } else {
+          try {
+            console.log('[VM DEBUG] fetching voice memory for schemeId:', aiResponse.voice_memory_clip)
+            const vmRes = await fetch(`https://bkzd32abpg.execute-api.ap-southeast-1.amazonaws.com/dev/api/voice-memory/${aiResponse.voice_memory_clip}?language=${selectedLanguage}`)
+            const vmData = await vmRes.json()
+            console.log('[VM DEBUG] voice memory response:', JSON.stringify(vmData))
+            aiResponse.voiceMemoryUrl = vmData.audio_url
+            aiResponse.voiceMemoryScheme = aiResponse.voice_memory_clip
+            // Mark this scheme as played so we never fetch it again this conversation
+            voiceMemoryPlayedRef.current.add(aiResponse.voice_memory_clip)
+            console.log('[VM DEBUG] voiceMemoryUrl set to:', aiResponse.voiceMemoryUrl)
+          } catch(e) {
+            console.log('[VM DEBUG] fetch failed:', e.message)
+          }
         }
       }
 
