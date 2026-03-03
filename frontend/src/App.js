@@ -1239,23 +1239,36 @@ function App() {
   const checkGoodbyePhrase = (message) => {
     const t = message.toLowerCase()
     
-    // Hindi goodbye phrases - be conservative to avoid false positives
+    // Universal English keywords that work across all languages
+    // These indicate conversation end regardless of language mixing
+    const universalEndKeywords = [
+      'okay', 'ok', 'ok bye', 'ok thanks',
+      'done', 'i am done', 'i\'m done', 
+      'enough', 'that\'s enough', 'that enough',
+      'stop', 'stop for now', 'that\'s all',
+      'thanks', 'thank you', 'thankyou',
+      'bye', 'goodbye', 'bye now', 'goodbye now',
+      'go now', 'leave now', 'i have to go', 'gotta go',
+      'take care', 'see you', 'later',
+      'that\'s it', 'that is it'
+    ]
+    
+    // Check for universal English keywords first (catches mixed language)
+    const hasUniversalKeyword = universalEndKeywords.some(keyword => t.includes(keyword))
+    if (hasUniversalKeyword) {
+      return true
+    }
+    
+    // Hindi goodbye phrases (explicit, not ambiguous like "ठीक है")
     const hindiGoodbye = [
       'बाय', 'अलविदा', 'जाना है', 'जा रहे हैं', 'जा रहा हूँ',
       'खुदा हाफिज', 'अब तो चल देते हैं', 'अब जा लूँ', 'अब मुझे जाना है',
       'चल दूँ', 'मुझे जाना है', 'बस अब'
     ]
     
-    // English goodbye phrases
-    const englishGoodbye = [
-      'bye', 'goodbye', 'goodbye now', 'bye now',
-      'i need to go', 'i have to go', 'i should go', 'i\'m leaving',
-      'see you', 'see you later', 'take care', 'farewell'
-    ]
-    
     // Tamil goodbye phrases
     const tamilGoodbye = [
-      'போகிறேன்', 'செல்லலாம்', 'வாழ்க', 'பிரிந்து'
+      'போகிறேன்', 'செல்லலாம்', 'வாழ்க', 'பிரிந்து', 'போகணும்'
     ]
     
     // Marathi goodbye phrases
@@ -1268,16 +1281,15 @@ function App() {
       'പോകുന്നു', 'വാഴ്ക്കുക', 'പോകണം', 'വിടാണ്'
     ]
     
-    const allGoodbyePhrases = [
+    const languageSpecificGoodbye = [
       ...hindiGoodbye,
-      ...englishGoodbye,
       ...tamilGoodbye,
       ...marathiGoodbye,
       ...malayalamGoodbye
     ]
     
-    // Check if any goodbye phrase is in the message
-    return allGoodbyePhrases.some(phrase => t.includes(phrase.toLowerCase()))
+    // Check language-specific phrases as secondary check
+    return languageSpecificGoodbye.some(phrase => t.includes(phrase.toLowerCase()))
   }
 
   const sendMessage = async (userMessage) => {
