@@ -116,6 +116,10 @@ def chat():
             return jsonify({'success': False, 'error': 'Message is required',
                            'code': 'INVALID_INPUT'}), 400
         
+        # FIX 5: Lambda warmup — return immediately without processing
+        if message == '__warmup__':
+            return jsonify({'success': True, 'warmup': True}), 200
+        
         # Inline scheme detection — does not depend on any service function
         def detect_scheme(msg):
             m = msg.lower()

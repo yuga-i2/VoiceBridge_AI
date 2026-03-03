@@ -585,7 +585,13 @@ function App() {
   const [response, setResponse] = useState(null)
   const [conversationHistory, setConversationHistory] = useState([])
   
-  // NEW: Call state machine
+  // FIX 2: Real history ref that persists across renders (not dependent on async state updates)
+  const conversationHistoryRef = useRef([])
+  // FIX 3: Track current audio to stop it when needed
+  const activeAudioRef = useRef(null)
+  // Store all active Web Audio API sources so we can stop them
+  const activeSourcesRef = useRef([])
+  
   const [callState, setCallState] = useState(CALL_STATES.IDLE)
   const [isSpeaking, setIsSpeaking] = useState(false)
   const [inputEnabled, setInputEnabled] = useState(false)
@@ -598,7 +604,6 @@ function App() {
   const recognitionRef = useRef(null)
   const isConversationActiveRef = useRef(false)
   const audioContextRef = useRef(null)
-  const activeSourcesRef = useRef([])
 
   // UI text in selected language
   const langUI = LANGUAGES[selectedLanguage]?.ui || LANGUAGES['hi-IN'].ui
@@ -623,6 +628,19 @@ function App() {
     }
   }, [allSchemes, farmerProfile])
 
+  // FIX 5: Lambda warmup on page load to eliminate 5s cold start delay
+  useEffect(() => {
+    const warmupLambda = async () => {
+      try {
+        await axios.post(API.chat, { message: '__warmup__', history: [] })
+        console.log('[VoiceBridge] Lambda pre-warmed on page load')
+      } catch(e) {
+        console.log('[VoiceBridge] Warmup failed (non-critical):', e.message)
+      }
+    }
+    warmupLambda()
+  }, [])
+
   const loadSchemes = async () => {
     try {
       const res = await axios.get(API.schemes)
@@ -644,6 +662,7 @@ function App() {
     setTranscript('')
     setResponse(null)
     setConversationHistory([])
+    conversationHistoryRef.current = []  // FIX 2: Reset ref too
     setMatchedSchemes([])
     setCallState(CALL_STATES.IDLE)
     setInputEnabled(false)
@@ -708,13 +727,17 @@ function App() {
   // ========== AUDIO HELPER FUNCTIONS ==========
   const playSahayaAudio = (audioUrl, onComplete) => {
     const audio = new Audio(audioUrl)
+    activeAudioRef.current = audio  // FIX 3: Track this audio so End Call can stop it
     audio.onended = () => {
+      activeAudioRef.current = null
       if (onComplete) onComplete()
     }
     audio.onerror = () => {
+      activeAudioRef.current = null
       if (onComplete) onComplete()
     }
     audio.play().catch(() => {
+      activeAudioRef.current = null
       setTimeout(() => onComplete(), 2000)
     })
     return audio
@@ -920,15 +943,19 @@ function App() {
     isConversationActiveRef.current = true
     setCallState(CALL_STATES.CONNECTING)
     setConversationHistory([])
+    conversationHistoryRef.current = []  // FIX 2: Initialize ref
     setTranscript('')
     setResponse(null)
     
     const openingText = LANGUAGES[selectedLanguage]?.greeting || LANGUAGES['hi-IN'].greeting
     
-    setConversationHistory([{
+    // FIX 2: Initialize BOTH state and ref with opening message
+    const openingMessage = {
       role: 'assistant',
       content: openingText
-    }])
+    }
+    setConversationHistory([openingMessage])
+    conversationHistoryRef.current = [openingMessage]  // FIX 2: Add to ref too
     setResponse({ text: openingText })
     
     // Try to get Polly audio first
@@ -999,6 +1026,15 @@ function App() {
     recognitionRef.current?.stop()
     window.speechSynthesis?.cancel()
     
+    // FIX 3: Stop HTMLAudioElement if one is playing (Polly TTS, Voice Memory, etc)
+    if (activeAudioRef.current) {
+      try {
+        activeAudioRef.current.pause()
+        activeAudioRef.current.currentTime = 0
+        activeAudioRef.current = null
+      } catch(e) {}
+    }
+    
     // Stop ALL currently playing audio sources immediately
     activeSourcesRef.current.forEach(source => {
       try { source.stop() } catch(e) {}
@@ -1012,6 +1048,10 @@ function App() {
         audioContextRef.current = null
       } catch (err) {}
     }
+    
+    // FIX 2: Clear history refs on conversation end
+    conversationHistoryRef.current = []
+    setConversationHistory([])
     
     setIsRecording(false)
     setCallState(CALL_STATES.IDLE)
@@ -1208,10 +1248,13 @@ function App() {
       // Normalize transcript using outer function
       const finalMessage = normalizeTranscript(userMessage)
       
-      const historyToSend = [
-        ...conversationHistory,
+      // FIX 2: Append user message to ref FIRST (this is the actual history that will be sent to Lambda)
+      conversationHistoryRef.current = [
+        ...conversationHistoryRef.current,
         { role: 'user', content: finalMessage }
       ]
+      
+      const historyToSend = conversationHistoryRef.current
       console.log('[VoiceBridge] Sending to Lambda with history length:', historyToSend.length)
 
       // Get AI response from /api/chat
@@ -1255,15 +1298,24 @@ function App() {
       }
 
       setResponse(aiResponse)
+      
+      // FIX 2: Add assistant response to ref (user was already added before API call)
+      const assistantMessage = {
+        role: 'assistant', 
+        content: aiResponse.text,
+        voiceMemoryUrl: aiResponse.voiceMemoryUrl,
+        voiceMemoryScheme: aiResponse.voiceMemoryScheme
+      }
+      conversationHistoryRef.current = [
+        ...conversationHistoryRef.current,
+        assistantMessage
+      ]
+      
+      // Update state for UI display
       setConversationHistory(prev => [
         ...prev,
         { role: 'user', content: userMessage },
-        { 
-          role: 'assistant', 
-          content: aiResponse.text,
-          voiceMemoryUrl: aiResponse.voiceMemoryUrl,
-          voiceMemoryScheme: aiResponse.voiceMemoryScheme
-        }
+        assistantMessage
       ])
 
       setIsProcessing(false)
