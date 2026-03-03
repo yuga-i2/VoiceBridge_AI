@@ -203,19 +203,29 @@ def chat():
                     final_voice_clip = scheme
                     break
 
-        # FIX 4: Voice Memory Deduplication
+        # FIX 4: Voice Memory Deduplication - IMPROVED
         # Prevent the same scheme's voice memory clip from playing multiple times
-        # Scan conversation history for schemes that already had voice memories returned
-        if final_voice_clip and history:
-            schemes_with_vm_played = set()
-            for msg in history:
-                # Frontend stores it as 'voiceMemoryScheme' in the conversation history
-                if msg.get('role') == 'assistant' and msg.get('voiceMemoryScheme'):
-                    schemes_with_vm_played.add(msg.get('voiceMemoryScheme'))
+        # Check if we've already played voice memory for this scheme in the conversation
+        if final_voice_clip and history and len(history) > 1:
+            # Keywords that indicate voice memory was already played
+            # (farmer names, success story indicators, specific scheme mentions)
+            vm_keywords = {
+                'PM_KISAN': ['सुनीता', 'sunitha', 'farmer', 'success', 'story', 'कहानी', '6000'],
+                'KCC': ['किसान credit', 'farmer credit', 'credit card', 'card holder', 'farmer'],
+                'PMFBY': ['बीमा', 'insurance', 'crop', 'फसल', 'farmer', 'premium']
+            }
             
-            # If this scheme's VM already played in conversation, don't repeat it
-            if final_voice_clip in schemes_with_vm_played:
-                final_voice_clip = None
+            # Scan assistant messages to see if this scheme's VM already played
+            for msg in history:
+                if msg.get('role') == 'assistant':
+                    response_text = (msg.get('content') or msg.get('response_text') or '').lower()
+                    # Check if any VM keywords for this scheme appear in previous responses
+                    if final_voice_clip in vm_keywords:
+                        keywords = vm_keywords[final_voice_clip]
+                        if any(kw.lower() in response_text for kw in keywords):
+                            logger.info(f"[FIX 4] Voice memory for {final_voice_clip} already played - skipping")
+                            final_voice_clip = None
+                            break
         
         # Generate TTS audio for Sahaya's response
         tts_audio_url = None
