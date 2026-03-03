@@ -1239,35 +1239,33 @@ function App() {
   const checkGoodbyePhrase = (message) => {
     const t = message.toLowerCase()
     
-    // Hindi goodbye phrases
+    // Hindi goodbye phrases - be conservative to avoid false positives
     const hindiGoodbye = [
       'बाय', 'अलविदा', 'जाना है', 'जा रहे हैं', 'जा रहा हूँ',
-      'धन्यवाद', 'बहुत धन्यवाद', 'सुक्रिया', 'शुक्रिया',
-      'बस इतना ही', 'और कुछ नहीं', 'खत्म', 'खुदा हाफिज',
-      'अब तो चल देते हैं', 'अब जा लूँ', 'अब मुझे जाना है'
+      'खुदा हाफिज', 'अब तो चल देते हैं', 'अब जा लूँ', 'अब मुझे जाना है',
+      'चल दूँ', 'मुझे जाना है', 'बस अब'
     ]
     
     // English goodbye phrases
     const englishGoodbye = [
-      'bye', 'goodbye', 'thank you', 'thanks a lot', 'thanks',
-      'that\'s enough', 'that\'s all', 'that\'s it', 'i\'m good',
-      'i need to go', 'i have to go', 'i should go', 'bye now',
-      'see you', 'take care', 'farewell', 'ok bye'
+      'bye', 'goodbye', 'goodbye now', 'bye now',
+      'i need to go', 'i have to go', 'i should go', 'i\'m leaving',
+      'see you', 'see you later', 'take care', 'farewell'
     ]
     
     // Tamil goodbye phrases
     const tamilGoodbye = [
-      'நன்றி', 'சரி', 'போகிறேன்', 'செல்லலாம்', 'வாழ்க'
+      'போகிறேன்', 'செல்லலாம்', 'வாழ்க', 'பிரிந்து'
     ]
     
     // Marathi goodbye phrases
     const marathiGoodbye = [
-      'धन्यवाद', 'बाई', 'जाऊ दे', 'आता जाऊ', 'एवढेच'
+      'बाई', 'जाऊ दे', 'आता जाऊ', 'अलविदा'
     ]
     
     // Malayalam goodbye phrases
     const malayalamGoodbye = [
-      'നന്ദി', 'വാഴ്ക', 'പോകുന്നു', 'തന്നെയാണ്'
+      'പോകുന്നു', 'വാഴ്ക്കുക', 'പോകണം', 'വിടാണ്'
     ]
     
     const allGoodbyePhrases = [
