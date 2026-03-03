@@ -62,11 +62,18 @@ GOODBYE DETECTION (CRITICAL)
 ═══════════════════════════════
 
 DETECT FAREWELL INTENT: If the farmer is trying to end the conversation:
-- Keywords: "bye", "goodbye", "खत्म करो", "കോൾ അവസാനിപ്പിക്കാം", "போகிறேன்", "thanks", "done", "enough", "that's all"
-- Inferrence: If they've asked their questions and seem satisfied
-- Uncertainty: If unclear, ask once for confirmation before ending
 
-RESPONSE RULES:
+English Keywords: "bye", "goodbye", "done", "thanks", "thank you", "take care", "that's all"
+
+Hindi Keywords (हिंदी): "बाय", "अलविदा", "खत्म", "खत्म करो", "कॉल खत्म", "जाना है", "धन्यवाद", "सुक्रिया", "खुदा हाफिज"
+
+Tamil Keywords (தமிழ்): "பை", "போகிறேன்", "நன்றி", "வாழ்க", "முடிந்தது", "செல்லலாम்", "பேசலாம்"
+
+Kannada Keywords (ಕನ್ನಡ): "ವಿದಾ", "ಧನ್ಯವಾದ", "ಹೋಗು", "ಕರೆ ಮುಗಿಸಿ", "ಸಾಕು", "ಮುಗಿಸು"
+
+Malayalam Keywords (മലയാളം): "കോൾ അവസാനം", "നന്ദി", "വാഴ്ക", "പോകാം", "പോകുന്നു", "കഴിഞ്ഞു", "നിർത്തൽ"
+
+HOW TO RESPOND:
 1. If CLEAR goodbye → Respond warmly with gratitude and wish them well
 2. If UNCERTAIN → Ask: "Are you sure you want to end? Any other questions?"
 3. NEVER just end abruptly — always acknowledge their farewell meaningfully
@@ -405,22 +412,44 @@ def _detect_goodbye_intent(message: str, response_text: str) -> bool:
     msg_lower = message.lower()
     resp_lower = response_text.lower()
     
-    # Goodbye keywords in all supported languages
+    # Goodbye keywords in ALL supported languages with multiple variations
     goodbye_keywords = [
-        # English
+        # ============ ENGLISH ============
         'bye', 'goodbye', 'done', 'enough', 'stop', 'thanks', 'thank you', 
         'ok bye', 'bye now', 'see you', 'take care', 'that\'s all', 'that\'s it',
-        'gotta go', 'need to go', 'have to go',
-        # Hindi
+        'gotta go', 'need to go', 'have to go', 'see ya', 'catch you later',
+        'end call', 'finish', 'complete', 'thanks bye',
+        
+        # ============ HINDI (हिंदी) ============
         'बाय', 'अलविदा', 'जाना है', 'खत्म', 'खत्म करो', 'कॉल खत्म',
-        'धन्यवाद', 'सुक्रिया', 'खुदा हाफिज',
-        # Malayalam  
-        'കോൾ അവസാനിപ്പിക്കാം', 'കോൾ അവസാനം', 'നിൽക്കാം', 'പോകട്ടെ', 
-        'നന്ദി', 'പോകുന്നു', 'വാഴ്ക',
-        # Tamil
-        'போகிறேന்', 'நன்றி', 'செல்லலாம்',
-        # Marathi
-        'बाई', 'जाऊ दे', 'धन्यवाद'
+        'धन्यवाद', 'सुक्रिया', 'खुदा हाफिज', 'फिर मिलेंगे',
+        'कॉल अंत करो', 'कॉल बंद करो', 'बंद करो', 'बंद कर',
+        'जाता हूं', 'जाती हूं', 'जाऊँ', 'जाते हैं', 'जाते हो',
+        'अलग करो', 'विदा', 'नमस्ते', 'अच्छा बाय',
+        
+        # ============ TAMIL (தமிழ்) ============
+        'பை', 'வணக்கம்', 'நன்றி', 'போய்விடு', 'போனேன்', 'போகிறேன்',
+        'பேச முடிந்தவ', 'பேசலாம்', 'முடிந்தது', 'வாழ்க',
+        'என்ற கோல் முடிக்க', 'கோல் முடிக்கவும்', 'அவசியம் செல்ல',
+        'அழைப்பு முடி', 'செல்கிறேன்', 'நன்றி சொல்', 'மீண்டு பார்ப்போம்',
+        
+        # ============ KANNADA (ಕನ್ನಡ) ============
+        'ವಿದಾ', 'ಹೌದು', 'ಸರಿ', 'ಧನ್ಯವಾದ', 'ಶುಕ್ರಿಯೆ', 'ನಮಸ್ಕಾರ',
+        'ಹೋಗು', 'ಹೋಗಬೇಕು', 'ಹೋಗುತ್ತೀನಿ', 'ಕರೆ ಮುಗಿಸು',
+        'ಕರೆ ಮುಗಿಸಿ', 'ಸಾಕು', 'ಮುಗಿಸು', 'ಮುಗಿದು',
+        'ನಿಲ್ಲಿಸು', 'ನಿಲ್ಲಬೇಕು', 'ಸರಿ ವಿದಾ', 'ಹಾಗಾದರೆ ಬಾಯ್',
+        
+        # ============ TELUGU (తెలుగు) ============
+        'బై', 'సరిగ్గా', 'ఆ విధంగా', 'ధన్యవాదాలు', 'దయచేసి', 'నమస్కారం',
+        'వెళ్ళవలసిన', 'పోకూ', 'నా వెళ్ళాలి', 'కాల్‌ ముగించండి',
+        'కాల్ ముగిసిన', 'సరిపడింది', 'ఆపండి', 'విరమిస్తుంది',
+        'ఆపుకోండి', 'చాలు', 'ఖతమ్', 'థాంక్ యూ బై',
+        
+        # ============ MALAYALAM (മലയാളം) ============
+        'കോൾ അവസാനിപ്പിക്കാം', 'കോൾ അവസാനം', 'നിർത്തൽ', 'ഓകെ', 'പോകാം',
+        'പോണം', 'പോകുന്നു', 'ജാ', 'വാഴ്ക', 'നന്ദി', 'നന്ദി പറയുന്നു',
+        'നില്‍ക്കാം', 'നിന്നുപോകാം', 'നിൽപ്പിച്ചോ', 'സാധിച്ചു',
+        'സാരമായി തീരുന്നു', 'കഴിഞ്ഞു', 'തീരണ്ടെ', 'കെട്ടിപ്പോകാം'
     ]
     
     # Check if any goodbye keyword is in the message (BETTER: handle non-ASCII properly)
@@ -429,20 +458,34 @@ def _detect_goodbye_intent(message: str, response_text: str) -> bool:
             # For Hindi/regional scripts: exact match WITHOUT lowercasing
             if ord(kw[0]) > 127:  # Non-ASCII
                 if kw in message:
-                    logger.info(f"[GOODBYE] Matched Hindi/regional '{kw}' in: {message}")
+                    # [GOODBYE] Matched Hindi/regional '{kw}' in message
                     return True
             # For English: case-insensitive
             elif kw.lower() in msg_lower:
-                logger.info(f"[GOODBYE] Matched English '{kw}' in: {message}")
+                # [GOODBYE] Matched English '{kw}' in message
                 return True
         except Exception:
             pass
     
     # Check if AI response indicates goodbye (phrases like "take care", "all the best", etc.)
-    goodbye_phrases = ['धन्यवाद', 'take care', 'all the best', 'வாழ்க', 'നന്ദി', 'good luck']
-    for phrase in goodbye_phrases:
-        if phrase.lower() in resp_lower and any(kw.lower() in msg_lower for kw in ['thanks', 'bye', 'done', 'धन्यवाद', 'നന്ദി']):
+    goodbye_response_phrases = [
+        'धन्यवाद', 'take care', 'all the best', 'வாழ்க', 'നന്ദി', 'good luck',
+        'ಧನ್ಯವಾದ', 'థాంకు', 'thanks', 'farewell', 'કોલ/call शેষ'
+    ]
+    
+    # More aggressive detection: if user says goodbye word AND any "end" signal from AI
+    for phrase in goodbye_response_phrases:
+        if phrase.lower() in resp_lower and any(
+            kw.lower() in msg_lower for kw in ['thanks', 'bye', 'done', 'धन्यवाद', 'നന്ദി', 'thank', 'okay', 'ok']
+        ):
             return True
+    
+    # If message includes multiple confirmed goodbye words, it's definitely goodbye
+    strong_goodbye_words = ['bye', 'बाय', 'போகிறேன்', 'വാഴ്ക', 'कॉल खत्म', 'अलविदा']
+    strong_goodbye_count = sum(1 for word in strong_goodbye_words if word in message or word.lower() in msg_lower)
+    
+    if strong_goodbye_count >= 2:
+        return True
     
     return False
 
