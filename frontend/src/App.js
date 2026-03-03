@@ -1323,20 +1323,33 @@ function App() {
           if (ttsRes.data.success && ttsRes.data.audio_url) {
             const fareAudio = new Audio(ttsRes.data.audio_url)
             activeAudioRef.current = fareAudio
-            fareAudio.onended = () => {
+            
+            // Ensure we end conversation after audio finishes
+            const handleAudioEnd = () => {
               activeAudioRef.current = null
+              setInputEnabled(true)
               endConversation()
             }
-            await fareAudio.play()
+            
+            fareAudio.onended = handleAudioEnd
+            fareAudio.onerror = handleAudioEnd  // Also end on error
+            
+            try {
+              await fareAudio.play()
+            } catch (playErr) {
+              console.error('Farewell audio play failed:', playErr)
+              handleAudioEnd()
+            }
           } else {
+            setInputEnabled(true)
             endConversation()
           }
         } catch (ttsErr) {
           console.error('Farewell TTS failed:', ttsErr)
+          setInputEnabled(true)
           endConversation()
         }
         
-        setInputEnabled(true)
         return
       }
       
