@@ -277,6 +277,7 @@ def chat():
             'voice_memory_clip': final_voice_clip,
             'audio_url': final_audio_url,
             'audio_type': 'tts' if final_audio_url else 'none',  # TTS is always primary
+            'is_goodbye': result.get('is_goodbye', False),  # AI-detected farewell intent
             'conversation_id': uuid.uuid4().hex
         })
     except Exception as e:

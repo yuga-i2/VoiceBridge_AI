@@ -1307,66 +1307,6 @@ function App() {
       // Normalize transcript using outer function
       const finalMessage = normalizeTranscript(userMessage)
       
-      // FIX 1: Check for goodbye phrases BEFORE calling Lambda
-      if (checkGoodbyePhrase(finalMessage)) {
-        console.log('[VoiceBridge] Goodbye phrase detected:', finalMessage)
-        
-        // Stop any currently playing audio
-        if (activeAudioRef.current) {
-          activeAudioRef.current.pause()
-          activeAudioRef.current.currentTime = 0
-        }
-        
-        // Play farewell message in selected language
-        const farewellMessages = {
-          'hindi': 'धन्यवाद! आपसे बात करके खुशी हुई। अलविदा!',
-          'english': 'Thank you! It was great talking to you. Goodbye!',
-          'tamil': 'நன்றி! உங்களுடன் பேச வந்தது மகிழ்ச்சி. வாழ்க!',
-          'marathi': 'धन्यवाद! तुमच्याशी बोलून आनंद झाला. अलविदा!',
-          'malayalam': 'നന്ദി! നിങ്ങളുമായി സംസാരിച്ച് സന്തോഷ്ടം. വാഴ്ക!'
-        }
-        
-        const farewell = farewellMessages[selectedLanguage] || farewellMessages['english']
-        
-        try {
-          const ttsRes = await axios.post(API.tts, {
-            text: farewell,
-            language: selectedLanguage
-          })
-          
-          if (ttsRes.data.success && ttsRes.data.audio_url) {
-            const fareAudio = new Audio(ttsRes.data.audio_url)
-            activeAudioRef.current = fareAudio
-            
-            // Ensure we end conversation after audio finishes
-            const handleAudioEnd = () => {
-              activeAudioRef.current = null
-              setInputEnabled(true)
-              endConversation()
-            }
-            
-            fareAudio.onended = handleAudioEnd
-            fareAudio.onerror = handleAudioEnd  // Also end on error
-            
-            try {
-              await fareAudio.play()
-            } catch (playErr) {
-              console.error('Farewell audio play failed:', playErr)
-              handleAudioEnd()
-            }
-          } else {
-            setInputEnabled(true)
-            endConversation()
-          }
-        } catch (ttsErr) {
-          console.error('Farewell TTS failed:', ttsErr)
-          setInputEnabled(true)
-          endConversation()
-        }
-        
-        return
-      }
-      
       // FIX 2: Append user message to ref FIRST (this is the actual history that will be sent to Lambda)
       conversationHistoryRef.current = [
         ...conversationHistoryRef.current,
@@ -1386,14 +1326,15 @@ function App() {
 
       console.log('CHAT RESULT:', JSON.stringify(chatRes.data))
       console.log('[VM DEBUG] voice_memory_clip from backend:', chatRes.data.voice_memory_clip)
-      console.log('[VM DEBUG] full chat result:', JSON.stringify(chatRes.data))
+      console.log('[GOODBYE DEBUG] is_goodbye from backend:', chatRes.data.is_goodbye)
 
       const aiResponse = {
         text: chatRes.data.response_text,
         schemes: chatRes.data.schemes_mentioned || [],
         stage: chatRes.data.stage,
         voice_memory_clip: chatRes.data.voice_memory_clip,
-        audio_url: chatRes.data.audio_type === 'voice_memory' ? null : chatRes.data.audio_url
+        audio_url: chatRes.data.audio_type === 'voice_memory' ? null : chatRes.data.audio_url,
+        is_goodbye: chatRes.data.is_goodbye
       }
 
       // Fetch voice memory audio if available
@@ -1439,6 +1380,26 @@ function App() {
 
       setIsProcessing(false)
 
+      // Check if AI detected goodbye intent
+      if (aiResponse.is_goodbye) {
+        console.log('[Goodbye] AI detected farewell intent - ending call gracefully')
+        setIsSpeaking(true)
+        setCallState(CALL_STATES.SAHAYA_SPEAKING)
+        
+        // Play the AI's farewell response
+        playWithLanguage(
+          aiResponse.audio_url || null,
+          null, // Don't play voice memory on goodbye
+          aiResponse.text,
+          () => {
+            setIsSpeaking(false)
+            setTimeout(() => endConversation(), 1000)
+          }
+        )
+        return
+      }
+
+      // Normal flow - continue conversation
       // Always play whatever audio we have
       const hasAudio = aiResponse.audio_url || aiResponse.voiceMemoryUrl
       

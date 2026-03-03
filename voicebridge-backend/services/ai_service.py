@@ -58,6 +58,20 @@ Use their name, land size, and state to personalize EVERY response.
 Relevant scheme data: {scheme_data}
 
 ═══════════════════════════════
+GOODBYE DETECTION (CRITICAL)
+═══════════════════════════════
+
+DETECT FAREWELL INTENT: If the farmer is trying to end the conversation:
+- Keywords: "bye", "goodbye", "खत्म करो", "കോൾ അവസാനിപ്പിക്കാം", "போகிறேன்", "thanks", "done", "enough", "that's all"
+- Inferrence: If they've asked their questions and seem satisfied
+- Uncertainty: If unclear, ask once for confirmation before ending
+
+RESPONSE RULES:
+1. If CLEAR goodbye → Respond warmly with gratitude and wish them well
+2. If UNCERTAIN → Ask: "Are you sure you want to end? Any other questions?"
+3. NEVER just end abruptly — always acknowledge their farewell meaningfully
+
+═══════════════════════════════
 LANGUAGE & FARMER STORY RULE
 ═══════════════════════════════
 
@@ -382,6 +396,47 @@ def _build_bedrock_messages(
     return messages, system_with_data
 
 
+def _detect_goodbye_intent(message: str, response_text: str) -> bool:
+    """
+    Detect if user is trying to end the conversation based on:
+    1. User message keywords
+    2. AI response indicating farewell/end
+    """
+    msg_lower = message.lower()
+    resp_lower = response_text.lower()
+    
+    # Goodbye keywords in all supported languages
+    goodbye_keywords = [
+        # English
+        'bye', 'goodbye', 'done', 'enough', 'stop', 'thanks', 'thank you', 
+        'ok bye', 'bye now', 'see you', 'take care', 'that\'s all', 'that\'s it',
+        'gotta go', 'need to go', 'have to go',
+        # Hindi
+        'बाय', 'अलविदा', 'जाना है', 'खत्म', 'खत्म करो', 'कॉल खत्म',
+        'धन्यवाद', 'सुक्रिया', 'खुदा हाफिज',
+        # Malayalam  
+        'കോൾ അവസാനിപ്പിക്കാം', 'കോൾ അവസാനം', 'നിൽക്കാം', 'പോകട്ടെ', 
+        'നന്ദി', 'പോകുന്നു', 'വാഴ്ക',
+        # Tamil
+        'போகிறேന்', 'நன்றி', 'செல்லலாம்',
+        # Marathi
+        'बाई', 'जाऊ दे', 'धन्यवाद'
+    ]
+    
+    # Check if any goodbye keyword is in the message
+    for kw in goodbye_keywords:
+        if kw.lower() in msg_lower:
+            return True
+    
+    # Check if AI response indicates goodbye (phrases like "take care", "all the best", etc.)
+    goodbye_phrases = ['धन्यवाद', 'take care', 'all the best', 'வாழ்க', 'നന്ദി', 'good luck']
+    for phrase in goodbye_phrases:
+        if phrase.lower() in resp_lower and any(kw.lower() in msg_lower for kw in ['thanks', 'bye', 'done', 'धन्यवाद', 'നന്ദി']):
+            return True
+    
+    return False
+
+
 def generate_response(
     message: str,
     scheme_ids: list[str],
@@ -400,6 +455,7 @@ def generate_response(
             raw_response = _select_mock_response(message, scheme_ids)
             clean_text, _ = _extract_voice_memory_tag(raw_response)
             voice_clip = get_voice_memory_clip(scheme_ids, message)
+            is_goodbye = _detect_goodbye_intent(message, clean_text)
             
             return {
                 "success": True,
@@ -407,6 +463,7 @@ def generate_response(
                 "voice_memory_clip": voice_clip,
                 "matched_schemes": scheme_ids,
                 "raw_response": raw_response,
+                "is_goodbye": is_goodbye,
                 "mock": True
             }
         
@@ -458,6 +515,8 @@ def generate_response(
             clean_text, _ = _extract_voice_memory_tag(raw_response)
             # Determine voice memory clip from matched schemes, not from AI tag
             voice_clip = get_voice_memory_clip(scheme_ids, message)
+            # Detect if user is saying goodbye
+            is_goodbye = _detect_goodbye_intent(message, clean_text)
             
             return {
                 "success": True,
@@ -465,6 +524,7 @@ def generate_response(
                 "voice_memory_clip": voice_clip,
                 "matched_schemes": scheme_ids,
                 "raw_response": raw_response,
+                "is_goodbye": is_goodbye,
                 "mock": False
             }
     
@@ -475,6 +535,7 @@ def generate_response(
             "response_text": MOCK_RESPONSES["confused"],
             "voice_memory_clip": None,
             "matched_schemes": scheme_ids,
+            "is_goodbye": False,
             "error": str(e),
             "mock": True
         }
