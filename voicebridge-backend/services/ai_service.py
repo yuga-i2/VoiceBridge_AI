@@ -404,11 +404,16 @@ def _build_bedrock_messages(
     return messages, system_with_data
 
 
-def _detect_goodbye_intent(message: str, response_text: str) -> bool:
+def _detect_goodbye_intent(message: str, response_text: str) -> dict:
     """
-    Detect if user is trying to end the conversation based on:
-    1. User message keywords
-    2. AI response indicating farewell/end
+    Detect if user is trying to end the conversation and whether confirmation is needed.
+    
+    Returns dict with:
+    - is_goodbye: bool - True if user wants to end call (strong or ambiguous)
+    - needs_confirmation: bool - True if goodbye is ambiguous and needs user confirmation
+    
+    Strong goodbye: Clear intent like "bye", "call खत्म", "കോൾ അവസാനിപ്പിക്കും"
+    Ambiguous goodbye: Phrases like "i don't have anything to ask" that might need confirmation
     
     Uses Unicode NFC normalization for consistent matching across regional scripts.
     """
@@ -529,7 +534,9 @@ def generate_response(
             # Mock path
             raw_response = _select_mock_response(message, scheme_ids)
             clean_text, _ = _extract_voice_memory_tag(raw_response)
-            is_goodbye = _detect_goodbye_intent(message, clean_text)
+            goodbye_result = _detect_goodbye_intent(message, clean_text)
+            is_goodbye = goodbye_result["is_goodbye"]
+            needs_confirmation = goodbye_result["needs_confirmation"]
             
             # CRITICAL: Do NOT return voice clip if this is a goodbye message
             if is_goodbye:
@@ -547,6 +554,7 @@ def generate_response(
                 "matched_schemes": final_schemes,
                 "raw_response": raw_response,
                 "is_goodbye": is_goodbye,
+                "needs_confirmation": needs_confirmation,
                 "mock": True
             }
         
@@ -597,7 +605,9 @@ def generate_response(
             # Extract clean text (remove tags if any)
             clean_text, _ = _extract_voice_memory_tag(raw_response)
             # Detect if user is saying goodbye FIRST
-            is_goodbye = _detect_goodbye_intent(message, clean_text)
+            goodbye_result = _detect_goodbye_intent(message, clean_text)
+            is_goodbye = goodbye_result["is_goodbye"]
+            needs_confirmation = goodbye_result["needs_confirmation"]
             
             # CRITICAL: Do NOT return voice clip if this is a goodbye message
             if is_goodbye:
@@ -616,6 +626,7 @@ def generate_response(
                 "matched_schemes": final_schemes,
                 "raw_response": raw_response,
                 "is_goodbye": is_goodbye,
+                "needs_confirmation": needs_confirmation,
                 "mock": False
             }
     

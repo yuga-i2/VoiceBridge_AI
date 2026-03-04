@@ -1342,7 +1342,8 @@ function App() {
         stage: chatRes.data.stage,
         voice_memory_clip: chatRes.data.voice_memory_clip,
         audio_url: chatRes.data.audio_type === 'voice_memory' ? null : chatRes.data.audio_url,
-        is_goodbye: chatRes.data.is_goodbye
+        is_goodbye: chatRes.data.is_goodbye,
+        needs_confirmation: chatRes.data.needs_confirmation
       }
 
       // Fetch voice memory audio if available
@@ -1399,20 +1400,46 @@ function App() {
 
       // Check if AI detected goodbye intent
       if (aiResponse.is_goodbye) {
-        console.log('[Goodbye] AI detected farewell intent - ending call gracefully')
-        setIsSpeaking(true)
-        setCallState(CALL_STATES.SAHAYA_SPEAKING)
-        
-        // Play the AI's farewell response
-        playWithLanguage(
-          aiResponse.audio_url || null,
-          null, // Don't play voice memory on goodbye
-          aiResponse.text,
-          () => {
-            setIsSpeaking(false)
-            setTimeout(() => endConversation(), 1000)
-          }
-        )
+        if (aiResponse.needs_confirmation) {
+          // Ambiguous goodbye - ask user for confirmation
+          console.log('[Goodbye] Ambiguous goodbye detected - asking for confirmation')
+          setIsSpeaking(true)
+          setCallState(CALL_STATES.SAHAYA_SPEAKING)
+          
+          // Play the response and show confirmation dialog
+          playWithLanguage(
+            aiResponse.audio_url || null,
+            null, // Don't play voice memory on goodbye
+            aiResponse.text,
+            () => {
+              setIsSpeaking(false)
+              // Show confirmation dialog
+              const userWantsToEnd = window.confirm('Do you want to end the call?')
+              if (userWantsToEnd) {
+                setTimeout(() => endConversation(), 500)
+              } else {
+                // User chose to continue - reset call state to listening
+                setCallState(CALL_STATES.LISTENING)
+              }
+            }
+          )
+        } else {
+          // Clear goodbye intent - end call immediately
+          console.log('[Goodbye] AI detected clear farewell intent - ending call gracefully')
+          setIsSpeaking(true)
+          setCallState(CALL_STATES.SAHAYA_SPEAKING)
+          
+          // Play the AI's farewell response
+          playWithLanguage(
+            aiResponse.audio_url || null,
+            null, // Don't play voice memory on goodbye
+            aiResponse.text,
+            () => {
+              setIsSpeaking(false)
+              setTimeout(() => endConversation(), 1000)
+            }
+          )
+        }
         return
       }
 
