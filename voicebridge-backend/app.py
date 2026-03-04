@@ -120,14 +120,34 @@ def chat():
         if message == '__warmup__':
             return jsonify({'success': True, 'warmup': True}), 200
         
+        # Helper: Multi-language KCC detection with speech-to-text variations
+        def detect_kcc_in_message(msg_lower):
+            """
+            Detect KCC in multiple languages including speech transcription variations.
+            Malayalam speech-to-text may produce: കെ സി പറ്റി, കെ സി പറയൂ, etc.
+            """
+            # Easy English/Hindi keywords
+            if any(k in msg_lower for k in ['kcc', 'kisan credit', 'credit card', 'kisan card', '4%', '4 percent', 'सीसीसी', 'केसीसी', 'si si si', 'see see see', 'kisan lon', 'kisan loan', '4 pratishat', 'केसी', 'kscc']):
+                return True
+            
+            # Malayalam: detect common substrings in KCC variations (കെ സി സി, കെ സി പറ്റി, കെ സി പറയൂ)
+            # Common pattern: 'കെ' + 'സ' in same word
+            if 'കെ' in msg_lower and 'സ' in msg_lower:
+                parts = msg_lower.split()
+                for part in parts:
+                    if 'കെ' in part and 'സ' in part:
+                        return True
+            
+            return False
+        
         # Inline scheme detection — does not depend on any service function
         def detect_scheme(msg):
             m = msg.lower()
             # PM_KISAN — Hindi + Malayalam + Tamil keywords
             if any(k in m for k in ['pm kisan','pmkisan','pm-kisan','kisan samman','6000','kisaan','पीएम किसान','पी एम किसान','pihem kisan','piem kisan','പി എം കിസാൻ','പിഎം കിസാൻ','കിസാൻ സമ്മാൻ','pm kisan','கிசான்','பிஎம் கிசான்','கிசான் சம்மான்']):
                 return ['PM_KISAN'], 'PM_KISAN'
-            # KCC — Hindi + Malayalam + Tamil keywords
-            if any(k in m for k in ['kcc','kisan credit','credit card','kisan card','4%','4 percent','सीसीसी','केसीसी','si si si','see see see','kisan lon','kisan loan','4 pratishat','കിസാൻ ക്രെഡിറ്റ്','കെ സി സി','കെസിസി','கிசான் கிரெடிட்','கேசिसी','கிசான் கிரெடิட்','கிரெடிट்']):
+            # KCC — use helper function for Malayalam speech variations
+            if detect_kcc_in_message(m):
                 return ['KCC'], 'KCC'
             # PMFBY — Hindi + Malayalam + Tamil keywords
             if any(k in m for k in ['pmfby','fasal bima','crop insurance','bima yojana','fasal insurance','फसल बीमा','piem ef bi','fasal bima yojana','ഫസൽ ബീമ','വിള ഇൻഷുറൻസ്','പിഎംഎഫ്ബിവൈ','பயிர் காப்பீடு','பிஎம்எஃப்பிஒய்']):
