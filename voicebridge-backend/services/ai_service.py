@@ -409,9 +409,17 @@ def _detect_goodbye_intent(message: str, response_text: str) -> bool:
     Detect if user is trying to end the conversation based on:
     1. User message keywords
     2. AI response indicating farewell/end
+    
+    Uses Unicode NFC normalization for consistent matching across regional scripts.
     """
     msg_lower = message.lower()
     resp_lower = response_text.lower()
+    
+    # Normalize input strings to NFC (handles Unicode variations in regional scripts)
+    message_norm = unicodedata.normalize('NFC', message)
+    response_norm = unicodedata.normalize('NFC', response_text)
+    msg_lower = message_norm.lower()
+    resp_lower = response_norm.lower()
     
     # Goodbye keywords in ALL supported languages with multiple variations
     goodbye_keywords = [
@@ -456,9 +464,11 @@ def _detect_goodbye_intent(message: str, response_text: str) -> bool:
     # Check if any goodbye keyword is in the message (BETTER: handle non-ASCII properly)
     for kw in goodbye_keywords:
         try:
+            # Normalize keyword to NFC for comparison
+            kw_norm = unicodedata.normalize('NFC', kw)
             # For Hindi/regional scripts: exact match WITHOUT lowercasing
             if ord(kw[0]) > 127:  # Non-ASCII
-                if kw in message:
+                if kw_norm in message_norm:
                     # [GOODBYE] Matched Hindi/regional '{kw}' in message
                     return True
             # For English: case-insensitive
@@ -483,7 +493,11 @@ def _detect_goodbye_intent(message: str, response_text: str) -> bool:
     
     # If message includes multiple confirmed goodbye words, it's definitely goodbye
     strong_goodbye_words = ['bye', 'बाय', 'போகிறேന्', 'വാഴ്ക', 'कॉल खत्म', 'अलविदा', 'കോൾ അവസാനം', 'കോൾ അവസാനിപ്പിക്കും', 'കഴിഞ്ഞു']
-    strong_goodbye_count = sum(1 for word in strong_goodbye_words if word in message or word.lower() in msg_lower)
+    strong_goodbye_count = 0
+    for word in strong_goodbye_words:
+        word_norm = unicodedata.normalize('NFC', word)
+        if word_norm in message_norm or word.lower() in msg_lower:
+            strong_goodbye_count += 1
     
     if strong_goodbye_count >= 2:
         return True
