@@ -144,13 +144,13 @@ def chat():
         def detect_scheme(msg):
             m = msg.lower()
             # PM_KISAN — Hindi + Malayalam + Tamil keywords
-            if any(k in m for k in ['pm kisan','pmkisan','pm-kisan','kisan samman','6000','kisaan','पीएम किसान','पी एम किसान','pihem kisan','piem kisan','പി എം കിസാൻ','പിഎം കിസാൻ','കിസാൻ സമ്മാൻ','pm kisan','கிசான்','பிஎம் கிசான்','கிசான் சம்மான்']):
+            if any(k in m for k in ['pm kisan','pmkisan','pm-kisan','kisan samman','6000','kisaan','पीएम किसान','पी एम किसान','pihem kisan','piem kisan','പി എം കിസാൻ','പിഎം കിസാൻ','കിസാൻ സമ്മാൻ','pm kisan','கிசான்','பிஎம் கிசான்','கிசான் சம்மான்','₹6000','rupees 6000']):
                 return ['PM_KISAN'], 'PM_KISAN'
             # KCC — use helper function for Malayalam speech variations
             if detect_kcc_in_message(m):
                 return ['KCC'], 'KCC'
             # PMFBY — Hindi + Malayalam + Tamil keywords
-            if any(k in m for k in ['pmfby','fasal bima','crop insurance','bima yojana','fasal insurance','फसल बीमा','piem ef bi','fasal bima yojana','ഫസൽ ബീമ','വിള ഇൻഷുറൻസ്','പിഎംഎഫ്ബിവൈ','பயிர் காப்பீடு','பிஎம்எஃப்பிஒய்']):
+            if any(k in m for k in ['pmfby','fasal bima','crop insurance','bima yojana','fasal insurance','फसल बीमा','piem ef bi','fasal bima yojana','ഫസൽ ബീമ','വിള ഇൻഷുറൻസ്','പിഎംഎഫ്ബിവൈ','பயிர் காப்பீடு','பிஎம்எஃப்பிஒய்','crop bima','bima scheme','फसल','silk']):
                 return ['PMFBY'], 'PMFBY'
             if any(k in m for k in ['mgnrega','mnrega','manrega','nrega','100 days','job card','rozgar']):
                 return ['MGNREGS'], None
