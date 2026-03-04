@@ -164,19 +164,8 @@ def chat():
 
         matched_schemes, voice_memory_clip = detect_scheme(message)
         
-        # Fallback: if no scheme detected in current message,
-        # check last assistant message in conversation history
-        if not matched_schemes:
-            history = data.get('conversation_history', [])
-            # Look at last 4 messages for scheme mentions
-            recent = history[-4:] if len(history) >= 4 else history
-            for msg in reversed(recent):
-                content = (msg.get('content') or '').lower()
-                fallback_schemes, fallback_clip = detect_scheme(content)
-                if fallback_schemes:
-                    matched_schemes = fallback_schemes
-                    voice_memory_clip = fallback_clip
-                    break
+        # CRITICAL: Do NOT fallback to history for scheme detection
+        # Only use current message detection to avoid stale schemes
         
         fp = data.get('farmer_profile', {})
         history = data.get('conversation_history', [])
@@ -200,46 +189,16 @@ def chat():
         result = generate_response(message, matched_schemes, farmer, history, lang_instruction)
         response_text = result.get('response_text', '')
         
-        # Use voice_memory_clip from AI response first (most accurate)
-        # Fall back to detect_scheme result if AI didn't return one
-        final_voice_clip = result.get('voice_memory_clip') or voice_memory_clip
+        # Use voice_memory_clip from AI response only
+        # Do NOT use fallbacks that search response_text (they cause false positives)
+        final_voice_clip = result.get('voice_memory_clip')
         
-        # Fallback: detect voice clip from AI response text
-        if not final_voice_clip and response_text:
-            # Check English scheme names (always present in AI response regardless of language)
-            rt = response_text.lower()
-            if 'pm-kisan' in rt or 'pm kisan' in rt or 'pmkisan' in rt or '6,000' in rt or '6000' in rt:
-                final_voice_clip = 'PM_KISAN'
-            elif 'kisan credit' in rt or 'kcc' in rt or 'credit card' in rt:
-                final_voice_clip = 'KCC'
-            elif 'pmfby' in rt or 'fasal bima' in rt or 'crop insurance' in rt or 'pm fasal' in rt:
-                final_voice_clip = 'PMFBY'
+        # IMPORTANT: If no matched_schemes in current message, do NOT fetch voice memory
+        # This prevents fetching audio when user is asking about goodbye/other topics
 
-        # Fallback: use first matched scheme if still no clip
-        if not final_voice_clip and matched_schemes:
-            clip_eligible = ['PM_KISAN', 'KCC', 'PMFBY']
-            for scheme in matched_schemes:
-                if scheme in clip_eligible:
-                    final_voice_clip = scheme
-                    break
-
-        # FIX 4: Voice Memory Deduplication - SIMPLE & RELIABLE
-        # Prevent the same scheme's voice memory clip from playing multiple times
-        # Check if we've already played voice memory for this scheme in the conversation
-        if final_voice_clip and history and len(history) > 1:
-            schemes_with_vm_already_played = set()
-            
-            # Scan history for voiceMemoryScheme field (sent by frontend when VM is played)
-            for msg in history:
-                if msg.get('role') == 'assistant':
-                    # Frontend sends voiceMemoryScheme when voice memory is played
-                    if msg.get('voiceMemoryScheme'):
-                        schemes_with_vm_already_played.add(msg.get('voiceMemoryScheme'))
-            
-            # Skip voice memory if already played in this conversation
-            if final_voice_clip in schemes_with_vm_already_played:
-                logger.info(f"[FIX 4] Voice memory for {final_voice_clip} already played in conversation - skipping")
-                final_voice_clip = None
+        # IMPORTANT: Frontend handles voice memory deduplication using voiceMemoryPlayedRef Set
+        # We trust the frontend's deduplication instead of trying to track in backend
+        # Backend should NOT try to filter voice_memory_clip based on history
         
         # Generate TTS audio for Sahaya's response
         tts_audio_url = None

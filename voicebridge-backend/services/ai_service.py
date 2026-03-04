@@ -507,8 +507,13 @@ def generate_response(
             # Mock path
             raw_response = _select_mock_response(message, scheme_ids)
             clean_text, _ = _extract_voice_memory_tag(raw_response)
-            voice_clip = get_voice_memory_clip(scheme_ids, message)
             is_goodbye = _detect_goodbye_intent(message, clean_text)
+            
+            # CRITICAL: Do NOT return voice clip if this is a goodbye message
+            if is_goodbye:
+                voice_clip = None
+            else:
+                voice_clip = get_voice_memory_clip(scheme_ids, message)
             
             return {
                 "success": True,
@@ -566,10 +571,15 @@ def generate_response(
             
             # Extract clean text (remove tags if any)
             clean_text, _ = _extract_voice_memory_tag(raw_response)
-            # Determine voice memory clip from matched schemes, not from AI tag
-            voice_clip = get_voice_memory_clip(scheme_ids, message)
-            # Detect if user is saying goodbye
+            # Detect if user is saying goodbye FIRST
             is_goodbye = _detect_goodbye_intent(message, clean_text)
+            
+            # CRITICAL: Do NOT return voice clip if this is a goodbye message
+            if is_goodbye:
+                voice_clip = None
+            else:
+                # Only get voice memory for scheme discussions (not goodbye)
+                voice_clip = get_voice_memory_clip(scheme_ids, message)
             
             return {
                 "success": True,
