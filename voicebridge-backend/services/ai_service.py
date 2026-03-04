@@ -446,10 +446,10 @@ def _detect_goodbye_intent(message: str, response_text: str) -> bool:
         'ఆపుకోండి', 'చాలు', 'ఖతమ్', 'థాంక్ యూ బై',
         
         # ============ MALAYALAM (മലയാളം) ============
-        'കോൾ അവസാനിപ്പിക്കാം', 'കോൾ അവസാനം', 'നിർത്തൽ', 'ഓകെ', 'പോകാം',
-        'പോണം', 'പോകുന്നു', 'ജാ', 'വാഴ്ക', 'നന്ദി', 'നന്ദി പറയുന്നു',
-        'നില്‍ക്കാം', 'നിന്നുപോകാം', 'നിൽപ്പിച്ചോ', 'സാധിച്ചു',
-        'സാരമായി തീരുന്നു', 'കഴിഞ്ഞു', 'തീരണ്ടെ', 'കെട്ടിപ്പോകാം'
+        'കോൾ അവസാനിപ്പിക്കാം', 'കോൾ അവസാനിപ്പിക്കും', 'കോൾ അവസാനം', 'കോൾ കം കരോ', 'കോൾ കഴിയ്ക്കാം', 'നിർത്തൽ', 'ഓകെ', 'പോകാം',
+        'പോണം', 'പോകുന്നു', 'പോകണം', 'പോയ്', 'പോയ്‌', 'ജാ', 'വാഴ്ക', 'നന്ദി', 'നന്ദി പറയുന്നു',
+        'നിലയ്ക്കാം', 'നില്‍ക്കാം', 'നിന്നുപോകാം', 'നിൽപ്പിച്ചോ', 'നിൽപ്പിക്കാം', 'സാധിച്ചു',
+        'സാരമായി തീരുന്നു', 'കഴിഞ്ഞു', 'കഴിയുന്നു', 'തീരണ്ടെ', 'തീരുമ്പോൾ', 'കെട്ടിപ്പോകാം', 'അവ്സാനിപ്പിക്കാം'
     ]
     
     # Check if any goodbye keyword is in the message (BETTER: handle non-ASCII properly)
@@ -481,7 +481,7 @@ def _detect_goodbye_intent(message: str, response_text: str) -> bool:
             return True
     
     # If message includes multiple confirmed goodbye words, it's definitely goodbye
-    strong_goodbye_words = ['bye', 'बाय', 'போகிறேன்', 'വാഴ്ക', 'कॉल खत्म', 'अलविदा']
+    strong_goodbye_words = ['bye', 'बाय', 'போகிறேന्', 'വാഴ്ക', 'कॉल खत्म', 'अलविदा', 'കോൾ അവസാനം', 'കോൾ അവസാനിപ്പിക്കും', 'കഴിഞ്ഞു']
     strong_goodbye_count = sum(1 for word in strong_goodbye_words if word in message or word.lower() in msg_lower)
     
     if strong_goodbye_count >= 2:
