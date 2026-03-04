@@ -5,6 +5,7 @@ Generates Sahaya's Hindi responses using Bedrock (AWS) or mock data (development
 
 import json
 import re
+import unicodedata
 from decimal import Decimal
 from config.settings import USE_MOCK, AWS_REGION, BEDROCK_MODEL_ID
 from services.scheme_service import get_scheme_by_id
@@ -512,14 +513,17 @@ def generate_response(
             # CRITICAL: Do NOT return voice clip if this is a goodbye message
             if is_goodbye:
                 voice_clip = None
+                # Also clear matched_schemes so frontend doesn't fetch voice memory
+                final_schemes = []
             else:
                 voice_clip = get_voice_memory_clip(scheme_ids, message)
+                final_schemes = scheme_ids
             
             return {
                 "success": True,
                 "response_text": clean_text,
                 "voice_memory_clip": voice_clip,
-                "matched_schemes": scheme_ids,
+                "matched_schemes": final_schemes,
                 "raw_response": raw_response,
                 "is_goodbye": is_goodbye,
                 "mock": True
@@ -577,15 +581,18 @@ def generate_response(
             # CRITICAL: Do NOT return voice clip if this is a goodbye message
             if is_goodbye:
                 voice_clip = None
+                # Also clear matched_schemes so frontend doesn't fetch voice memory
+                final_schemes = []
             else:
                 # Only get voice memory for scheme discussions (not goodbye)
                 voice_clip = get_voice_memory_clip(scheme_ids, message)
+                final_schemes = scheme_ids
             
             return {
                 "success": True,
                 "response_text": clean_text,
                 "voice_memory_clip": voice_clip,
-                "matched_schemes": scheme_ids,
+                "matched_schemes": final_schemes,
                 "raw_response": raw_response,
                 "is_goodbye": is_goodbye,
                 "mock": False
