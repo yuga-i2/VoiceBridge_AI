@@ -360,22 +360,23 @@ Amplify also provides free SSL certificate, HTTP→HTTPS redirect, and request l
 └────────────┬──────────────────────────────────┬────────────────┘
              │                                  │
              ▼                                  ▼
-┌──────────────────────────────┐    ┌──────────────────────────────┐
-│  [ AI ENGINE — Bedrock ]     │    │  [ DATA — DynamoDB ]         │
-│                              │    │                              │
-│  bedrock.invoke_model()      │    │  ★ [CACHE LOGIC]            │
-│  • farmer_profile             │    │  hash(farmer_id +            │
-│  • conversation_history       │    │          question)           │
-│  • scheme context from DB     │    │  → DynamoDB scan             │
-│  • language instructions      │    │  → HIT: return (<10ms)       │
-│  • lang_instruction           │    │  → MISS: call Bedrock       │
-│                              │    │        + store cache         │
-│  Returns:                     │    │  [STATUS: Plan only v1.4]    │
-│  • response_text             │    │                              │
-│  • [PLAY_VOICE_MEMORY:KCC]  │    │  Also stores:                │
-│  • is_goodbye: bool          │    │  • 10 welfare schemes         │
-│  • matched_schemes           │    │  • farmer eligibility        │
-└──────┬───────────┬──────────┘    └──────────────────────────────┘
+┌─────────────────────────────┐     ┌──────────────────────────────┐
+│  [AI ENGINE — Bedrock       |     |     [ DATA — DynamoDB ]      |
+|  (Claude 3 Haiku)]          |     |                              |
+│                             │     │                              │
+│  bedrock.invoke_model()     │     │  ★ [CACHE LOGIC]            │
+│  • farmer_profile           │     │  hash(farmer_id +            │
+│  • conversation_history     │     │          question)           │
+│  • scheme context from DB   │     │  → DynamoDB scan             │
+│  • language instructions    │     │  → HIT: return (<10ms)       │
+│  • lang_instruction         │     │  → MISS: call Bedrock        │
+│                             │     │        + store cache         │
+│  Returns:                   │     │  [STATUS: Plan only v1.4]    │
+│  • response_text            │     │                              │
+│  • [PLAY_VOICE_MEMORY:KCC]  │     │  Also stores:                │
+│  • is_goodbye: bool         │     │  • 10 welfare schemes        |
+│  • matched_schemes          │     │   • farmer eligibility       │
+└──────┬───────────┬──────────┘     └──────────────────────────────┘
        │           │
        ▼           ▼
    Bedrock       [No cache
@@ -384,63 +385,63 @@ Amplify also provides free SSL certificate, HTTP→HTTPS redirect, and request l
     tags]        call]
        │
        ▼
-┌──────────────────────────────────────────────────────────────────┐
-│  [ SPEECH SYNTHESIS — Polly + S3 ]                             │
-│                                                                  │
-│  polly.synthesize_speech(response_text):                        │
-│  • VoiceId="Kajal" (Hindi-specific neural model)               │
+┌───────────────────────────────────────────────────────────────┐
+│  [ SPEECH SYNTHESIS — Polly + S3 ]                            │
+│                                                               │
+│  polly.synthesize_speech(response_text):                      │
+│  • VoiceId="Kajal" (Hindi-specific neural model)              │
 │  • Engine="neural", Format="mp3", LanguageCode="hi-IN"        │
 │  • Audio stream → s3.put_object(tts_output/{uuid}.mp3)        │
-│  • Returns presigned_url (15-min expiry)                       │
-│                                                                  │
-│  Lambda returns JSON:                                           │
-│  {response_text, audio_url, voice_memory_clip,                 │
-│   is_goodbye: bool, matched_schemes}                           │
+│  • Returns presigned_url (15-min expiry)                      │
+│                                                               │
+│  Lambda returns JSON:                                         │
+│  {response_text, audio_url, voice_memory_clip,                │
+│   is_goodbye: bool, matched_schemes}                          │
 └──────────────┬────────────────────────────────────────────────┘
                │
         HTTPS response
         200 OK + JSON
                │
                ▼
-┌─────────────────────────────────────────────────────────────────┐
-│        [ FRONTEND — Audio Playback Sequence ]                   │
-│                                                                 │
-│  React receives: {audio_url, voice_memory_clip, is_goodbye}   │
-│                                                                 │
-│  if is_goodbye:                                                │
-│    ★ playWithLanguage(audio_url, null, text, ...)            │
-│    → endConversation() after audio  [Goodbye flow]           │
-│                                                                 │
-│  else (normal flow):                                           │
-│    ★ playSequentially(audio_url, voiceMemoryUrl, ...)        │
-│    1. playAudioUrl(audio_url) [Polly TTS]                    │
-│    2. await 1000ms   ← PAUSE (farmer pause before peer)      │
-│    3. if voiceMemoryPlayedRef.has(scheme):  [DEDUP]          │
-│         skip (already played this conversation)               │
-│       else:                                                    │
-│         fetch /api/voice-memory/{scheme}?lang=hi-IN           │
-│         → presigned S3 URL for farmer clip                    │
-│         playAudioUrl(voiceMemoryUrl) [★ VOICE MEMORY NETWORK] │
-│         voiceMemoryPlayedRef.add(scheme)                      │
-│    4. await 600ms   ← PAUSE (after peer voice ends)          │
-│    5. startListening() [Resume Web Speech API]               │
+┌────────────────────────────────────────────────────────────────┐
+│        [ FRONTEND — Audio Playback Sequence ]                  │
 │                                                                │
-│  On endConversation():                                        │
+│  React receives: {audio_url, voice_memory_clip, is_goodbye}    │
+│                                                                │
+│  if is_goodbye:                                                │
+│    ★ playWithLanguage(audio_url, null, text, ...)             │
+│    → endConversation() after audio  [Goodbye flow]             │
+│                                                                │
+│  else (normal flow):                                           │
+│    ★ playSequentially(audio_url, voiceMemoryUrl, ...)          │
+│    1. playAudioUrl(audio_url) [Polly TTS]                      │
+│    2. await 1000ms   ← PAUSE (farmer pause before peer)        │
+│    3. if voiceMemoryPlayedRef.has(scheme):  [DEDUP]            │
+│         skip (already played this conversation)                │
+│       else:                                                    │
+│         fetch /api/voice-memory/{scheme}?lang=hi-IN            │
+│         → presigned S3 URL for farmer clip                     │ 
+│         playAudioUrl(voiceMemoryUrl) [★ VOICE MEMORY NETWORK] |
+│         voiceMemoryPlayedRef.add(scheme)                       │
+│    4. await 600ms   ← PAUSE (after peer voice ends)            │
+│    5. startListening() [Resume Web Speech API]                 │
+│                                                                │
+│  On endConversation():                                         │
 │    voiceMemoryPlayedRef.current.clear()  [Reset for next call] │
-└────────┬──────────────────────────────────────────────────────┘
+└────────┬───────────────────────────────────────────────────────┘
          │
          └─────────────────┬──────────────────────┐
                            │                      │
                            ▼                      ▼
         ┌──────────────────────────┐  ┌──────────────────────────┐
-        │  [ DELIVERY — SNS SMS ]   │  │  [ DELIVERY — Connect ]  │
+        │  [ DELIVERY — SNS SMS ]   │  │  [ DELIVERY — Connect ] │
         │                          │  │                          │
-        │  if matched_schemes:    │  │  [PARTIAL] Outbound call │
+        │  if matched_schemes:    │  │  [PARTIAL] Outbound call  │
         │  send_checklist()        │  │  ⚙ Infrastructure built │
         │  ↓                       │  │  ⚙ +91 DID pending TRAI │
         │  sns.publish(            │  │    (4-6 week regulatory) │
-        │    PhoneNumber=+91...,   │  │  ⚙ Demo routes to       │
-        │    Message=docs_text,    │  │    developer's mobile   │
+        │    PhoneNumber=+91...,   │  │  ⚙ Demo routes to        │
+        │    Message=docs_text,    │  │    developer's mobile    │
         │    SenderID="Sahaya"     │  └──────────────────────────┘
         │  )                       │
         │  ↓ SMS to farmer         │
