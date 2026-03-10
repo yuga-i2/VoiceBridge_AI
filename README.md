@@ -10,7 +10,7 @@
 
 **Live Demo:** https://master.dk0lrulrclio3.amplifyapp.com  
 **API Health Check:** https://bkzd32abpg.execute-api.ap-southeast-1.amazonaws.com/dev/api/health  
-[DEMO VIDEO LINK]
+**Demo Video:** https://youtu.be/bhXY-YPOncQ
 
 ---
 
